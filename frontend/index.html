@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="es">
+<html class="light" lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -14,53 +14,34 @@
       theme: {
         extend: {
           colors: {
-            "primary": "#c0c1ff",
-            "on-primary": "#1000a9",
-            "primary-container": "#8083ff",
-            "on-primary-container": "#0d0096",
-            "primary-fixed": "#e1e0ff",
-            "primary-fixed-dim": "#c0c1ff",
-            "on-primary-fixed": "#07006c",
-            "on-primary-fixed-variant": "#2f2ebe",
-            "inverse-primary": "#494bd6",
-            "secondary": "#4edea3",
-            "on-secondary": "#003824",
-            "secondary-container": "#00a572",
-            "on-secondary-container": "#00311f",
-            "secondary-fixed": "#6ffbbe",
-            "secondary-fixed-dim": "#4edea3",
-            "on-secondary-fixed": "#002113",
-            "on-secondary-fixed-variant": "#005236",
-            "tertiary": "#ffb2b7",
-            "on-tertiary": "#67001b",
-            "tertiary-container": "#ff516a",
-            "on-tertiary-container": "#5b0017",
-            "tertiary-fixed": "#ffdadb",
-            "tertiary-fixed-dim": "#ffb2b7",
-            "on-tertiary-fixed": "#40000d",
-            "on-tertiary-fixed-variant": "#92002a",
-            "error": "#ffb4ab",
-            "on-error": "#690005",
-            "error-container": "#93000a",
-            "on-error-container": "#ffdad6",
-            "background": "#131313",
-            "on-background": "#e5e2e1",
-            "surface": "#131313",
-            "surface-dim": "#131313",
-            "surface-bright": "#3a3939",
-            "surface-container-lowest": "#0e0e0e",
-            "surface-container-low": "#1c1b1b",
-            "surface-container": "#201f1f",
-            "surface-container-high": "#2a2a2a",
-            "surface-container-highest": "#353534",
-            "on-surface": "#e5e2e1",
-            "on-surface-variant": "#c7c4d7",
-            "inverse-surface": "#e5e2e1",
-            "inverse-on-surface": "#313030",
-            "surface-variant": "#353534",
-            "surface-tint": "#c0c1ff",
-            "outline": "#908fa0",
-            "outline-variant": "#464554"
+            "primary": "#4f46e5", // Indigo corporativo
+            "on-primary": "#ffffff",
+            "primary-container": "#e0e7ff",
+            "on-primary-container": "#312e81",
+            "secondary": "#059669", // Emerald
+            "on-secondary": "#ffffff",
+            "secondary-container": "#d1fae5",
+            "on-secondary-container": "#065f46",
+            "tertiary": "#db2777", // Pink/Coral
+            "on-tertiary": "#ffffff",
+            "error": "#dc2626",
+            "on-error": "#ffffff",
+            "error-container": "#fee2e2",
+            "on-error-container": "#991b1b",
+            "background": "#f8fafc", // Slate 50 (Fondo claro limpio)
+            "on-background": "#0f172a", // Slate 900
+            "surface": "#ffffff", // Blanco
+            "surface-dim": "#f1f5f9", // Slate 100
+            "surface-bright": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f8fafc",
+            "surface-container": "#f1f5f9",
+            "surface-container-high": "#e2e8f0",
+            "surface-container-highest": "#cbd5e1",
+            "on-surface": "#0f172a",
+            "on-surface-variant": "#475569", // Slate 600
+            "outline": "#94a3b8", // Slate 400
+            "outline-variant": "#cbd5e1" // Slate 300
           },
           fontFamily: {
             "display": ["Outfit", "sans-serif"],
@@ -69,10 +50,10 @@
             "label": ["Inter", "sans-serif"]
           },
           fontSize: {
-            "display-lg": ["48px", { lineHeight: "56px", fontWeight: "700", letterSpacing: "-0.02em" }],
-            "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }],
-            "headline-lg-mobile": ["24px", { lineHeight: "32px", fontWeight: "600" }],
-            "headline-md": ["24px", { lineHeight: "32px", fontWeight: "500" }],
+            "display-lg": ["44px", { lineHeight: "52px", fontWeight: "700", letterSpacing: "-0.02em" }],
+            "headline-lg": ["30px", { lineHeight: "38px", fontWeight: "600" }],
+            "headline-lg-mobile": ["22px", { lineHeight: "30px", fontWeight: "600" }],
+            "headline-md": ["22px", { lineHeight: "28px", fontWeight: "500" }],
             "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
             "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
             "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "600" }],
@@ -85,68 +66,60 @@
             lg: "1rem",
             xl: "1.5rem",
             full: "9999px"
-          },
-          spacing: {
-            "container-margin": "24px",
-            "gutter": "16px",
-            "stack-sm": "8px",
-            "stack-md": "16px",
-            "stack-lg": "32px",
-            "unit": "4px"
           }
         }
       }
     }
   </script>
   <style>
-    body { background-color: #131313; color: #e5e2e1; font-family: 'Inter', sans-serif; }
+    body { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }
 
     .glass-panel {
-      background: rgba(32, 31, 31, 0.7);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255,255,255,0.15);
-      border-left: 1px solid rgba(255,255,255,0.15);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      border-right: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
     }
     .glass-day {
-      background: rgba(32,31,31,0.4);
+      background: rgba(255, 255, 255, 0.65);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(15, 23, 42, 0.06);
     }
     .current-day {
-      border-top: 3px solid #c0c1ff !important;
-      box-shadow: inset 0 20px 30px -20px rgba(192,193,255,0.1);
+      border-top: 3px solid #4f46e5 !important;
+      background: rgba(240, 244, 255, 0.8) !important;
+      box-shadow: inset 0 20px 30px -20px rgba(79, 70, 229, 0.05);
     }
     .recipe-gradient {
-      background: linear-gradient(to top, rgba(19,19,19,0.9) 0%, rgba(19,19,19,0.3) 50%, transparent 100%);
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 60%, transparent 100%);
     }
-    .glow-error { box-shadow: 0 0 15px rgba(255,180,171,0.1); }
+    .glow-error { box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
     .pulse-coral { animation: pulse-coral 2s infinite; }
     @keyframes pulse-coral {
-      0%   { box-shadow: 0 0 0 0 rgba(255,180,171,0.4); }
-      70%  { box-shadow: 0 0 0 6px rgba(255,180,171,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,180,171,0); }
+      0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70%  { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .nav-item { @apply flex items-center gap-4 text-on-surface-variant px-4 py-3 rounded-lg hover:bg-white/5 hover:text-on-surface transition-all font-label-md text-label-md; }
-    .nav-item.active { @apply bg-primary/10 text-primary border-l-4 border-primary rounded-r-lg; }
+    .nav-item { @apply flex items-center gap-4 text-slate-600 px-4 py-3 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-all font-medium text-sm; }
+    .nav-item.active { @apply bg-indigo-50 text-indigo-700 font-semibold border-l-4 border-indigo-600 rounded-r-lg; }
     .screen { display: none; }
     .screen.active { display: flex; }
   </style>
 </head>
-<body class="min-h-screen flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<body class="min-h-screen flex overflow-hidden bg-slate-50 text-slate-900">
 
   <!-- ── Side Navigation ─────────────────────────────────────────── -->
-  <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full z-40 bg-surface-container/80 backdrop-blur-2xl border-r border-white/10 shadow-xl w-64">
-    <div class="p-6 flex flex-col items-center border-b border-white/10">
-      <div class="w-16 h-16 rounded-full bg-surface-container-high border border-white/10 mb-4 overflow-hidden flex items-center justify-center">
-        <span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings:'FILL' 1">restaurant</span>
+  <nav class="hidden md:flex flex-col fixed left-0 top-0 h-full z-40 bg-white border-r border-slate-200 shadow-sm w-64">
+    <div class="p-6 flex flex-col items-center border-b border-slate-100">
+      <!-- Logo corporativo integrado -->
+      <div class="mb-4 flex items-center justify-center p-2 rounded-xl bg-slate-50 border border-slate-100">
+        <img src="logo.png" alt="ACFC Kitchen Logo" class="h-16 w-auto object-contain max-w-[200px]" onerror="this.outerHTML='<span class=\'material-symbols-outlined text-4xl text-indigo-600\'>restaurant</span>'"/>
       </div>
-      <h1 class="font-headline-md text-headline-md font-black text-primary text-center" style="font-family: Outfit">ACFC Kitchen</h1>
-      <p class="font-label-sm text-label-sm text-on-surface-variant mt-1 text-center">Executive Suite</p>
+      <h1 class="font-headline-md text-headline-md font-black text-indigo-600 text-center" style="font-family: Outfit">ACFC Kitchen</h1>
+      <p class="font-label-sm text-xs text-slate-500 mt-1 text-center">Suite de Gestión Gastronómica</p>
     </div>
 
     <div class="flex-1 overflow-y-auto py-6 px-4 space-y-1 no-scrollbar">
@@ -154,28 +127,31 @@
         <span class="material-symbols-outlined">dashboard</span> Dashboard
       </a>
       <a onclick="showScreen('planner')" class="nav-item cursor-pointer" id="nav-planner">
-        <span class="material-symbols-outlined">calendar_month</span> Menu Planner
+        <span class="material-symbols-outlined">calendar_month</span> Planificador Menú
       </a>
       <a onclick="showScreen('inventory')" class="nav-item cursor-pointer" id="nav-inventory">
-        <span class="material-symbols-outlined">inventory_2</span> Inventory
+        <span class="material-symbols-outlined">inventory_2</span> Inventario y Control
+      </a>
+      <a onclick="showScreen('recetas')" class="nav-item cursor-pointer" id="nav-recetas">
+        <span class="material-symbols-outlined">receipt_long</span> Recetas & Escandallos
+      </a>
+      <a onclick="showScreen('proveedores')" class="nav-item cursor-pointer" id="nav-proveedores">
+        <span class="material-symbols-outlined">group</span> Proveedores
       </a>
       <a onclick="showScreen('recipes')" class="nav-item cursor-pointer" id="nav-recipes">
-        <span class="material-symbols-outlined">menu_book</span> AI Recipes
-      </a>
-      <a onclick="showScreen('analytics')" class="nav-item cursor-pointer" id="nav-analytics">
-        <span class="material-symbols-outlined">analytics</span> Analytics
+        <span class="material-symbols-outlined">auto_awesome</span> Asistente IA
       </a>
     </div>
 
-    <div class="p-4 border-t border-white/10">
-      <button class="w-full py-3 bg-primary text-on-primary font-label-md text-label-md rounded-lg hover:bg-primary-fixed-dim transition-colors mb-4 flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined">add</span> New Entry
+    <div class="p-4 border-t border-slate-100">
+      <button class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors mb-4 flex items-center justify-center gap-2 shadow-sm shadow-indigo-600/10">
+        <span class="material-symbols-outlined">add</span> Nuevo Registro
       </button>
-      <a class="flex items-center gap-4 text-on-surface-variant px-4 py-2 rounded-lg hover:bg-white/5 font-label-sm text-label-sm">
-        <span class="material-symbols-outlined text-lg">help</span> Support
+      <a class="flex items-center gap-4 text-slate-500 px-4 py-2 rounded-lg hover:bg-slate-50 text-xs cursor-pointer">
+        <span class="material-symbols-outlined text-lg">help</span> Soporte Técnico
       </a>
-      <a class="flex items-center gap-4 text-on-surface-variant px-4 py-2 rounded-lg hover:bg-white/5 font-label-sm text-label-sm">
-        <span class="material-symbols-outlined text-lg">logout</span> Logout
+      <a class="flex items-center gap-4 text-slate-500 px-4 py-2 rounded-lg hover:bg-slate-50 text-xs cursor-pointer">
+        <span class="material-symbols-outlined text-lg">logout</span> Cerrar Sesión
       </a>
     </div>
   </nav>
@@ -184,357 +160,457 @@
   <div class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
 
     <!-- Top App Bar -->
-    <header class="flex justify-between items-center w-full px-6 h-20 bg-surface/70 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 shrink-0">
+    <header class="flex justify-between items-center w-full px-6 h-20 bg-white border-b border-slate-200 sticky top-0 z-50 shrink-0">
       <div class="flex items-center gap-4">
-        <span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary md:hidden" style="font-family: Outfit">ACFC Kitchen</span>
-        <div class="hidden md:flex items-center gap-2 text-on-surface-variant">
-          <span class="font-label-md text-label-md">ACFC Kitchen</span>
+        <!-- Logo mobile -->
+        <img src="logo.png" alt="ACFC Kitchen" class="h-10 w-auto md:hidden object-contain" onerror="this.style.display='none'"/>
+        <span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-indigo-600 md:hidden" style="font-family: Outfit">ACFC Kitchen</span>
+        
+        <div class="hidden md:flex items-center gap-2 text-slate-500">
+          <span class="font-label-md text-sm">ACFC Kitchen</span>
           <span class="material-symbols-outlined text-sm">chevron_right</span>
-          <span class="font-label-md text-label-md text-primary" id="breadcrumb">Dashboard</span>
+          <span class="font-label-md text-sm text-indigo-600 font-semibold" id="breadcrumb">Dashboard</span>
         </div>
       </div>
       <div class="flex items-center gap-6">
         <div class="text-right hidden lg:block">
-          <div class="font-headline-md text-headline-md text-primary" style="font-family: Outfit">$24,500.00</div>
-          <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Global Cost</div>
+          <div class="font-headline-md text-headline-md text-emerald-600 font-bold" style="font-family: Outfit">$24,500.00</div>
+          <div class="font-label-sm text-xs text-slate-500 uppercase tracking-wider">Costo Global Planificado</div>
         </div>
-        <div class="flex items-center gap-4 border-l border-white/10 pl-6">
-          <button class="text-on-surface-variant hover:text-primary transition-colors relative">
+        <div class="flex items-center gap-4 border-l border-slate-200 pl-6">
+          <button class="text-slate-500 hover:text-indigo-600 transition-colors relative">
             <span class="material-symbols-outlined">notifications</span>
-            <span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full pulse-coral"></span>
+            <span class="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full pulse-coral"></span>
           </button>
-          <button class="text-on-surface-variant hover:text-primary transition-colors">
+          <button class="text-slate-500 hover:text-indigo-600 transition-colors">
             <span class="material-symbols-outlined">settings</span>
           </button>
-          <div class="w-10 h-10 rounded-full bg-surface-container border border-white/10 overflow-hidden cursor-pointer hover:border-primary transition-colors flex items-center justify-center">
-            <span class="material-symbols-outlined text-on-surface-variant">person</span>
+          <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden cursor-pointer hover:border-indigo-600 transition-colors flex items-center justify-center">
+            <span class="material-symbols-outlined text-slate-600">person</span>
           </div>
         </div>
       </div>
     </header>
 
     <!-- Content Screens -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto bg-slate-50">
 
       <!-- ═══ SCREEN: DASHBOARD ══════════════════════════════════════ -->
       <div id="screen-dashboard" class="screen active flex-col p-8 space-y-8">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
           <div>
-            <h2 class="font-display-lg text-display-lg text-on-surface mb-2" style="font-family: Outfit">Dashboard</h2>
-            <p class="font-body-lg text-body-lg text-on-surface-variant">Resumen ejecutivo del estado del sistema gastronómico.</p>
+            <h2 class="font-display-lg text-display-lg text-slate-900 mb-2" style="font-family: Outfit">Dashboard</h2>
+            <p class="font-body-lg text-slate-500">Resumen ejecutivo del estado del sistema gastronómico claro e intuitivo.</p>
           </div>
-          <button onclick="showScreen('planner')" class="bg-primary text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg hover:bg-primary-fixed-dim transition-all shadow-[0_0_15px_rgba(192,193,255,0.3)] flex items-center gap-2">
-            <span class="material-symbols-outlined">calendar_month</span> Ver Planificador
+          <button onclick="showScreen('planner')" class="bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all shadow-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">calendar_month</span> Planificador de Menú
           </button>
         </div>
+
         <!-- Bento stats -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group cursor-pointer" onclick="showScreen('inventory')">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-primary">kitchen</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Total Ingredientes</div>
-            <div class="font-display-lg text-display-lg text-on-surface flex items-baseline gap-2" style="font-size:48px;font-family:Outfit">482 <span class="font-label-md text-label-md text-secondary">+12 esta semana</span></div>
+          <div class="bg-white border border-slate-200 rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:shadow-md transition-shadow" onclick="showScreen('inventory')">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-indigo-600">kitchen</span></div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Total Ingredientes</div>
+            <div class="font-display-lg text-slate-900 flex items-baseline gap-2" style="font-size:36px;font-family:Outfit">482 <span class="text-xs font-semibold text-emerald-600">+12 esta semana</span></div>
           </div>
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group border-l-4 border-l-error glow-error cursor-pointer" onclick="showScreen('inventory')">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-error">warning</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-error pulse-coral"></span>Stock Bajo
+          <div class="bg-white border border-slate-200 rounded-xl p-6 relative overflow-hidden group border-l-4 border-l-red-500 cursor-pointer hover:shadow-md transition-shadow" onclick="showScreen('inventory')">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-red-500">warning</span></div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-red-500 pulse-coral"></span>Stock Crítico
             </div>
-            <div class="flex items-baseline gap-2" style="font-size:48px;font-family:Outfit;font-weight:700;color:#ffb4ab">12 <span class="font-label-md text-label-md text-on-surface-variant">Items Críticos</span></div>
+            <div class="flex items-baseline gap-2 font-bold text-red-600" style="font-size:36px;font-family:Outfit">12 <span class="text-xs text-slate-400 font-medium ml-2">requieren reorden</span></div>
           </div>
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-primary-container">receipt_long</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Pedidos Pendientes</div>
-            <div class="flex items-baseline gap-2" style="font-size:48px;font-family:Outfit;font-weight:700;color:#8083ff">8 <span class="font-label-md text-label-md text-on-surface-variant">Activos</span></div>
+          <div class="bg-white border border-slate-200 rounded-xl p-6 relative overflow-hidden group cursor-pointer hover:shadow-md transition-shadow">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-indigo-400">receipt_long</span></div>
+            <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Pedidos de Compra</div>
+            <div class="flex items-baseline gap-2 font-bold text-indigo-600" style="font-size:36px;font-family:Outfit">8 <span class="text-xs text-slate-400 font-medium ml-2">pendientes</span></div>
           </div>
-          <div class="glass-panel rounded-xl p-6 flex flex-col justify-between">
+          <div class="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
             <div>
-              <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Presupuesto Mensual</div>
-              <div class="font-headline-lg text-headline-lg text-on-surface" style="font-family:Outfit">$18,420.00</div>
+              <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Presupuesto Ejecutado</div>
+              <div class="text-2xl font-bold text-slate-900" style="font-family:Outfit">$18,420.00</div>
             </div>
             <div class="mt-4">
-              <div class="flex justify-between font-label-sm text-label-sm mb-1 text-on-surface-variant"><span>75%</span><span>Límite: $24,500</span></div>
-              <div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div class="h-full bg-secondary-container w-[75%] rounded-full shadow-[0_0_10px_rgba(0,165,114,0.5)]"></div>
+              <div class="flex justify-between text-xs text-slate-500 mb-1"><span>75%</span><span>Límite: $24,500</span></div>
+              <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 w-[75%] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"></div>
               </div>
             </div>
           </div>
         </div>
-        <!-- Quick access -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="glass-panel rounded-xl p-6 cursor-pointer hover:border-primary/30 transition-colors" onclick="showScreen('planner')">
+
+        <!-- Quick access matrix -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white border border-slate-200 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all" onclick="showScreen('recetas')">
             <div class="flex items-center gap-4 mb-4">
-              <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center"><span class="material-symbols-outlined text-primary text-2xl">calendar_month</span></div>
-              <div><div class="font-headline-md text-headline-md" style="font-family:Outfit">Planificador</div><div class="font-label-sm text-label-sm text-on-surface-variant">Menú Mensual</div></div>
+              <div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center"><span class="material-symbols-outlined text-indigo-600 text-2xl">receipt_long</span></div>
+              <div><div class="text-lg font-bold text-slate-900" style="font-family:Outfit">Recetas</div><div class="text-xs text-slate-500">Cálculo de Escandallos</div></div>
             </div>
-            <p class="font-body-md text-body-md text-on-surface-variant">Calendario visual de menús con costeo automático y alertas de presupuesto.</p>
+            <p class="text-sm text-slate-500">Consulta los escandallos actualizados, costos de porción y márgenes brutos.</p>
           </div>
-          <div class="glass-panel rounded-xl p-6 cursor-pointer hover:border-primary/30 transition-colors" onclick="showScreen('inventory')">
+          <div class="bg-white border border-slate-200 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all" onclick="showScreen('proveedores')">
             <div class="flex items-center gap-4 mb-4">
-              <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center"><span class="material-symbols-outlined text-secondary text-2xl">inventory_2</span></div>
-              <div><div class="font-headline-md text-headline-md" style="font-family:Outfit">Inventario</div><div class="font-label-sm text-label-sm text-on-surface-variant">Control de Stock</div></div>
+              <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center"><span class="material-symbols-outlined text-emerald-600 text-2xl">group</span></div>
+              <div><div class="text-lg font-bold text-slate-900" style="font-family:Outfit">Proveedores</div><div class="text-xs text-slate-500">Directorio y Tarifas</div></div>
             </div>
-            <p class="font-body-md text-body-md text-on-surface-variant">Live Stock Matrix con alertas visuales de reorden y métricas en tiempo real.</p>
+            <p class="text-sm text-slate-500">Catálogo de proveedores homologados y optimización por costo unitario mínimo.</p>
           </div>
-          <div class="glass-panel rounded-xl p-6 cursor-pointer hover:border-primary/30 transition-colors" onclick="showScreen('recipes')">
+          <div class="bg-white border border-slate-200 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all" onclick="showScreen('inventory')">
             <div class="flex items-center gap-4 mb-4">
-              <div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center"><span class="material-symbols-outlined text-tertiary text-2xl">auto_awesome</span></div>
-              <div><div class="font-headline-md text-headline-md" style="font-family:Outfit">AI Recipes</div><div class="font-label-sm text-label-sm text-on-surface-variant">Desarrollo con IA</div></div>
+              <div class="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center"><span class="material-symbols-outlined text-amber-600 text-2xl">inventory_2</span></div>
+              <div><div class="text-lg font-bold text-slate-900" style="font-family:Outfit">Inventario</div><div class="text-xs text-slate-500">Buscador y Alertas</div></div>
             </div>
-            <p class="font-body-md text-body-md text-on-surface-variant">Extracción NLP de recetas e integración con catálogo de insumos y proveedores.</p>
+            <p class="text-sm text-slate-500">Monitoreo de ingredientes en stock y asistente automático de reposición.</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-sm transition-all" onclick="showScreen('recipes')">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 rounded-lg bg-pink-50 flex items-center justify-center"><span class="material-symbols-outlined text-pink-600 text-2xl">auto_awesome</span></div>
+              <div><div class="text-lg font-bold text-slate-900" style="font-family:Outfit">Asistente IA</div><div class="text-xs text-slate-500">Procesamiento NLP</div></div>
+            </div>
+            <p class="text-sm text-slate-500">Extrae ingredientes de recetas de forma textual y genera el escandallo automáticamente.</p>
           </div>
         </div>
       </div>
 
-      <!-- ═══ SCREEN: MONTHLY MENU PLANNER ══════════════════════════ -->
-      <div id="screen-planner" class="screen flex-col md:flex-row gap-gutter p-container-margin overflow-hidden" style="height: calc(100vh - 80px)">
+      <!-- ═══ SCREEN: PLANNER ════════════════════════════════════════ -->
+      <div id="screen-planner" class="screen flex-col md:flex-row gap-6 p-8 overflow-hidden" style="height: calc(100vh - 80px)">
         <!-- Calendar -->
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div class="flex justify-between items-center mb-stack-md">
+          <div class="flex justify-between items-center mb-4">
             <div class="flex items-center gap-4">
-              <button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
-              <h2 class="font-headline-lg text-headline-lg font-semibold" style="font-family:Outfit">Julio 2026</h2>
-              <button class="p-1 text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+              <button class="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+              <h2 class="font-headline-lg text-headline-lg font-semibold text-slate-900" style="font-family:Outfit">Julio 2026</h2>
+              <button class="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
             </div>
             <div class="flex gap-4 items-center">
-              <span class="flex items-center gap-1 font-label-sm text-label-sm text-secondary"><span class="w-2 h-2 rounded-full bg-secondary"></span>Completo</span>
-              <span class="flex items-center gap-1 font-label-sm text-label-sm text-tertiary-container ml-2"><span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span>Borrador</span>
-              <button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded flex items-center gap-2 hover:bg-primary-fixed transition-colors">
-                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">publish</span> Publicar
+              <span class="flex items-center gap-1 text-xs text-emerald-600 font-semibold"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Completo</span>
+              <span class="flex items-center gap-1 text-xs text-amber-500 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>Borrador</span>
+              <button class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                Publicar Menú
               </button>
             </div>
           </div>
           <!-- Day headers -->
-          <div class="grid grid-cols-7 gap-unit mb-unit">
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Lun</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Mar</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Mié</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Jue</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Vie</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Sáb</div>
-            <div class="text-center font-label-sm text-label-sm text-on-surface-variant uppercase py-2">Dom</div>
+          <div class="grid grid-cols-7 gap-2 mb-2">
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Lun</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Mar</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Mié</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Jue</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Vie</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Sáb</div>
+            <div class="text-center text-xs font-semibold text-slate-400 uppercase py-2">Dom</div>
           </div>
           <!-- Calendar grid -->
-          <div class="grid grid-cols-7 gap-unit flex-1 overflow-hidden" id="cal-grid">
+          <div class="grid grid-cols-7 gap-2 flex-1 overflow-y-auto no-scrollbar" id="cal-grid">
             <!-- Days rendered by JS -->
           </div>
         </div>
         <!-- Recipe Sidebar -->
-        <div class="w-full md:w-80 glass-panel rounded-xl flex flex-col overflow-hidden" style="max-height: calc(100vh - 140px)">
-          <div class="p-4 border-b border-white/10 flex justify-between items-center bg-surface/50">
-            <h3 class="font-headline-md text-headline-md font-semibold flex items-center gap-2" style="font-family:Outfit">
-              <span class="material-symbols-outlined text-primary">menu_book</span> Catálogo
+        <div class="w-full md:w-80 bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden" style="max-height: calc(100vh - 140px)">
+          <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="font-headline-md text-headline-md font-semibold flex items-center gap-2 text-slate-900" style="font-family:Outfit">
+              <span class="material-symbols-outlined text-indigo-600">menu_book</span> Catálogo
             </h3>
-            <button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">search</span></button>
+            <button class="text-slate-400 hover:text-indigo-600 transition-colors"><span class="material-symbols-outlined">search</span></button>
           </div>
-          <div class="flex gap-2 p-3 overflow-x-auto no-scrollbar border-b border-white/5">
-            <span class="px-3 py-1 rounded-full bg-primary/20 text-primary font-label-sm text-label-sm border border-primary/30 whitespace-nowrap cursor-pointer">Pasta</span>
-            <span class="px-3 py-1 rounded-full bg-surface-bright text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors">Carnes & Pescados</span>
-            <span class="px-3 py-1 rounded-full bg-surface-bright text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap cursor-pointer hover:bg-white/10 transition-colors">Vegetariano</span>
+          <div class="flex gap-2 p-3 overflow-x-auto no-scrollbar border-b border-slate-100">
+            <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold text-xs border border-indigo-100 cursor-pointer">Pasta</span>
+            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs cursor-pointer hover:bg-slate-200 transition-colors">Carnes</span>
+            <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs cursor-pointer hover:bg-slate-200 transition-colors">Vegetariano</span>
           </div>
           <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3 no-scrollbar">
             <!-- Recipe Cards -->
-            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-white/10 group">
+            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-slate-200 group">
               <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB7eL_t0ahUeqYD5rkMCez_5SHkvVskzu7orsSRVl3z9MF1ZaW_LzvdHHeTqARasIly4qWGrXqanZ5140hQJ_vySWNXOF9JYmDNTfCThJcXIQceZKqHeumQOU7FYEpyIttTsBW3MH4mf2heA-_5tC1_tsZ6A56TVUfa0Yfv982pqUzuNIU3w5fmHTH71KePdhxzut7GkcsYRWwByhwk4gpLugkFb0V0n1UzesIumVoLdiB8R-VNznfx_8sMikJqE11-Hka5NEpSh4oz')"></div>
               <div class="absolute inset-0 recipe-gradient flex flex-col justify-between p-3">
                 <div class="flex justify-between items-start">
-                  <span class="bg-secondary/20 text-secondary font-label-sm text-[10px] px-2 py-0.5 rounded-full border border-secondary/30 uppercase tracking-wider backdrop-blur-sm">Vegetariano</span>
-                  <span class="bg-black/50 text-white font-label-sm text-label-sm px-2 py-1 rounded backdrop-blur-md border border-white/10">$3.50/p</span>
+                  <span class="bg-emerald-500/80 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase tracking-wider backdrop-blur-sm">Vegetariano</span>
+                  <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded backdrop-blur-md">$3.50/r</span>
                 </div>
-                <h4 class="font-body-lg text-body-lg font-semibold text-white drop-shadow-md" style="font-family:Outfit">Mushroom Risotto</h4>
+                <h4 class="text-body-lg font-bold text-white drop-shadow-md">Mushroom Risotto</h4>
               </div>
             </div>
-            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-white/10 group">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZEcGKPWxVNwMDlgv67YH9Opp2KAKJTqC9hF72isI7Ib72EW-koGbWjPAS3MDWLeeGxojDtf6RA0Ou_ZEm_saM2mwkHqcXSYxWgHOVBMXssCT9i7mt7hQk2O6E-nlkSbaiqPpn4wtc9ZnU3kNZ1gG25OJ_vdt_cj9jBt6p_RFz4HpVeti7RaLlJBx_dEvXeUtdAIiXom6jpVn6Z0MnvyyeFJX008dQBiZuqnpgeU6UqX3glNY1hITSRSEr4ElE8PJLOMb3lmjIwZpw')"></div>
+            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-slate-200 group">
+              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCZEcGKPWxVNwMDlgv67YH9Opp2KAKJTqC9hF72isI7Ib72EW-koGbWjPAS3MDWLeeGxojDtf6RA0Ou_ZEm_saM2mwkHqcXSYxWgHOVBMXssCT9i7kt7hQk2O6E-nlkSbaiqPpn4wtc9ZnU3kNZ1gG25OJ_vdt_cj9jBt6p_RFz4HpVeti7RaLlJBx_dEvXeUtdAIiXom6jpVn6Z0MnvyyeFJX008dQBiZuqnpgeU6UqX3glNY1hITSRSEr4ElE8PJLOMb3lmjIwZpw')"></div>
               <div class="absolute inset-0 recipe-gradient flex flex-col justify-between p-3">
                 <div class="flex justify-between items-start">
-                  <span class="bg-tertiary-container/20 text-tertiary-fixed-dim font-label-sm text-[10px] px-2 py-0.5 rounded-full border border-tertiary-container/30 uppercase tracking-wider backdrop-blur-sm">Carnes &amp; Pescados</span>
-                  <span class="bg-black/50 text-white font-label-sm text-label-sm px-2 py-1 rounded backdrop-blur-md border border-white/10">$8.20/p</span>
+                  <span class="bg-rose-500/80 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase tracking-wider backdrop-blur-sm">Carne/Pescado</span>
+                  <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded backdrop-blur-md">$8.20/r</span>
                 </div>
-                <h4 class="font-body-lg text-body-lg font-semibold text-white drop-shadow-md" style="font-family:Outfit">Grilled Salmon</h4>
-              </div>
-            </div>
-            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-white/10 group">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjFDfqoIk7uUY3_MwAsc-hKsUt8lmOIk9PEdcc2Aokh34LIc32CBryjXNuOGbMN3Fazk_Ln8wWqg19qw4O26n2rJvtqzHMCk5a6MPgyAbqtIwcJ-bJ7ZdGAVfPHk1z4-HTNX7cbO1OrhVKAvLAh3OD1NyGMRmNT_JtVH8IxVy4podCPYpYirbCpYGg_gpax8qRAOGUy_Uq-pbaD95Dj8jB78_IgeoRw8Gfg_joj62IzpyGA_L_1X6FToEl0KUPDp_1gBcmIjF2_asi')"></div>
-              <div class="absolute inset-0 recipe-gradient flex flex-col justify-between p-3">
-                <div class="flex justify-between items-start">
-                  <span class="bg-primary/20 text-primary font-label-sm text-[10px] px-2 py-0.5 rounded-full border border-primary/30 uppercase tracking-wider backdrop-blur-sm">Pasta</span>
-                  <span class="bg-black/50 text-white font-label-sm text-label-sm px-2 py-1 rounded backdrop-blur-md border border-white/10">$2.10/p</span>
-                </div>
-                <h4 class="font-body-lg text-body-lg font-semibold text-white drop-shadow-md" style="font-family:Outfit">Penne Arrabiata</h4>
-              </div>
-            </div>
-            <div class="relative h-32 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border border-white/10 group">
-              <div class="absolute inset-0 bg-gradient-to-br from-secondary/20 to-surface-container-high"></div>
-              <div class="absolute inset-0 recipe-gradient flex flex-col justify-between p-3">
-                <div class="flex justify-between items-start">
-                  <span class="bg-secondary/20 text-secondary font-label-sm text-[10px] px-2 py-0.5 rounded-full border border-secondary/30 uppercase tracking-wider backdrop-blur-sm">Vegetariano</span>
-                  <span class="bg-black/50 text-white font-label-sm text-label-sm px-2 py-1 rounded backdrop-blur-md border border-white/10">$1.80/p</span>
-                </div>
-                <h4 class="font-body-lg text-body-lg font-semibold text-white drop-shadow-md" style="font-family:Outfit">Ensalada Verde</h4>
+                <h4 class="text-body-lg font-bold text-white drop-shadow-md">Grilled Salmon</h4>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ═══ SCREEN: INVENTORY CONTROL ═════════════════════════════ -->
-      <div id="screen-inventory" class="screen flex-col p-8 space-y-8">
+      <!-- ═══ SCREEN: INVENTORY (CON BUSCADOR Y FILTROS) ════════════ -->
+      <div id="screen-inventory" class="screen flex-col p-8 space-y-6">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
           <div>
-            <h2 class="font-display-lg text-display-lg text-on-surface mb-2" style="font-family:Outfit">Inventory Control</h2>
-            <p class="font-body-lg text-body-lg text-on-surface-variant">Gestiona niveles de stock, costos y cadena de suministro.</p>
+            <h2 class="font-display-lg text-display-lg text-slate-900 mb-2" style="font-family:Outfit">Control de Inventario</h2>
+            <p class="font-body-lg text-slate-500">Métricas, niveles de reorden y asistente de stock mínimo.</p>
           </div>
-          <button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg hover:bg-primary-fixed-dim transition-all shadow-[0_0_15px_rgba(192,193,255,0.3)] hover:shadow-[0_0_25px_rgba(192,193,255,0.5)] flex items-center gap-2 group">
-            <span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">sync</span>
-            Auto-generar Pedidos de Compra
+          <button class="bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined">sync</span>
+            Auto-generar Compras
           </button>
         </div>
-        <!-- Stats bento -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-primary">kitchen</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Total Ingredientes</div>
-            <div class="flex items-baseline gap-2" style="font-size:48px;font-family:Outfit;font-weight:700">482 <span class="font-label-md text-label-md text-secondary">+12 esta semana</span></div>
-          </div>
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group border-l-4 border-l-error glow-error">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-error">warning</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-error pulse-coral"></span> Alertas Stock Bajo
+
+        <!-- Panel de Búsqueda y Filtros Avanzados -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Texto -->
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400">search</span>
+              <input type="text" id="search-input" onkeyup="filterInventory()" placeholder="Buscar ingrediente..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-400"/>
             </div>
-            <div class="flex items-baseline gap-2" style="font-size:48px;font-family:Outfit;font-weight:700;color:#ffb4ab">12 <span class="font-label-md text-label-md text-on-surface-variant">Items Críticos</span></div>
-          </div>
-          <div class="glass-panel rounded-xl p-6 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><span class="material-symbols-outlined text-6xl text-primary-container">receipt_long</span></div>
-            <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Pedidos Pendientes</div>
-            <div class="flex items-baseline gap-2" style="font-size:48px;font-family:Outfit;font-weight:700;color:#8083ff">8 <span class="font-label-md text-label-md text-on-surface-variant">Activos</span></div>
-          </div>
-          <div class="glass-panel rounded-xl p-6 flex flex-col justify-between">
+            <!-- Categoría -->
             <div>
-              <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Presupuesto Mensual</div>
-              <div class="font-headline-lg text-headline-lg text-on-surface" style="font-family:Outfit">$18,420.00</div>
+              <select id="category-filter" onchange="filterInventory()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-slate-700">
+                <option value="">Todas las Categorías</option>
+                <option value="Frescos">Frescos</option>
+                <option value="Asiático">Asiático</option>
+                <option value="Despensa">Despensa</option>
+                <option value="Congelados">Congelados</option>
+                <option value="Lácteos">Lácteos</option>
+              </select>
             </div>
-            <div class="mt-4">
-              <div class="flex justify-between font-label-sm text-label-sm mb-1 text-on-surface-variant"><span>75%</span><span>Límite: $24,500</span></div>
-              <div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                <div class="h-full bg-secondary-container w-[75%] rounded-full shadow-[0_0_10px_rgba(0,165,114,0.5)]"></div>
-              </div>
+            <!-- Rango de Precio -->
+            <div>
+              <select id="price-filter" onchange="filterInventory()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-slate-700">
+                <option value="">Cualquier Precio</option>
+                <option value="low">Menos de $10.00 / kg o L</option>
+                <option value="mid">Entre $10.00 y $50.00</option>
+                <option value="high">Más de $50.00</option>
+              </select>
+            </div>
+            <!-- Nivel de Stock -->
+            <div>
+              <select id="stock-filter" onchange="filterInventory()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all text-slate-700">
+                <option value="">Cualquier Stock</option>
+                <option value="critical">Bajo Stock / Crítico</option>
+                <option value="optimal">Disponible / Óptimo</option>
+              </select>
             </div>
           </div>
         </div>
-        <!-- Live Stock Matrix -->
-        <div class="glass-panel rounded-xl flex flex-col">
-          <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <h3 class="font-headline-md text-headline-md text-on-surface" style="font-family:Outfit">Live Stock Matrix</h3>
-            <div class="flex gap-2">
-              <button class="p-2 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors text-on-surface border border-white/5"><span class="material-symbols-outlined">filter_list</span></button>
-              <button class="p-2 rounded-lg bg-surface-container hover:bg-surface-bright transition-colors text-on-surface border border-white/5"><span class="material-symbols-outlined">more_vert</span></button>
-            </div>
+
+        <!-- Tabla de Inventario -->
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="font-headline-md text-headline-md text-slate-900" style="font-family:Outfit">Live Stock Matrix</h3>
+            <span class="text-xs text-slate-500" id="results-count">Mostrando todos los ingredientes</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="border-b border-white/5 bg-surface-container-low/50">
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider pl-6">Item</th>
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Categoría</th>
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Nivel Stock</th>
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Stock Mín</th>
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Costo/Ud</th>
-                  <th class="p-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider pr-6">Estado</th>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider pl-6">Ingrediente</th>
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoría</th>
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Actual</th>
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Mínimo</th>
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Costo Unitario</th>
+                  <th class="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider pr-6">Estado</th>
                 </tr>
               </thead>
-              <tbody class="font-body-md text-body-md" id="inventory-tbody">
-                <!-- rows injected by JS -->
+              <tbody class="divide-y divide-slate-100 text-sm text-slate-700" id="inventory-tbody-filters">
+                <!-- Se inyecta por JS para permitir filtrado interactivo inmediato -->
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ═══ SCREEN: AI RECIPE DEVELOPER ═══════════════════════════ -->
-      <div id="screen-recipes" class="screen flex-col p-8 space-y-8">
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-          <div>
-            <h2 class="font-display-lg text-display-lg text-on-surface mb-2" style="font-family:Outfit">AI Recipe Developer</h2>
-            <p class="font-body-lg text-body-lg text-on-surface-variant">Extrae y desarrolla recetas con inteligencia artificial.</p>
-          </div>
-          <button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg hover:bg-primary-fixed-dim transition-all shadow-[0_0_15px_rgba(192,193,255,0.3)] flex items-center gap-2">
-            <span class="material-symbols-outlined">auto_awesome</span> Generar con IA
-          </button>
+      <!-- ═══ SCREEN: RECETAS Y ESCANDALLOS ════════════════════════ -->
+      <div id="screen-recetas" class="screen flex-col p-8 space-y-6">
+        <div>
+          <h2 class="font-display-lg text-display-lg text-slate-900 mb-2" style="font-family:Outfit">Recetas y Escandallos</h2>
+          <p class="font-body-lg text-slate-500">Cálculo de costes de plato, márgenes de ganancia y fichas técnicas.</p>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Input panel -->
-          <div class="glass-panel rounded-xl p-6 space-y-4">
-            <h3 class="font-headline-md text-headline-md text-on-surface" style="font-family:Outfit">Entrada de Receta</h3>
-            <div>
-              <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Nombre del Plato</label>
-              <input type="text" placeholder="Ej: Risotto de Setas con Trufa" class="w-full bg-surface-container border border-white/10 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:border-primary focus:outline-none focus:shadow-[0_0_0_2px_rgba(192,193,255,0.2)] transition-all placeholder:text-on-surface-variant/50"/>
-            </div>
-            <div>
-              <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Descripción / Texto de Receta (NLP)</label>
-              <textarea rows="5" placeholder="Pega aquí el texto de la receta. La IA extraerá ingredientes, cantidades y técnicas automáticamente..." class="w-full bg-surface-container border border-white/10 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:border-primary focus:outline-none focus:shadow-[0_0_0_2px_rgba(192,193,255,0.2)] transition-all placeholder:text-on-surface-variant/50 resize-none"></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Categoría</label>
-                <select class="w-full bg-surface-container border border-white/10 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:border-primary focus:outline-none transition-all">
-                  <option>Vegetariano</option><option>Carnes &amp; Pescados</option><option>Pasta</option><option>Arroces</option>
-                </select>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Listado de fichas -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+              <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Catálogo de Fichas de Costo</h3>
+                <button class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors">+ Añadir Ficha</button>
               </div>
-              <div>
-                <label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 block">Pax</label>
-                <input type="number" value="10" min="1" class="w-full bg-surface-container border border-white/10 rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:border-primary focus:outline-none transition-all"/>
+              <div class="divide-y divide-slate-100">
+                <div class="py-4 flex justify-between items-center">
+                  <div>
+                    <div class="font-semibold text-slate-950">Mushroom Risotto</div>
+                    <div class="text-xs text-slate-500">Pasta/Arroz • 10 raciones estándar</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-slate-900">$3.33 / ración</div>
+                    <div class="text-xs text-emerald-600">Margen: 70%</div>
+                  </div>
+                </div>
+                <div class="py-4 flex justify-between items-center">
+                  <div>
+                    <div class="font-semibold text-slate-950">Grilled Salmon with Asparagus</div>
+                    <div class="text-xs text-slate-500">Pescados • 5 raciones estándar</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-slate-900">$8.20 / ración</div>
+                    <div class="text-xs text-emerald-600">Margen: 65%</div>
+                  </div>
+                </div>
+                <div class="py-4 flex justify-between items-center">
+                  <div>
+                    <div class="font-semibold text-slate-950">Penne all'Arrabbiata</div>
+                    <div class="text-xs text-slate-500">Pasta • 20 raciones estándar</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-slate-900">$2.10 / ración</div>
+                    <div class="text-xs text-emerald-600">Margen: 80%</div>
+                  </div>
+                </div>
               </div>
             </div>
-            <button class="w-full bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg hover:bg-primary-fixed-dim transition-all shadow-[0_0_15px_rgba(192,193,255,0.3)] flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined">psychology</span> Extraer Ingredientes con IA
-            </button>
           </div>
-          <!-- Output panel -->
-          <div class="glass-panel rounded-xl p-6 space-y-4">
-            <div class="flex justify-between items-center">
-              <h3 class="font-headline-md text-headline-md text-on-surface" style="font-family:Outfit">Ingredientes Extraídos</h3>
-              <span class="px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-sm text-label-sm border border-secondary/20">IA Activa</span>
-            </div>
-            <div class="space-y-3" id="extracted-ingredients">
-              <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border border-white/5 hover:border-primary/20 transition-colors">
-                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="font-body-md text-body-md">Champiñones Portobello</span></div>
-                <div class="flex items-center gap-3"><span class="font-label-md text-label-md text-on-surface-variant">250g/pax</span><span class="font-label-sm text-label-sm text-secondary">$1.20</span></div>
-              </div>
-              <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border border-white/5 hover:border-primary/20 transition-colors">
-                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="font-body-md text-body-md">Arroz Arborio</span></div>
-                <div class="flex items-center gap-3"><span class="font-label-md text-label-md text-on-surface-variant">100g/pax</span><span class="font-label-sm text-label-sm text-secondary">$0.45</span></div>
-              </div>
-              <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border border-white/5 hover:border-primary/20 transition-colors">
-                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="font-body-md text-body-md">Aceite de Trufa Negra</span></div>
-                <div class="flex items-center gap-3"><span class="font-label-md text-label-md text-on-surface-variant">5ml/pax</span><span class="font-label-sm text-label-sm text-tertiary">$0.43</span></div>
-              </div>
-              <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border border-white/5 hover:border-primary/20 transition-colors">
-                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="font-body-md text-body-md">Parmesano DOP</span></div>
-                <div class="flex items-center gap-3"><span class="font-label-md text-label-md text-on-surface-variant">30g/pax</span><span class="font-label-sm text-label-sm text-secondary">$0.90</span></div>
-              </div>
-              <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border border-white/5 hover:border-primary/20 transition-colors">
-                <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="font-body-md text-body-md">Vino Blanco Seco</span></div>
-                <div class="flex items-center gap-3"><span class="font-label-md text-label-md text-on-surface-variant">30ml/pax</span><span class="font-label-sm text-label-sm text-secondary">$0.35</span></div>
+          <!-- Resumen de Costes e Indicadores -->
+          <div class="space-y-6">
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+              <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Distribución de Costo Medio</h3>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Materia Prima</span><span>40%</span></div>
+                  <div class="h-2 w-full bg-slate-100 rounded-full"><div class="h-full bg-indigo-600 w-[40%] rounded-full"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Merma Proyectada</span><span>8%</span></div>
+                  <div class="h-2 w-full bg-slate-100 rounded-full"><div class="h-full bg-amber-500 w-[8%] rounded-full"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs text-slate-500 mb-1"><span>Margen Bruto Promedio</span><span>52%</span></div>
+                  <div class="h-2 w-full bg-slate-100 rounded-full"><div class="h-full bg-emerald-500 w-[52%] rounded-full"></div></div>
+                </div>
               </div>
             </div>
-            <div class="pt-4 border-t border-white/10 flex justify-between items-center">
-              <span class="font-label-md text-label-md text-on-surface-variant">Costo Total / Pax</span>
-              <span class="font-headline-md text-headline-md text-secondary" style="font-family:Outfit">$3.33</span>
-            </div>
-            <button class="w-full bg-surface-container border border-primary/30 text-primary font-label-md text-label-md py-3 rounded-lg hover:bg-primary/10 transition-all flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined">save</span> Guardar en Catálogo
-            </button>
           </div>
         </div>
       </div>
 
-      <!-- ═══ SCREEN: ANALYTICS (placeholder) ═══════════════════════ -->
-      <div id="screen-analytics" class="screen flex-col p-8 space-y-8">
-        <h2 class="font-display-lg text-display-lg text-on-surface" style="font-family:Outfit">Analytics</h2>
-        <div class="glass-panel rounded-xl p-12 flex flex-col items-center justify-center text-center space-y-4">
-          <span class="material-symbols-outlined text-6xl text-primary/30">analytics</span>
-          <p class="font-headline-md text-headline-md text-on-surface-variant" style="font-family:Outfit">Panel de Analytics en construcción</p>
-          <p class="font-body-md text-body-md text-on-surface-variant max-w-md">Los dashboards de costos, ROI por receta y análisis de proveedores estarán disponibles próximamente.</p>
+      <!-- ═══ SCREEN: PROVEEDORES ═══════════════════════════════════ -->
+      <div id="screen-proveedores" class="screen flex-col p-8 space-y-6">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+          <div>
+            <h2 class="font-display-lg text-display-lg text-slate-900 mb-2" style="font-family:Outfit">Directorio de Proveedores</h2>
+            <p class="font-body-lg text-slate-500">Listado de partners comerciales, tiempos de entrega y condiciones.</p>
+          </div>
+          <button class="bg-indigo-600 text-white font-semibold px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition-all text-sm">+ Añadir Proveedor</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Proveedor 1 -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex justify-between items-start">
+                <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase rounded border border-indigo-100">Frescos y Carnes</span>
+                <span class="text-xs text-emerald-600 font-semibold flex items-center"><span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></span>Activo</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Mercabarna Dist. S.L.</h3>
+              <p class="text-sm text-slate-500">Principal proveedor de carnes de alta gama (Wagyu, ternera gallega) y verduras selectas.</p>
+              <div class="text-xs text-slate-500 space-y-1 pt-2">
+                <div><strong>Contacto:</strong> pedidos@mercabarnadist.com</div>
+                <div><strong>Teléfono:</strong> +34 932 443 112</div>
+                <div><strong>Condiciones:</strong> Pago a 30 días, entrega diaria</div>
+              </div>
+            </div>
+            <div class="pt-4 border-t border-slate-100 mt-4 flex justify-between items-center text-xs">
+              <span class="text-slate-400">Min. Pedido: $150</span>
+              <span class="text-indigo-600 font-semibold cursor-pointer">Ver Precios de Compra →</span>
+            </div>
+          </div>
+          <!-- Proveedor 2 -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex justify-between items-start">
+                <span class="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase rounded border border-amber-100">Secos e Importación</span>
+                <span class="text-xs text-emerald-600 font-semibold flex items-center"><span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></span>Activo</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Tokyo Foods España</h3>
+              <p class="text-sm text-slate-500">Insumos asiáticos gourmet, arroz Koshihikari, salsas de soja envejecidas y conservas.</p>
+              <div class="text-xs text-slate-500 space-y-1 pt-2">
+                <div><strong>Contacto:</strong> sales@tokyofoods.es</div>
+                <div><strong>Teléfono:</strong> +34 911 556 788</div>
+                <div><strong>Condiciones:</strong> Pago inmediato, entrega semanal (Martes)</div>
+              </div>
+            </div>
+            <div class="pt-4 border-t border-slate-100 mt-4 flex justify-between items-center text-xs">
+              <span class="text-slate-400">Min. Pedido: $300</span>
+              <span class="text-indigo-600 font-semibold cursor-pointer">Ver Precios de Compra →</span>
+            </div>
+          </div>
+          <!-- Proveedor 3 -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex justify-between items-start">
+                <span class="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded border border-emerald-100">Gourmet Select</span>
+                <span class="text-xs text-amber-600 font-semibold flex items-center"><span class="w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>En Revisión</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Ibéricos & Trufas Madrid</h3>
+              <p class="text-sm text-slate-500">Aceites premium de trufa negra, jamón de bellota curado y trufa fresca de temporada.</p>
+              <div class="text-xs text-slate-500 space-y-1 pt-2">
+                <div><strong>Contacto:</strong> contacto@ibericostrufas.com</div>
+                <div><strong>Teléfono:</strong> +34 915 229 001</div>
+                <div><strong>Condiciones:</strong> Pago a 15 días, entrega 48h</div>
+              </div>
+            </div>
+            <div class="pt-4 border-t border-slate-100 mt-4 flex justify-between items-center text-xs">
+              <span class="text-slate-400">Min. Pedido: No</span>
+              <span class="text-indigo-600 font-semibold cursor-pointer">Ver Precios de Compra →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN: AI ASSISTANT (ASISTENTE IA) ═══════════════════ -->
+      <div id="screen-recipes" class="screen flex-col p-8 space-y-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+          <div>
+            <h2 class="font-display-lg text-display-lg text-slate-900 mb-2" style="font-family:Outfit">Asistente IA</h2>
+            <p class="font-body-lg text-slate-500">Extrae ingredientes de recetas de forma textual y genera el escandallo automáticamente.</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Input -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Entrada de Receta (NLP)</h3>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">Nombre del Plato</label>
+              <input type="text" placeholder="Ej: Risotto de Setas con Trufa" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400"/>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">Cuerpo de la Receta</label>
+              <textarea rows="5" placeholder="Pega el texto aquí..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-400 resize-none"></textarea>
+            </div>
+            <button class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-sm">
+              <span class="material-symbols-outlined">psychology</span> Procesar e Integrar
+            </button>
+          </div>
+          <!-- Output -->
+          <div class="bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Extracción Resultante</h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="text-sm font-medium">Champiñones Portobello</span>
+                <span class="text-xs font-semibold text-slate-500">250g / porción</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="text-sm font-medium">Arroz Arborio</span>
+                <span class="text-xs font-semibold text-slate-500">100g / porción</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span class="text-sm font-medium">Aceite de Trufa Negra</span>
+                <span class="text-xs font-semibold text-slate-500">5ml / porción</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -543,13 +619,24 @@
 
   <script>
     // ── Navigation ────────────────────────────────────────────────
-    const labels = { dashboard:'Dashboard', planner:'Menu Planner', inventory:'Inventory', recipes:'AI Recipes', analytics:'Analytics' };
+    const labels = { 
+      dashboard: 'Dashboard', 
+      planner: 'Planificador Menú', 
+      inventory: 'Inventario y Control', 
+      recetas: 'Recetas & Escandallos', 
+      proveedores: 'Proveedores', 
+      recipes: 'Asistente IA' 
+    };
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('screen-' + id).classList.add('active');
-      document.getElementById('nav-' + id).classList.add('active');
+      
+      const targetScreen = document.getElementById('screen-' + id);
+      const targetNav = document.getElementById('nav-' + id);
+      if (targetScreen) targetScreen.classList.add('active');
+      if (targetNav) targetNav.classList.add('active');
+      
       document.getElementById('breadcrumb').textContent = labels[id] || id;
     }
 
@@ -559,44 +646,25 @@
       5:  { almuerzo: 'Penne Arrabiata',    cena: 'Ensalada Verde',  cost: '$' },
       8:  { almuerzo: 'Wagyu Don',          cena: 'Sopa de Lentejas',cost: '$$$' },
       12: { almuerzo: 'Green Salad',        cena: 'Pasta Pesto',     cost: '$' },
-      15: { almuerzo: 'Arroz Koshihikari',  cena: 'Salmón a la Sal', cost: '$$' },
-      19: { almuerzo: 'Ramen Tonkotsu',     cena: 'Gyozas',          cost: '$$' },
-      22: { almuerzo: 'Ensalada Nçoise',    cena: 'Lubina al Horno', cost: '$$$' },
+      15: { almuerzo: 'Arroz Koshihikari',  cena: 'Salmón a la Sal', cost: '$$' }
     };
-    const today = 1; // simulate day 1 as today
-    const startOffset = 1; // July 2026 starts on Wednesday (index 2, but offset=2 prev days)
     const daysInMonth = 31;
     const grid = document.getElementById('cal-grid');
-    // Previous month padding
-    for (let i = 0; i < 1; i++) {
-      const d = document.createElement('div');
-      d.className = 'glass-day rounded p-2 flex flex-col opacity-30';
-      d.innerHTML = `<div class="text-right font-label-md text-label-md text-on-surface-variant mb-1">${30-i}</div>`;
-      grid.prepend(d);
-    }
     for (let d = 1; d <= daysInMonth; d++) {
       const cell = document.createElement('div');
-      const isToday = d === today;
-      cell.className = `glass-day rounded p-2 flex flex-col min-h-[80px] ${isToday ? 'current-day' : ''} hover:border-primary/20 transition-colors cursor-pointer`;
-      let inner = `<div class="text-right font-label-md text-label-md ${isToday?'text-primary font-bold':''} mb-1">${d}</div>`;
+      const isToday = d === 1;
+      cell.className = `glass-day rounded-xl p-3 flex flex-col min-h-[120px] ${isToday ? 'current-day' : ''} hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer`;
+      let inner = `<div class="text-right text-xs font-semibold ${isToday?'text-indigo-600 font-bold':''} mb-1">${d}</div>`;
       if (menuData[d]) {
         const { almuerzo, cena, cost } = menuData[d];
-        const costColor = cost === '$$$' ? 'text-tertiary-container' : cost === '$$' ? 'text-tertiary-container' : 'text-secondary';
-        const costBg = cost === '$$$' ? 'bg-tertiary-container/10' : cost === '$$' ? 'bg-tertiary-container/10' : 'bg-secondary/10';
+        const costColor = cost === '$$$' ? 'text-rose-600 bg-rose-50' : cost === '$$' ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50';
         inner += `<div class="flex-1 flex flex-col gap-1 overflow-hidden">
-          <div class="bg-surface/60 border border-white/10 rounded p-1.5 flex justify-between items-start">
+          <div class="bg-white/80 border border-slate-100 rounded p-1.5 flex justify-between items-start">
             <div class="truncate min-w-0 pr-1">
-              <span class="font-label-sm text-[10px] text-on-surface-variant block leading-none mb-0.5">Almuerzo</span>
-              <span class="text-[11px] truncate block text-on-surface">${almuerzo}</span>
+              <span class="text-[9px] text-slate-400 block leading-none mb-0.5">Almuerzo</span>
+              <span class="text-xs truncate block text-slate-800 font-medium">${almuerzo}</span>
             </div>
-            <span class="${costColor} font-bold text-[9px] ${costBg} px-1 rounded flex-shrink-0">${cost}</span>
-          </div>
-          <div class="bg-surface/60 border border-white/10 rounded p-1.5 flex justify-between items-start">
-            <div class="truncate min-w-0 pr-1">
-              <span class="font-label-sm text-[10px] text-on-surface-variant block leading-none mb-0.5">Cena</span>
-              <span class="text-[11px] truncate block text-on-surface">${cena}</span>
-            </div>
-            <span class="${costColor} font-bold text-[9px] ${costBg} px-1 rounded flex-shrink-0">${cost}</span>
+            <span class="${costColor} font-bold text-[9px] px-1 rounded flex-shrink-0">${cost}</span>
           </div>
         </div>`;
       }
@@ -604,50 +672,93 @@
       grid.appendChild(cell);
     }
 
-    // ── Inventory rows ────────────────────────────────────────────
+    // ── Inventory Data Matrix & Filters ───────────────────────────
     const inventoryItems = [
-      { name: 'Wagyu Beef A5', cat: 'Frescos', catColor: 'bg-tertiary-container/20 text-tertiary-container border-tertiary-container/30', stock: 2.5, unit: 'kg', min: 10, cost: '$125.00/kg', pct: 15, pctColor: 'bg-error', status: 'REORDER', statusClass: 'bg-error-container/80 text-on-error border-error/50 glow-error', icon: 'warning' },
-      { name: 'Arroz Koshihikari', cat: 'Asiático', catColor: 'bg-primary-container/20 text-primary-fixed border-primary-container/30', stock: 45, unit: 'kg', min: 15, cost: '$4.50/kg', pct: 80, pctColor: 'bg-secondary-container', status: 'Optimal', statusClass: 'text-secondary', dot: true },
-      { name: 'Aceite de Trufa Negra', cat: 'Despensa', catColor: 'bg-surface-bright text-on-surface border-white/10', stock: 1.2, unit: 'L', min: 1.0, cost: '$85.00/L', pct: 35, pctColor: 'bg-tertiary', status: 'Monitoring', statusClass: 'text-tertiary', dot: true },
-      { name: 'Pulpo Patagónico', cat: 'Congelados', catColor: 'bg-inverse-primary/20 text-inverse-primary border-inverse-primary/30', stock: 4.0, unit: 'kg', min: 12, cost: '$32.00/kg', pct: 20, pctColor: 'bg-error', status: 'REORDER', statusClass: 'bg-error-container/80 text-on-error border-error/50 glow-error', icon: 'warning' },
-      { name: 'Parmesano DOP', cat: 'Lácteos', catColor: 'bg-secondary/10 text-secondary border-secondary/20', stock: 8.5, unit: 'kg', min: 5, cost: '$28.00/kg', pct: 70, pctColor: 'bg-secondary-container', status: 'Optimal', statusClass: 'text-secondary', dot: true },
-      { name: 'Champiñones Portobello', cat: 'Frescos', catColor: 'bg-tertiary-container/20 text-tertiary-container border-tertiary-container/30', stock: 3, unit: 'kg', min: 8, cost: '$4.80/kg', pct: 38, pctColor: 'bg-tertiary', status: 'Monitoring', statusClass: 'text-tertiary', dot: true },
+      { name: 'Wagyu Beef A5', cat: 'Frescos', stock: 2.5, unit: 'kg', min: 10, cost: 125.00, status: 'REORDER', critical: true },
+      { name: 'Arroz Koshihikari', cat: 'Asiático', stock: 45, unit: 'kg', min: 15, cost: 4.50, status: 'Optimal', critical: false },
+      { name: 'Aceite de Trufa Negra', cat: 'Despensa', stock: 1.2, unit: 'L', min: 1.0, cost: 85.00, status: 'Monitoring', critical: false },
+      { name: 'Pulpo Patagónico', cat: 'Congelados', stock: 4.0, unit: 'kg', min: 12, cost: 32.00, status: 'REORDER', critical: true },
+      { name: 'Parmesano DOP', cat: 'Lácteos', stock: 8.5, unit: 'kg', min: 5, cost: 28.00, status: 'Optimal', critical: false },
+      { name: 'Champiñones Portobello', cat: 'Frescos', stock: 3.0, unit: 'kg', min: 8, cost: 4.80, status: 'Monitoring', critical: false },
     ];
 
-    const tbody = document.getElementById('inventory-tbody');
-    inventoryItems.forEach((item, idx) => {
-      const isLast = idx === inventoryItems.length - 1;
-      const glowShadow = item.pctColor === 'bg-error' ? 'shadow-[0_0_8px_rgba(255,180,171,0.6)]'
-                       : item.pctColor === 'bg-tertiary' ? 'shadow-[0_0_8px_rgba(255,178,183,0.4)]'
-                       : 'shadow-[0_0_8px_rgba(0,165,114,0.4)]';
-      const stockColor = item.pctColor === 'bg-error' ? 'text-error' : item.pctColor === 'bg-tertiary' ? 'text-tertiary' : 'text-on-surface';
-      const statusBadge = item.icon
-        ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md font-label-sm text-label-sm border ${item.statusClass}"><span class="material-symbols-outlined text-[14px]">${item.icon}</span>${item.status}</span>`
-        : `<span class="inline-flex items-center gap-1.5 font-label-sm text-label-sm ${item.statusClass}"><span class="w-2 h-2 rounded-full bg-current"></span>${item.status}</span>`;
-      tbody.innerHTML += `
-        <tr class="${isLast?'':'border-b border-white/5'} hover:bg-white/5 transition-colors group">
-          <td class="p-4 pl-6">
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded bg-surface-container border border-white/10 overflow-hidden shrink-0 flex items-center justify-center">
-                <span class="material-symbols-outlined text-on-surface-variant">inventory_2</span>
+    function renderInventory(items) {
+      const tbody = document.getElementById('inventory-tbody-filters');
+      tbody.innerHTML = '';
+      
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">No se encontraron ingredientes con los filtros seleccionados.</td></tr>`;
+        document.getElementById('results-count').textContent = 'Mostrando 0 ingredientes';
+        return;
+      }
+
+      document.getElementById('results-count').textContent = `Mostrando ${items.length} ingrediente${items.length > 1 ? 's' : ''}`;
+
+      items.forEach((item) => {
+        const pct = Math.min(100, Math.round((item.stock / (item.min * 2)) * 100));
+        const pctColor = item.critical ? 'bg-red-500' : pct < 50 ? 'bg-amber-500' : 'bg-emerald-500';
+        const stockColor = item.critical ? 'text-red-600 font-semibold' : pct < 50 ? 'text-amber-600' : 'text-slate-900';
+        
+        const statusBadge = item.critical
+          ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-50 text-red-700 font-bold border border-red-100 text-xs"><span class="material-symbols-outlined text-[14px]">warning</span>REORDER</span>`
+          : `<span class="inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Optimal</span>`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 pl-6">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-slate-500 text-lg">kitchen</span>
+                </div>
+                <span class="font-semibold text-slate-900">${item.name}</span>
               </div>
-              <span class="font-medium text-[18px] text-on-surface">${item.name}</span>
-            </div>
-          </td>
-          <td class="p-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-label-sm border ${item.catColor}">${item.cat}</span></td>
-          <td class="p-4">
-            <div class="flex items-center gap-3">
-              <span class="font-label-md text-label-md ${stockColor}">${item.stock} ${item.unit}</span>
-              <div class="h-1.5 w-24 bg-surface-container-highest rounded-full overflow-hidden">
-                <div class="h-full ${item.pctColor} ${glowShadow} rounded-full" style="width:${item.pct}%"></div>
+            </td>
+            <td class="p-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">${item.cat}</span></td>
+            <td class="p-4">
+              <div class="flex items-center gap-3">
+                <span class="${stockColor}">${item.stock} ${item.unit}</span>
+                <div class="h-1.5 w-20 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full ${pctColor} rounded-full" style="width:${pct}%"></div>
+                </div>
               </div>
-            </div>
-          </td>
-          <td class="p-4 text-on-surface-variant">${item.min} ${item.unit}</td>
-          <td class="p-4 text-on-surface-variant">${item.cost}</td>
-          <td class="p-4 pr-6">${statusBadge}</td>
-        </tr>`;
-    });
+            </td>
+            <td class="p-4 text-slate-500">${item.min} ${item.unit}</td>
+            <td class="p-4 text-slate-900 font-medium">$${item.cost.toFixed(2)}/${item.unit}</td>
+            <td class="p-4 pr-6">${statusBadge}</td>
+          </tr>`;
+      });
+    }
+
+    function filterInventory() {
+      const searchVal = document.getElementById('search-input').value.toLowerCase();
+      const catVal = document.getElementById('category-filter').value;
+      const priceRange = document.getElementById('price-filter').value;
+      const stockVal = document.getElementById('stock-filter').value;
+
+      const filtered = inventoryItems.filter(item => {
+        // Texto
+        if (searchVal && !item.name.toLowerCase().includes(searchVal)) return false;
+        // Categoría
+        if (catVal && item.cat !== catVal) return false;
+        // Rango de precio
+        if (priceRange) {
+          if (priceRange === 'low' && item.cost >= 10.00) return false;
+          if (priceRange === 'mid' && (item.cost < 10.00 || item.cost > 50.00)) return false;
+          if (priceRange === 'high' && item.cost <= 50.00) return false;
+        }
+        // Nivel de stock
+        if (stockVal) {
+          if (stockVal === 'critical' && !item.critical) return false;
+          if (stockVal === 'optimal' && item.critical) return false;
+        }
+        return true;
+      });
+
+      renderInventory(filtered);
+    }
+
+    // Carga inicial
+    renderInventory(inventoryItems);
   </script>
 </body>
 </html>
