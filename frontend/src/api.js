@@ -1,118 +1,120 @@
 import { supabase } from './supabaseClient';
 
-// ── Menús: obtiene el planning semanal ─────────────────────────────────────
-export const fetchMenus = async (month = '') => {
+// ── Menús: planning semanal ────────────────────────────────────────────────
+export const fetchMenus = async () => {
   try {
     const { data, error } = await supabase
       .from('menu_planning')
       .select('*')
-      .order('date', { ascending: true })
+      .order('planning_date', { ascending: true })
       .limit(30);
-
     if (error) throw error;
     return { success: true, items: data || [] };
-  } catch (error) {
-    console.error('Error fetching menus:', error);
-    return { success: false, items: [], error: error.message };
+  } catch (err) {
+    console.error('fetchMenus:', err);
+    return { success: false, items: [], error: err.message };
   }
 };
 
-// ── Lista de compras: explota ingredientes necesarios ──────────────────────
-export const fetchShoppingList = async (month = '') => {
+// ── Compras: lista de ingredientes con stock ───────────────────────────────
+export const fetchShoppingList = async () => {
   try {
     const { data, error } = await supabase
       .from('ingredients')
-      .select('id, name, unit, stock_quantity, min_stock, cost_per_unit')
+      .select('id, name, unit, current_stock, min_stock, precio_mas_bajo, proveedor_principal')
       .order('name', { ascending: true });
-
     if (error) throw error;
     return { success: true, items: data || [] };
-  } catch (error) {
-    console.error('Error fetching shopping list:', error);
-    return { success: false, items: [], error: error.message };
+  } catch (err) {
+    console.error('fetchShoppingList:', err);
+    return { success: false, items: [], error: err.message };
   }
 };
 
-// ── Insumos: catálogo completo de ingredientes con precios ─────────────────
-export const fetchInsumos = async () => {
+// ── Insumos: catálogo completo con precios por proveedor ───────────────────
+export const fetchInsumos = async (filters = {}) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('ingredients')
       .select(`
         id,
         name,
+        category,
+        subcategory,
+        nutritional_category,
         unit,
-        stock_quantity,
+        precio_por_kg,
+        precio_por_u,
+        precio_por_gramo,
+        precio_mas_bajo,
+        proveedor_principal,
+        precios_por_proveedor,
+        current_stock,
         min_stock,
-        cost_per_unit,
-        supplier_prices (
-          price_per_unit,
-          suppliers ( name )
-        )
+        updated_at
       `)
-      .order('name', { ascending: true });
+      .order('category', { ascending: true })
+      .order('name',     { ascending: true });
 
+    if (filters.category) query = query.eq('category', filters.category);
+    if (filters.search)   query = query.ilike('name', `%${filters.search}%`);
+
+    const { data, error } = await query;
     if (error) throw error;
     return { success: true, items: data || [] };
-  } catch (error) {
-    console.error('Error fetching insumos:', error);
-    return { success: false, items: [], error: error.message };
+  } catch (err) {
+    console.error('fetchInsumos:', err);
+    return { success: false, items: [], error: err.message };
   }
 };
 
 // ── Actualizar precio de un ingrediente ────────────────────────────────────
-export const updateIngredientPrice = async (id, costPerUnit) => {
+export const updateIngredientPrice = async (id, fields) => {
   try {
-    const { error } = await supabase
-      .from('ingredients')
-      .update({ cost_per_unit: parseFloat(costPerUnit) })
-      .eq('id', id);
+    const patch = { updated_at: new Date().toISOString() };
+    if (fields.precio_por_kg    != null) patch.precio_por_kg    = parseFloat(fields.precio_por_kg);
+    if (fields.precio_por_u     != null) patch.precio_por_u     = parseFloat(fields.precio_por_u);
+    if (fields.precio_mas_bajo  != null) patch.precio_mas_bajo  = parseFloat(fields.precio_mas_bajo);
+    if (fields.proveedor_principal != null) patch.proveedor_principal = fields.proveedor_principal;
 
+    const { error } = await supabase.from('ingredients').update(patch).eq('id', id);
     if (error) throw error;
     return { success: true };
-  } catch (error) {
-    console.error('Error updating ingredient:', error);
-    return { success: false, error: error.message };
+  } catch (err) {
+    console.error('updateIngredientPrice:', err);
+    return { success: false, error: err.message };
   }
 };
 
 // ── Estadísticas del dashboard ─────────────────────────────────────────────
 export const fetchDashboardStats = async () => {
   try {
-    const [ingredientsRes, lowStockRes, ordersRes] = await Promise.all([
+    const [totalRes, ordersRes] = await Promise.all([
       supabase.from('ingredients').select('id', { count: 'exact', head: true }),
-      supabase.from('ingredients').select('id', { count: 'exact', head: true })
-        .lt('stock_quantity', supabase.raw('min_stock')),
       supabase.from('purchase_orders').select('id', { count: 'exact', head: true })
         .eq('status', 'pending'),
     ]);
-
     return {
       success: true,
-      totalIngredients: ingredientsRes.count || 0,
-      lowStockAlerts: lowStockRes.count || 0,
-      pendingOrders: ordersRes.count || 0,
+      totalIngredients: totalRes.count  || 0,
+      lowStockAlerts:   0,
+      pendingOrders:    ordersRes.count || 0,
     };
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    return { success: false };
+  } catch (err) {
+    console.error('fetchDashboardStats:', err);
+    return { success: false, totalIngredients: 0, lowStockAlerts: 0, pendingOrders: 0 };
   }
 };
 
-// ── Compatibilidad retroactiva (mantiene firma anterior) ───────────────────
+// ── Compat: firma genérica usada por App.jsx ───────────────────────────────
 export const fetchData = async (action, month = '') => {
-  switch (action) {
-    case 'menus':       return fetchMenus(month);
-    case 'shopping_list':
-    case 'compras':     return fetchShoppingList(month);
-    case 'insumos':     return fetchInsumos();
-    default:            return fetchShoppingList(month);
-  }
+  if (action === 'menus')   return fetchMenus();
+  if (action === 'compras') return fetchShoppingList();
+  if (action === 'insumos') return fetchInsumos();
+  return fetchShoppingList();
 };
 
 export const saveData = async (entity, id, fields) => {
-  if (entity === 'insumos' && fields.cost_per_unit !== undefined) {
-    return updateIngredientPrice(id, fields.cost_per_unit);
-  }
+  if (entity === 'insumos') return updateIngredientPrice(id, fields);
   return { success: false, error: 'Operación no soportada' };
 };
