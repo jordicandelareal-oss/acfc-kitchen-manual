@@ -136,6 +136,15 @@
       .mobile-menu-btn { display: none !important; }
       #mobile-nav { display: none !important; }
     }
+
+    /* ── Custom select arrow (replaces native chevron) ── */
+    .select-custom {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
   </style>
 </head>
 <body>
@@ -685,27 +694,23 @@
         </div>
         <!-- Categoría -->
         <select id="inv-cat" onchange="filterInventory()"
-          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
-          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
+          class="select-custom bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate">
           <option value="">Todas las categorías</option>
         </select>
         <!-- Subcategoría -->
         <select id="inv-subcat" onchange="filterInventory()"
-          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
-          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
+          class="select-custom bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate">
           <option value="">Todas las subcategorías</option>
         </select>
         <!-- Proveedor -->
         <select id="inv-provider" onchange="filterInventory()"
-          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
-          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
+          class="select-custom bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate">
           <option value="">Todos los proveedores</option>
         </select>
         <!-- Estado + Clear -->
         <div class="flex gap-2">
           <select id="inv-status" onchange="filterInventory()"
-            class="appearance-none flex-1 bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand truncate"
-            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
+            class="select-custom appearance-none flex-1 bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand truncate">
             <option value="">Cualquier estado</option>
             <option value="critical">⚠️ Stock crítico</option>
             <option value="ok">✅ Stock óptimo</option>
