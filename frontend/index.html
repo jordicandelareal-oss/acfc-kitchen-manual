@@ -1557,10 +1557,10 @@ function renderInventory(items) {
           <p class="font-semibold text-slate-900">${item.name}</p>
         </td>
         <td class="px-4 py-4"><span class="badge badge-slate">${item.cat}</span></td>
-        <td class="px-4 py-4 font-semibold ${item.critical ? 'text-red-600' : 'text-slate-900'}">${item.stock_actual} ${item.unit}</td>
+        <td class="px-4 py-4 font-semibold ${item.critical ? 'text-red-600' : 'text-slate-900'}">${item.stock_actual || 0} ${item.unit}</td>
         <td class="px-4 py-4 hidden md:table-cell" style="min-width:120px">
           <div class="prog-track w-24"><div class="prog-fill" style="width:${pct}%;background:${barColor}"></div></div>
-          <p class="text-[10px] text-slate-400 mt-1">min: ${item.stock_minimo} ${item.unit} · max: ${item.stock_maximo} ${item.unit}</p>
+          <p class="text-[10px] text-slate-400 mt-1">min: ${item.stock_minimo || 0} ${item.unit} · max: ${item.stock_maximo || 0} ${item.unit}</p>
         </td>
         <td class="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">${item.cost.toFixed(2)}€</td>
         <td class="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">${item.supplier}</td>
