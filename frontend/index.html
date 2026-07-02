@@ -975,6 +975,57 @@
       </div>
     </div>
 
+    <!-- Edit Supplier Modal -->
+    <div id="modal-edit-supplier" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden" onclick="if(event.target===this)closeEditSupplierModal()">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Editar Proveedor</h2>
+          <button onclick="closeEditSupplierModal()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400">
+            <span class="material-symbols-outlined" style="font-size:20px">close</span>
+          </button>
+        </div>
+        <input type="hidden" id="edit-supplier-id" />
+        <div class="flex flex-col gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del proveedor *</label>
+            <input type="text" id="edit-supplier-name"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              placeholder="Ej: Makro" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Persona de contacto</label>
+            <input type="text" id="edit-supplier-contact"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              placeholder="Ej: Juan García" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
+              <input type="email" id="edit-supplier-email"
+                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                placeholder="pedidos@proveedor.com" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+              <input type="tel" id="edit-supplier-phone"
+                class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                placeholder="+34 600 000 000" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Notas</label>
+            <textarea id="edit-supplier-notes" rows="2"
+              class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none"
+              placeholder="Condiciones, frecuencia de entrega..."></textarea>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeEditSupplierModal()" class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancelar</button>
+          <button onclick="saveEditSupplier()" class="flex-1 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="supplier-grid"></div>
   </div>
 
@@ -1957,32 +2008,90 @@ function renderSuppliers(list) {
     return;
   }
   el.innerHTML = list.map((s) => {
-    const nameEscaped = (s.name || '').replace(/'/g, "\\'");
+    const id       = s.id || '';
+    const name     = s.name || '—';
+    const contact  = s.contact_name || '';
+    const email    = s.email || '';
+    const phone    = s.phone || '';
+    const notes    = s.notes || '';
+    // Escape for inline onclick attributes
+    const esc = v => v.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    // WhatsApp: strip all non-digit chars except leading +
+    const rawPhone  = phone.replace(/[\s\-().]/g, '');
+    const waText    = encodeURIComponent(`Hola ${contact || name}, te adjunto el pedido de ACFC Kitchen:`);
+    const waUrl     = phone ? `https://wa.me/${rawPhone}?text=${waText}` : '';
+
+    // Mailto
+    const mailSubj  = encodeURIComponent('Pedido ACFC Kitchen');
+    const mailBody  = encodeURIComponent(`Hola ${contact || name}, un saludo. Aquí tienes el pedido:`);
+    const mailtoUrl = email ? `mailto:${email}?subject=${mailSubj}&body=${mailBody}` : '';
+
     return `
-      <div class="card p-6 flex flex-col gap-4 supplier-active hover:-translate-y-0.5 transition-transform cursor-pointer">
+      <div class="card p-6 flex flex-col gap-4 supplier-active hover:-translate-y-0.5 transition-transform">
+        <!-- Header -->
         <div class="flex justify-between items-start">
-          <div>
-            <h3 class="font-bold text-slate-900 text-base" style="font-family:Outfit">${s.name || '—'}</h3>
-            ${s.contact_name ? `<p class="text-xs text-slate-400 mt-0.5">Contacto: ${s.contact_name}</p>` : ''}
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-slate-900 text-base truncate" style="font-family:Outfit">${name}</h3>
+            ${contact ? `<p class="text-xs text-slate-400 mt-0.5">Contacto: ${contact}</p>` : '<p class="text-xs text-slate-300 mt-0.5 italic">Sin contacto</p>'}
           </div>
-          <span class="badge badge-green">Activo</span>
+          <!-- Edit button -->
+          <button
+            onclick="openEditSupplierModal('${esc(id)}','${esc(name)}','${esc(contact)}','${esc(email)}','${esc(phone)}','${esc(notes)}')"
+            title="Editar proveedor"
+            class="ml-2 p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-brand hover:border-brand transition-colors flex-shrink-0">
+            <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+          </button>
         </div>
-        ${s.email || s.phone ? `<div class="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
-          ${s.email ? `<div><span class="font-semibold text-slate-700 block">Email</span>${s.email}</div>` : '<div></div>'}
-          ${s.phone ? `<div><span class="font-semibold text-slate-700 block">Teléfono</span>${s.phone}</div>` : '<div></div>'}
-        </div>` : ''}
-        ${s.notes ? `<p class="text-sm text-slate-500 leading-relaxed flex-grow">${s.notes}</p>` : ''}
-        <div class="flex justify-between items-center pt-1">
-          <span class="text-xs text-slate-400">ID: ${s.id ? s.id.slice(0,8) + '...' : '—'}</span>
-          <div class="flex gap-1.5">
-            ${s.phone ? `<button onclick="toast('📞 Llamando a ${nameEscaped}...')" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-brand hover:border-brand transition-colors"><span class="material-symbols-outlined" style="font-size:16px">call</span></button>` : ''}
-            ${s.email ? `<a href="mailto:${s.email}" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-brand hover:border-brand transition-colors"><span class="material-symbols-outlined" style="font-size:16px">mail</span></a>` : ''}
+
+        <!-- Contact info grid -->
+        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <div>
+            <span class="font-semibold text-slate-700 block">Email</span>
+            ${email ? `<span class="truncate block">${email}</span>` : '<span class="text-slate-300 italic">No registrado</span>'}
           </div>
+          <div>
+            <span class="font-semibold text-slate-700 block">Teléfono</span>
+            ${phone ? `<span>${phone}</span>` : '<span class="text-slate-300 italic">No registrado</span>'}
+          </div>
+        </div>
+
+        ${notes ? `<p class="text-sm text-slate-500 leading-relaxed">${notes}</p>` : ''}
+
+        <!-- Action buttons -->
+        <div class="flex gap-2 pt-1 border-t border-slate-100">
+          <!-- WhatsApp -->
+          ${waUrl
+            ? `<a href="${waUrl}" target="_blank" rel="noopener"
+                 title="Enviar pedido por WhatsApp"
+                 class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-colors text-xs font-semibold">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                WhatsApp
+              </a>`
+            : `<button disabled title="Añade un teléfono para activar WhatsApp"
+                 class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                WhatsApp
+              </button>`
+          }
+          <!-- Email -->
+          ${mailtoUrl
+            ? `<a href="${mailtoUrl}"
+                 title="Enviar pedido por email"
+                 class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-colors text-xs font-semibold">
+                <span class="material-symbols-outlined" style="font-size:15px">mail</span>
+                Correo
+              </a>`
+            : `<button disabled title="Añade un email para activar esta opción"
+                 class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
+                <span class="material-symbols-outlined" style="font-size:15px">mail</span>
+                Correo
+              </button>`
+          }
         </div>
       </div>`;
   }).join('');
 
-  // Update stats counter
   const totalEl = document.getElementById('stat-suppliers-total');
   if (totalEl) totalEl.textContent = list.length;
 }
@@ -2065,20 +2174,83 @@ function closeAddSupplierModal() {
   document.getElementById('modal-add-supplier').classList.add('hidden');
 }
 
-async function saveNewSupplier() {
-  const name = document.getElementById('new-supplier-name').value.trim();
+// ── EDIT SUPPLIER ─────────────────────────────────────────────────
+function openEditSupplierModal(id, name, contact, email, phone, notes) {
+  document.getElementById('edit-supplier-id').value      = id;
+  document.getElementById('edit-supplier-name').value    = name;
+  document.getElementById('edit-supplier-contact').value = contact;
+  document.getElementById('edit-supplier-email').value   = email;
+  document.getElementById('edit-supplier-phone').value   = phone;
+  document.getElementById('edit-supplier-notes').value   = notes;
+  document.getElementById('modal-edit-supplier').classList.remove('hidden');
+}
+
+function closeEditSupplierModal() {
+  document.getElementById('modal-edit-supplier').classList.add('hidden');
+}
+
+async function saveEditSupplier() {
+  const id    = document.getElementById('edit-supplier-id').value;
+  const name  = document.getElementById('edit-supplier-name').value.trim();
+  const email = document.getElementById('edit-supplier-email').value.trim();
+  const phone = document.getElementById('edit-supplier-phone').value.trim();
+
   if (!name) { toast('⚠️ El nombre es obligatorio'); return; }
+
+  // Basic email format validation
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    toast('⚠️ El formato del email no es válido'); return;
+  }
+  // Basic phone validation (digits, spaces, +, -, parentheses)
+  if (phone && !/^[\d\s\+\-\.\(\)]{6,20}$/.test(phone)) {
+    toast('⚠️ El formato del teléfono no es válido'); return;
+  }
+
+  const payload = {
+    name,
+    contact_name: document.getElementById('edit-supplier-contact').value.trim() || null,
+    email: email || null,
+    phone: phone || null,
+    notes: document.getElementById('edit-supplier-notes').value.trim() || null,
+  };
+
+  try {
+    const { error } = await window.supabase
+      .from('suppliers')
+      .update(payload)
+      .eq('id', id);
+    if (error) throw error;
+    toast('✅ Proveedor actualizado correctamente');
+    closeEditSupplierModal();
+    await fetchAndRenderSuppliers();
+  } catch (err) {
+    console.error('Error updating supplier:', err);
+    toast('❌ Error al guardar: ' + err.message);
+  }
+}
+
+async function saveNewSupplier() {
+  const name  = document.getElementById('new-supplier-name').value.trim();
+  const email = document.getElementById('new-supplier-email').value.trim();
+  const phone = document.getElementById('new-supplier-phone').value.trim();
+  if (!name) { toast('⚠️ El nombre es obligatorio'); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    toast('⚠️ El formato del email no es válido'); return;
+  }
+  if (phone && !/^[\d\s\+\-\.\(\)]{6,20}$/.test(phone)) {
+    toast('⚠️ El formato del teléfono no es válido'); return;
+  }
   const payload = {
     name,
     contact_name: document.getElementById('new-supplier-contact').value.trim() || null,
-    email: document.getElementById('new-supplier-email').value.trim() || null,
-    phone: document.getElementById('new-supplier-phone').value.trim() || null,
+    email: email || null,
+    phone: phone || null,
     notes: document.getElementById('new-supplier-notes').value.trim() || null,
   };
   try {
     const { error } = await window.supabase.from('suppliers').insert(payload);
     if (error) throw error;
-    toast('✅ Proveedor guardado correctamente');
+    toast('✅ Proveedor creado correctamente');
     closeAddSupplierModal();
     await fetchAndRenderSuppliers();
   } catch (err) {
