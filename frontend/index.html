@@ -1778,201 +1778,211 @@ function renderRecipes() {
   const el = document.getElementById('recipe-list');
   if (!el) return;
   
-  if (RECIPES.length === 0) {
-    el.innerHTML = `<div class="p-8 text-center text-slate-400">No hay recetas que mostrar.</div>`;
-    return;
-  }
+  try {
+    if (RECIPES.length === 0) {
+      el.innerHTML = `<div class="p-8 text-center text-slate-400">No hay recetas que mostrar.</div>`;
+      return;
+    }
 
-  el.innerHTML = RECIPES.map((r, i) => {
-    let totalCost = 0;
-    let totalGrams = 0;
-    
-    const parsedIngs = (r.recipe_ingredients || []).map(ri => {
-      const ing = ri.ingredients || {};
-      const qty = Number(ri.quantity_per_portion) || 0;
-      const unit = ri.unit || 'Gr';
-      const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin clasificar';
-      
-      let itemCost = 0;
-      let unitCostText = "0.00€";
-      const uLower = unit.toLowerCase();
-      if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
-        const costPerKg = Number(ing.calculated_net_cost_kg || ing.precio_mas_bajo || ing.precio_por_kg || 0);
-        itemCost = (qty / 1000) * costPerKg;
-        unitCostText = `${costPerKg.toFixed(2)}€/kg`;
-        totalGrams += qty;
-      } else {
-        const costPerUnit = Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
-        itemCost = qty * costPerUnit;
-        unitCostText = `${costPerUnit.toFixed(2)}€/ud`;
-      }
-      
-      totalCost += itemCost;
-      
-      return {
-        id: ing.id,
-        name: ing.name || 'Sin nombre',
-        nutritional_category,
-        qty: `${qty} ${unit}`,
-        rawQty: qty,
-        unit: unit,
-        unitCostText,
-        waste_percentage: Number(ing.waste_percentage) || 0,
-        cost: itemCost
-      };
-    });
-
-    const portions = Number(r.portions) || 1;
-    const costPerPortion = totalCost;
-    const totalRecipeCost = totalCost * portions;
-    const suggestedPrice = costPerPortion / 0.30; 
-    const margin = 70;
-    const marginColor = 'success';
-    
-    const viewType = _recipeViewStates[r.id] || 'cocina';
-    
-    return `
-      <div class="card overflow-hidden">
-        <div class="px-6 py-5 flex flex-wrap justify-between items-start gap-4 cursor-pointer" onclick="toggleRecipe('${r.id}')">
-          <div class="flex items-center gap-4">
-            <div class="kpi-icon bg-brand-muted"><span class="material-symbols-outlined text-brand" style="font-size:22px">restaurant_menu</span></div>
-            <div>
-              <h3 class="font-bold text-slate-900" style="font-family:Outfit">${r.name}</h3>
-              <p class="text-xs text-slate-400 mt-0.5"><span class="badge badge-slate mr-2">${r.category || 'Sin familia'}</span>${portions} pax · Coste total: ${totalRecipeCost.toFixed(2)}€</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="text-right">
-              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${costPerPortion.toFixed(2)}€</p>
-              <p class="text-xs text-slate-400">por ración</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xl font-bold text-${marginColor}" style="font-family:Outfit">${margin}%</p>
-              <p class="text-xs text-slate-400">margen obj.</p>
-            </div>
-            <div class="text-right hidden sm:block">
-              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${suggestedPrice.toFixed(2)}€</p>
-              <p class="text-xs text-slate-400">PVP sugerido</p>
-            </div>
-            <button id="recipe-toggle-${r.id}" class="p-2 rounded-xl text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors ml-2" onclick="event.stopPropagation(); toggleRecipe('${r.id}')">
-              <span class="material-symbols-outlined" style="font-size:22px">expand_more</span>
-            </button>
-          </div>
-        </div>
+    el.innerHTML = RECIPES.map((r, i) => {
+      try {
+        let totalCost = 0;
+        let totalGrams = 0;
         
-        <div id="recipe-detail-${r.id}" class="recipe-detail">
-          <div class="px-6 pb-6 border-t border-slate-100 pt-5">
-            <div class="flex justify-between items-center mb-4">
-              <h4 class="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
-              
-              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'cocina')" id="btn-view-cocina-${r.id}" 
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
-                  Cocina
-                </button>
-                <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'escandallo')" id="btn-view-escandallo-${r.id}" 
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
-                  Escandallo
+        const parsedIngs = (r.recipe_ingredients || []).map(ri => {
+          const ing = ri.ingredients || {};
+          const qty = Number(ri.quantity_per_portion) || 0;
+          const unit = ri.unit || 'Gr';
+          const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin clasificar';
+          
+          let itemCost = 0;
+          let unitCostText = "0.00€";
+          const uLower = unit.toLowerCase();
+          if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+            const costPerKg = Number(ing.calculated_net_cost_kg || ing.precio_mas_bajo || ing.precio_por_kg || 0);
+            itemCost = (qty / 1000) * costPerKg;
+            unitCostText = `${costPerKg.toFixed(2)}€/kg`;
+            totalGrams += qty;
+          } else {
+            const costPerUnit = Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+            itemCost = qty * costPerUnit;
+            unitCostText = `${costPerUnit.toFixed(2)}€/ud`;
+          }
+          
+          totalCost += itemCost;
+          
+          return {
+            id: ing.id,
+            name: ing.name || 'Sin nombre',
+            nutritional_category,
+            qty: `${qty} ${unit}`,
+            rawQty: qty,
+            unit: unit,
+            unitCostText,
+            waste_percentage: Number(ing.waste_percentage) || 0,
+            cost: itemCost
+          };
+        });
+
+        const portions = Number(r.portions) || 1;
+        const costPerPortion = totalCost;
+        const totalRecipeCost = totalCost * portions;
+        const suggestedPrice = costPerPortion / 0.30; 
+        const margin = 70;
+        const marginColor = 'success';
+        
+        const viewType = _recipeViewStates[r.id] || 'cocina';
+        
+        return `
+          <div class="card overflow-hidden">
+            <div class="px-6 py-5 flex flex-wrap justify-between items-start gap-4 cursor-pointer" onclick="toggleRecipe('${r.id}')">
+              <div class="flex items-center gap-4">
+                <div class="kpi-icon bg-brand-muted"><span class="material-symbols-outlined text-brand" style="font-size:22px">restaurant_menu</span></div>
+                <div>
+                  <h3 class="font-bold text-slate-900" style="font-family:Outfit">${r.name || 'Sin nombre'}</h3>
+                  <p class="text-xs text-slate-400 mt-0.5"><span class="badge badge-slate mr-2">${r.category || 'Sin familia'}</span>${portions} pax · Coste total: ${totalRecipeCost.toFixed(2)}€</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${costPerPortion.toFixed(2)}€</p>
+                  <p class="text-xs text-slate-400">por ración</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xl font-bold text-${marginColor}" style="font-family:Outfit">${margin}%</p>
+                  <p class="text-xs text-slate-400">margen obj.</p>
+                </div>
+                <div class="text-right hidden sm:block">
+                  <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${suggestedPrice.toFixed(2)}€</p>
+                  <p class="text-xs text-slate-400">PVP sugerido</p>
+                </div>
+                <button id="recipe-toggle-${r.id}" class="p-2 rounded-xl text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors ml-2" onclick="event.stopPropagation(); toggleRecipe('${r.id}')">
+                  <span class="material-symbols-outlined" style="font-size:22px">expand_more</span>
                 </button>
               </div>
             </div>
-
-            <!-- VISTA A: COCINA / FICHA TÉCNICA -->
-            <div id="recipe-view-cocina-${r.id}" class="${viewType === 'cocina' ? '' : 'hidden'}">
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
-                        <th class="pb-2 text-left font-semibold">Ingrediente</th>
-                        <th class="pb-2 text-right font-semibold">Cantidad</th>
-                        <th class="pb-2 text-right font-semibold">Unidad</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                      ${parsedIngs.map(ing => `
-                        <tr class="text-slate-700">
-                          <td class="py-2.5 font-medium">${ing.name}</td>
-                          <td class="py-2.5 text-right text-slate-500 font-mono">${ing.rawQty}</td>
-                          <td class="py-2.5 text-right text-slate-400">${ing.unit}</td>
-                        </tr>`).join('')}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div class="space-y-4">
-                  <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
-                    <div class="text-sm text-slate-600 space-y-2">
-                      ${r.instructions ? r.instructions.split('\n').map((step, idx) => `<p class="leading-relaxed"><strong class="text-brand mr-1">${idx+1}.</strong> ${step}</p>`).join('') : '<p class="italic text-slate-400">Sin instrucciones registradas.</p>'}
-                    </div>
-                  </div>
+            
+            <div id="recipe-detail-${r.id}" class="recipe-detail">
+              <div class="px-6 pb-6 border-t border-slate-100 pt-5">
+                <div class="flex justify-between items-center mb-4">
+                  <h4 class="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
                   
-                  <div class="flex gap-2 flex-wrap">
-                    <button onclick="openNewRecipeModal('${r.id}')" class="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors">
-                      <span class="material-symbols-outlined" style="font-size:16px">edit</span>Editar
+                  <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                    <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'cocina')" id="btn-view-cocina-${r.id}" 
+                      class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
+                      Cocina
                     </button>
-                    <button onclick="deleteRecipe('${r.id}')" class="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors" title="Eliminar Receta">
-                      <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+                    <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'escandallo')" id="btn-view-escandallo-${r.id}" 
+                      class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
+                      Escandallo
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- VISTA B: FINANCIERO / ESCANDALLO -->
-            <div id="recipe-view-escandallo-${r.id}" class="${viewType === 'escandallo' ? '' : 'hidden'}">
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 overflow-x-auto">
-                  <table class="w-full text-xs text-left">
-                    <thead>
-                      <tr class="text-slate-400 uppercase border-b border-slate-100">
-                        <th class="pb-2 font-semibold">Ingrediente</th>
-                        <th class="pb-2 font-semibold">Clasificación</th>
-                        <th class="pb-2 text-right font-semibold">Porción</th>
-                        <th class="pb-2 text-right font-semibold">Costo Unitario</th>
-                        <th class="pb-2 text-right font-semibold">Merma</th>
-                        <th class="pb-2 text-right font-semibold">Costo</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50">
-                      ${parsedIngs.map(ing => `
-                        <tr class="text-slate-700">
-                          <td class="py-2.5 font-medium text-slate-900">${ing.name}</td>
-                          <td class="py-2.5"><span class="badge badge-slate">${ing.nutritional_category}</span></td>
-                          <td class="py-2.5 text-right font-mono">${ing.rawQty} ${ing.unit}</td>
-                          <td class="py-2.5 text-right font-mono text-slate-500">${ing.unitCostText}</td>
-                          <td class="py-2.5 text-right font-mono text-slate-500">${ing.waste_percentage}%</td>
-                          <td class="py-2.5 text-right font-mono font-bold text-slate-800">${ing.cost.toFixed(3)}€</td>
-                        </tr>`).join('')}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="space-y-4">
-                  <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Métricas de Negocio</p>
-                    <div class="flex justify-between text-xs text-slate-600">
-                      <span>Gramaje Total Ración:</span>
-                      <span class="font-bold text-slate-900">${totalGrams.toFixed(0)} gr</span>
+                <!-- VISTA A: COCINA / FICHA TÉCNICA -->
+                <div id="recipe-view-cocina-${r.id}" class="${viewType === 'cocina' ? '' : 'hidden'}">
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                      <table class="w-full text-sm">
+                        <thead>
+                          <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
+                            <th class="pb-2 text-left font-semibold">Ingrediente</th>
+                            <th class="pb-2 text-right font-semibold">Cantidad</th>
+                            <th class="pb-2 text-right font-semibold">Unidad</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                          ${parsedIngs.map(ing => `
+                            <tr class="text-slate-700">
+                              <td class="py-2.5 font-medium">${ing.name}</td>
+                              <td class="py-2.5 text-right text-slate-500 font-mono">${ing.rawQty}</td>
+                              <td class="py-2.5 text-right text-slate-400">${ing.unit}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                      </table>
                     </div>
-                    <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
-                      <span>Costo Real Ración:</span>
-                      <span class="font-bold text-brand text-sm">${costPerPortion.toFixed(2)}€</span>
-                    </div>
-                    <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
-                      <span>PVP Sugerido (70% Margen):</span>
-                      <span class="font-bold text-success text-sm">${suggestedPrice.toFixed(2)}€</span>
+                    
+                    <div class="space-y-4">
+                      <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
+                        <div class="text-sm text-slate-600 space-y-2">
+                          ${r.instructions ? r.instructions.split('\n').map((step, idx) => `<p class="leading-relaxed"><strong class="text-brand mr-1">${idx+1}.</strong> ${step}</p>`).join('') : '<p class="italic text-slate-400">Sin instrucciones registradas.</p>'}
+                        </div>
+                      </div>
+                      
+                      <div class="flex gap-2 flex-wrap">
+                        <button onclick="openNewRecipeModal('${r.id}')" class="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors">
+                          <span class="material-symbols-outlined" style="font-size:16px">edit</span>Editar
+                        </button>
+                        <button onclick="deleteRecipe('${r.id}')" class="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors" title="Eliminar Receta">
+                          <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <!-- VISTA B: FINANCIERO / ESCANDALLO -->
+                <div id="recipe-view-escandallo-${r.id}" class="${viewType === 'escandallo' ? '' : 'hidden'}">
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 overflow-x-auto">
+                      <table class="w-full text-xs text-left">
+                        <thead>
+                          <tr class="text-slate-400 uppercase border-b border-slate-100">
+                            <th class="pb-2 font-semibold">Ingrediente</th>
+                            <th class="pb-2 font-semibold">Clasificación</th>
+                            <th class="pb-2 text-right font-semibold">Porción</th>
+                            <th class="pb-2 text-right font-semibold">Costo Unitario</th>
+                            <th class="pb-2 text-right font-semibold">Merma</th>
+                            <th class="pb-2 text-right font-semibold">Costo</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                          ${parsedIngs.map(ing => `
+                            <tr class="text-slate-700">
+                              <td class="py-2.5 font-medium text-slate-900">${ing.name}</td>
+                              <td class="py-2.5"><span class="badge badge-slate">${ing.nutritional_category}</span></td>
+                              <td class="py-2.5 text-right font-mono">${ing.rawQty} ${ing.unit}</td>
+                              <td class="py-2.5 text-right font-mono text-slate-500">${ing.unitCostText}</td>
+                              <td class="py-2.5 text-right font-mono text-slate-500">${ing.waste_percentage}%</td>
+                              <td class="py-2.5 text-right font-mono font-bold text-slate-800">${ing.cost.toFixed(3)}€</td>
+                            </tr>`).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="space-y-4">
+                      <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Métricas de Negocio</p>
+                        <div class="flex justify-between text-xs text-slate-600">
+                          <span>Gramaje Total Ración:</span>
+                          <span class="font-bold text-slate-900">${totalGrams.toFixed(0)} gr</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
+                          <span>Costo Real Ración:</span>
+                          <span class="font-bold text-brand text-sm">${costPerPortion.toFixed(2)}€</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
+                          <span>PVP Sugerido (70% Margen):</span>
+                          <span class="font-bold text-success text-sm">${suggestedPrice.toFixed(2)}€</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
-
-          </div>
-        </div>
-      </div>`;
-  }).join('');
+          </div>`;
+      } catch (innerErr) {
+        console.error("Error rendering recipe card:", r, innerErr);
+        return `<div class="card p-4 border border-red-100 bg-red-50 text-red-700 text-xs">Error al renderizar receta "${r.name || 'Sin nombre'}": ${innerErr.message}</div>`;
+      }
+    }).join('');
+  } catch (err) {
+    console.error("Error in renderRecipes:", err);
+    el.innerHTML = `<div class="p-6 text-center text-red-600 bg-red-50 border border-red-200 rounded-xl text-sm font-semibold">Error al renderizar la lista: ${err.message}</div>`;
+  }
 }
 
 // ── SUPPLIERS ─────────────────────────────────────────────────────
@@ -2439,46 +2449,57 @@ async function deleteSubcat(cat, sub) {
   }
 
   function filterRecipes() {
-    const searchVal = (document.getElementById('recipe-search')?.value || '').toLowerCase().trim();
-    const familyVal = document.getElementById('recipe-family-filter')?.value || '';
-    
-    RECIPES = ALL_RECIPES.filter(r => {
-      const matchSearch = r.name.toLowerCase().includes(searchVal);
-      const matchFamily = !familyVal || r.category === familyVal;
-      return matchSearch && matchFamily;
-    });
-    
-    // Update summary stats
-    let totalRaciones = RECIPES.length;
-    let sumCost = 0;
-    let highCostCount = 0;
-    let totalMarginSum = 0;
-    
-    RECIPES.forEach(r => {
-      let rCost = 0;
-      (r.recipe_ingredients || []).forEach(ri => {
-        const ing = ri.ingredients || {};
-        const qty = Number(ri.quantity_per_portion) || 0;
-        const unit = ri.unit || 'Gr';
-        const uLower = unit.toLowerCase();
-        if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
-          rCost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
-        } else {
-          rCost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
-        }
+    try {
+      const searchVal = (document.getElementById('recipe-search')?.value || '').toLowerCase().trim();
+      const familyVal = document.getElementById('recipe-family-filter')?.value || '';
+      
+      RECIPES = ALL_RECIPES.filter(r => {
+        const nameStr = r.name || '';
+        const matchSearch = nameStr.toLowerCase().includes(searchVal);
+        const matchFamily = !familyVal || r.category === familyVal;
+        return matchSearch && matchFamily;
       });
-      sumCost += rCost;
-      if (rCost > 10) highCostCount++;
-    });
-    
-    const avgCost = totalRaciones ? sumCost / totalRaciones : 0;
-    
-    document.getElementById('recipe-stat-count').textContent = totalRaciones;
-    document.getElementById('recipe-stat-cost').textContent = `${avgCost.toFixed(2)}€`;
-    document.getElementById('recipe-stat-high').textContent = highCostCount;
-    document.getElementById('recipe-stat-margin').textContent = '70%'; // targeted
-    
-    renderRecipes();
+      
+      // Update summary stats
+      let totalRaciones = RECIPES.length;
+      let sumCost = 0;
+      let highCostCount = 0;
+      let totalMarginSum = 0;
+      
+      RECIPES.forEach(r => {
+        let rCost = 0;
+        (r.recipe_ingredients || []).forEach(ri => {
+          const ing = ri.ingredients || {};
+          const qty = Number(ri.quantity_per_portion) || 0;
+          const unit = ri.unit || 'Gr';
+          const uLower = unit.toLowerCase();
+          if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+            rCost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
+          } else {
+            rCost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+          }
+        });
+        sumCost += rCost;
+        if (rCost > 10) highCostCount++;
+      });
+      
+      const avgCost = totalRaciones ? sumCost / totalRaciones : 0;
+      
+      const countEl = document.getElementById('recipe-stat-count');
+      const costEl = document.getElementById('recipe-stat-cost');
+      const highEl = document.getElementById('recipe-stat-high');
+      const marginEl = document.getElementById('recipe-stat-margin');
+      
+      if (countEl) countEl.textContent = totalRaciones;
+      if (costEl) costEl.textContent = `${avgCost.toFixed(2)}€`;
+      if (highEl) highEl.textContent = highCostCount;
+      if (marginEl) marginEl.textContent = '70%'; // targeted
+      
+      renderRecipes();
+    } catch (e) {
+      console.error("Error in filterRecipes:", e);
+      toast("❌ Error al filtrar recetas: " + e.message);
+    }
   }
 
   // ── NEW / EDIT RECIPE MODAL ──────────────────────────────────────
