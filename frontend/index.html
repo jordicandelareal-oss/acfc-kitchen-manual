@@ -741,20 +741,7 @@
 // ── DATA ──────────────────────────────────────────────────────────
 const SCREENS = ['dashboard','inventory','recetas','proveedores','planner','recipes'];
 
-const INVENTORY = [
-  { name:'Wagyu Beef A5',         cat:'Carnicería', stock:2.5,  unit:'kg', min:10,  cost:125.00, supplier:'Mercabarna', critical:true  },
-  { name:'Arroz Koshihikari',     cat:'Asiático',   stock:45,   unit:'kg', min:15,  cost:4.50,   supplier:'Asia Market', critical:false },
-  { name:'Aceite de Trufa Negra', cat:'Despensa',   stock:1.2,  unit:'L',  min:1.0, cost:85.00,  supplier:'Trufas El Maestro', critical:false },
-  { name:'Pulpo Patagónico',      cat:'Congelados', stock:4.0,  unit:'kg', min:12,  cost:32.00,  supplier:'Pescados Atlántico', critical:true  },
-  { name:'Burrata Pugliese',      cat:'Lácteos',    stock:12,   unit:'ud', min:20,  cost:5.50,   supplier:'Latteria Italiana', critical:true  },
-  { name:'Foie Gras Mi-Cuit',     cat:'Frescos',    stock:3.0,  unit:'kg', min:2.0, cost:98.00,  supplier:'Maison Rivière', critical:false },
-  { name:'Parmigiano Reggiano',   cat:'Lácteos',    stock:8.0,  unit:'kg', min:5.0, cost:22.00,  supplier:'Latteria Italiana', critical:false },
-  { name:'Quinoa Real Boliviana', cat:'Despensa',   stock:30,   unit:'kg', min:10,  cost:8.90,   supplier:'Bio Natura', critical:false },
-  { name:'Vieiras San Jacobo',    cat:'Frescos',    stock:1.5,  unit:'kg', min:5.0, cost:48.00,  supplier:'Pescados Atlántico', critical:true  },
-  { name:'Espárragos Trigueros',  cat:'Frescos',    stock:18,   unit:'kg', min:8.0, cost:6.20,   supplier:'Mercabarna', critical:false },
-  { name:'Chocolate Valrhona',    cat:'Despensa',   stock:5.0,  unit:'kg', min:3.0, cost:38.00,  supplier:'Pastelería Pro', critical:false },
-  { name:'Ternera Gallega DO',    cat:'Carnicería', stock:0.8,  unit:'kg', min:8.0, cost:55.00,  supplier:'Mercabarna', critical:true  },
-];
+let INVENTORY = [];
 
 const RECIPES = [
   {
@@ -1310,6 +1297,47 @@ function extractIngredients(text) {
   renderSuppliers(SUPPLIERS);
   renderCalendar();
 })();
+</script>
+
+<script type="module">
+  import { supabase } from './src/supabaseClient.js';
+
+  async function loadSupabaseInventory() {
+    try {
+      const { data, error } = await supabase
+        .from('ingredients')
+        .select('*')
+        .order('name');
+        
+      if (error) {
+        console.error('Error fetching inventory:', error);
+        return;
+      }
+      
+      INVENTORY = data.map(item => {
+        const currentStock = Number(item.current_stock) || 0;
+        const minStock = Number(item.min_stock) || 0;
+        
+        return {
+          id: item.id,
+          name: item.name || 'Sin nombre',
+          cat: item.category || 'Sin categoría',
+          stock: currentStock,
+          unit: item.unit || 'ud',
+          min: minStock,
+          cost: Number(item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
+          supplier: item.proveedor_principal || 'Sin proveedor',
+          critical: currentStock <= minStock
+        };
+      });
+      
+      renderInventory(INVENTORY);
+    } catch (err) {
+      console.error('Unexpected error loading inventory:', err);
+    }
+  }
+
+  loadSupabaseInventory();
 </script>
 
 </body>
