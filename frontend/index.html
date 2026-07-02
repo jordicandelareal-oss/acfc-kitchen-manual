@@ -299,7 +299,7 @@
           <input type="number" id="ing-purchase-price" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: 12.50" oninput="calculateNetCost()" />
         </div>
       </div>
-      
+
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">Escenario salida</label>
@@ -309,21 +309,64 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-brand mb-1">Merma / Hidratación (%)</label>
-          <div class="flex items-center gap-3">
-            <input type="range" id="ing-waste-slider" min="0" max="100" value="0" class="flex-1" oninput="document.getElementById('ing-waste').value=this.value; calculateNetCost()" />
-            <input type="number" id="ing-waste" value="0" min="0" max="100" class="w-16 px-2 py-1 border border-brand-muted bg-brand-muted/20 text-brand rounded-lg text-sm font-bold text-center outline-none" oninput="document.getElementById('ing-waste-slider').value=this.value; calculateNetCost()" />
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Precio base /KG</label>
+          <div class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono" id="ing-base-price-display">—</div>
+        </div>
+      </div>
+
+      <!-- Bidirectional process control -->
+      <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+        <!-- Toggle MERMA / HIDRATACION -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tipo de proceso</span>
+          <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-semibold">
+            <button id="btn-merma" onclick="setProcessType('MERMA')" 
+              class="px-3 py-1.5 bg-brand text-white transition-all">
+              🧄 Merma
+            </button>
+            <button id="btn-hidratacion" onclick="setProcessType('HIDRATACION')" 
+              class="px-3 py-1.5 bg-white text-slate-500 transition-all">
+              💧 Hidratación
+            </button>
+          </div>
+        </div>
+
+        <!-- Explanation badge -->
+        <p id="ing-process-desc" class="text-[11px] text-slate-500 italic">
+          🧄 <strong>Merma</strong>: El producto pierde peso durante el proceso (limpieza, cocción, deshuesado). El coste/kg sube.
+        </p>
+
+        <!-- Slider row -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-semibold" id="ing-waste-label">Merma (%)</label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="ing-waste" value="0" min="0" max="999" 
+                class="w-16 px-2 py-1 border border-brand-muted bg-white text-brand rounded-lg text-sm font-bold text-center outline-none focus:border-brand" 
+                oninput="syncSlider(); calculateNetCost()" />
+              <span class="text-xs text-slate-400">%</span>
+            </div>
+          </div>
+          <input type="range" id="ing-waste-slider" min="0" max="99" value="0" 
+            class="w-full accent-brand" 
+            oninput="document.getElementById('ing-waste').value=this.value; calculateNetCost()" />
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>0%</span>
+            <span id="ing-slider-max-label">99%</span>
           </div>
         </div>
       </div>
-      
+
       <!-- Calculated Result -->
-      <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+      <div class="mt-2 p-4 rounded-xl border-2 border-brand/20 bg-brand-muted/10 flex justify-between items-center">
         <div>
-          <span class="block text-xs font-semibold text-slate-500">Coste Neto Calculado</span>
-          <span class="block text-[10px] text-slate-400" id="ing-cost-label">Coste final tras aplicar merma</span>
+          <span class="block text-xs font-semibold text-slate-500">Coste Neto / KG</span>
+          <span class="block text-[11px] text-slate-400 font-mono mt-0.5" id="ing-cost-formula">—</span>
         </div>
-        <div class="text-xl font-bold text-slate-900 font-mono" id="ing-calculated-cost">0.00 €</div>
+        <div class="text-right">
+          <div class="text-2xl font-bold text-brand font-mono" id="ing-calculated-cost">0.00 €</div>
+          <div class="text-[10px] text-slate-400" id="ing-cost-label">por kg neto</div>
+        </div>
       </div>
       
     </div>
@@ -1069,8 +1112,10 @@ function openIngredientModal(id) {
   document.getElementById('ing-purchase-price').value = item.purchase_price || '';
   document.getElementById('ing-output-scenario').value = item.output_scenario || 'KG_LT';
   document.getElementById('ing-waste').value = item.waste_percentage || 0;
-  document.getElementById('ing-waste-slider').value = item.waste_percentage || 0;
+  document.getElementById('ing-waste-slider').value = Math.min(item.waste_percentage || 0, 99);
   
+  // Restore process type
+  setProcessType(item.process_type || 'MERMA');
   calculateNetCost();
   document.getElementById('modal-ingredient').classList.add('open');
 }
@@ -1079,21 +1124,87 @@ function closeIngredientModal() {
   document.getElementById('modal-ingredient').classList.remove('open');
 }
 
-function calculateNetCost() {
-  const format = parseFloat(document.getElementById('ing-format-gr').value) || 0;
-  const price = parseFloat(document.getElementById('ing-purchase-price').value) || 0;
-  const waste = parseFloat(document.getElementById('ing-waste').value) || 0;
-  const scenario = document.getElementById('ing-output-scenario').value;
+// Track active process type
+let _processType = 'MERMA';
+
+function setProcessType(type) {
+  _processType = type;
+  const isMerma = type === 'MERMA';
   
-  let baseCost = 0;
-  if (scenario === 'KG_LT') {
-    if (format > 0) baseCost = (price / format) * 1000;
+  // Toggle button styles
+  document.getElementById('btn-merma').className = isMerma
+    ? 'px-3 py-1.5 bg-brand text-white transition-all'
+    : 'px-3 py-1.5 bg-white text-slate-500 transition-all';
+  document.getElementById('btn-hidratacion').className = !isMerma
+    ? 'px-3 py-1.5 bg-sky-500 text-white transition-all'
+    : 'px-3 py-1.5 bg-white text-slate-500 transition-all';
+  
+  // Update label and description
+  document.getElementById('ing-waste-label').textContent = isMerma ? 'Merma (%)' : 'Hidratación (%)';
+  document.getElementById('ing-process-desc').innerHTML = isMerma
+    ? '🧄 <strong>Merma</strong>: El producto pierde peso (limpieza, cocción, deshuesado). El coste/kg sube.'
+    : '💧 <strong>Hidratación</strong>: El producto gana peso absorbiendo agua (arroz, legumbres). El coste/kg baja.';
+  
+  // Slider max: merma max 99%, hidratacion up to 999%
+  const slider = document.getElementById('ing-waste-slider');
+  if (isMerma) {
+    slider.max = 99;
+    document.getElementById('ing-slider-max-label').textContent = '99%';
+    document.getElementById('ing-waste').max = 99;
   } else {
-    if (format > 0) baseCost = (price / format);
+    slider.max = 300; // practical max for hydration (pasta goes ~200%)
+    document.getElementById('ing-slider-max-label').textContent = '300%';
+    document.getElementById('ing-waste').max = 999;
   }
   
-  const netCost = baseCost / (1 - (waste / 100));
-  document.getElementById('ing-calculated-cost').textContent = netCost.toFixed(4) + ' €';
+  calculateNetCost();
+}
+
+function syncSlider() {
+  const val = parseFloat(document.getElementById('ing-waste').value) || 0;
+  const slider = document.getElementById('ing-waste-slider');
+  slider.value = Math.min(val, parseFloat(slider.max));
+}
+
+function calculateNetCost() {
+  const format = parseFloat(document.getElementById('ing-format-gr').value) || 0;
+  const price  = parseFloat(document.getElementById('ing-purchase-price').value) || 0;
+  const pct    = parseFloat(document.getElementById('ing-waste').value) || 0;
+  const scenario = document.getElementById('ing-output-scenario').value;
+  
+  // Step 1: Precio Base por KG o por UD
+  let baseCostPerKg = 0;
+  if (scenario === 'KG_LT') {
+    if (format > 0) baseCostPerKg = price / (format / 1000); // = price * 1000 / format
+  } else {
+    // UNIDADES: base per unit
+    if (format > 0) baseCostPerKg = price / format;
+  }
+  
+  // Step 2: Apply process formula
+  let netCost = 0;
+  let formulaStr = '';
+  
+  if (_processType === 'MERMA') {
+    // Merma: product lost → cost goes UP
+    // Coste_Neto_KG = Base / (1 - merma/100)
+    const divisor = 1 - (pct / 100);
+    netCost = divisor > 0 ? baseCostPerKg / divisor : 0;
+    formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 - ${pct}%) = ${netCost.toFixed(4)}€`;
+  } else {
+    // Hidratación: product gains weight → cost goes DOWN
+    // Coste_Neto_KG = Base / (1 + hidratacion/100)
+    netCost = baseCostPerKg / (1 + (pct / 100));
+    formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 + ${pct}%) = ${netCost.toFixed(4)}€`;
+  }
+  
+  // Display
+  const basePriceDisplay = document.getElementById('ing-base-price-display');
+  if (basePriceDisplay) basePriceDisplay.textContent = baseCostPerKg > 0 ? baseCostPerKg.toFixed(4) + ' €/kg' : '—';
+  
+  document.getElementById('ing-calculated-cost').textContent = netCost.toFixed(2) + ' €';
+  document.getElementById('ing-cost-formula').textContent = formulaStr || '—';
+  
   return netCost;
 }
 
@@ -1124,6 +1235,7 @@ async function saveIngredient() {
     purchase_price: parseFloat(document.getElementById('ing-purchase-price').value) || null,
     output_scenario: document.getElementById('ing-output-scenario').value,
     waste_percentage: parseFloat(document.getElementById('ing-waste').value) || 0,
+    process_type: _processType,
     calculated_net_cost_kg: netCost
   };
   
@@ -1637,6 +1749,7 @@ function extractIngredients(text) {
           purchase_price: Number(item.purchase_price) || null,
           output_scenario: item.output_scenario || 'KG_LT',
           waste_percentage: Number(item.waste_percentage) || 0,
+          process_type: item.process_type || 'MERMA',
           calculated_net_cost_kg: Number(item.calculated_net_cost_kg) || 0,
           stock: currentStock,
           unit: item.unit || 'ud',
