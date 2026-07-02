@@ -553,37 +553,47 @@
 
     <!-- Stats row -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-slate-900" style="font-family:Outfit">482</p><p class="text-xs text-slate-400 mt-0.5">Total líneas</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-red-500" style="font-family:Outfit">12</p><p class="text-xs text-slate-400 mt-0.5">Stock crítico</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-success" style="font-family:Outfit">94%</p><p class="text-xs text-slate-400 mt-0.5">Fill rate</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-slate-900" style="font-family:Outfit">18.4K€</p><p class="text-xs text-slate-400 mt-0.5">Valor stock</p></div>
+      <div class="card p-4 text-center"><p id="inv-stat-total" class="text-2xl font-bold text-slate-900" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Total líneas</p></div>
+      <div class="card p-4 text-center"><p id="inv-stat-critical" class="text-2xl font-bold text-red-500" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Stock crítico</p></div>
+      <div class="card p-4 text-center"><p id="inv-stat-fillrate" class="text-2xl font-bold text-success" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Fill rate</p></div>
+      <div class="card p-4 text-center"><p id="inv-stat-value" class="text-2xl font-bold text-slate-900" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Valor stock</p></div>
     </div>
 
     <!-- Filters -->
-    <div class="card p-5">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="relative">
+    <div class="card p-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+        <!-- Search -->
+        <div class="relative lg:col-span-2">
           <span class="material-symbols-outlined absolute left-3 top-3 text-slate-400" style="font-size:18px">search</span>
-          <input id="inv-search" type="text" placeholder="Buscar ingrediente..." onkeyup="filterInventory()"
+          <input id="inv-search" type="text" placeholder="Buscar ingrediente, marca, ref..." oninput="filterInventory()"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"/>
         </div>
+        <!-- Categoría -->
         <select id="inv-cat" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
           <option value="">Todas las categorías</option>
-          <option>Frescos</option><option>Asiático</option><option>Despensa</option>
-          <option>Congelados</option><option>Lácteos</option><option>Carnicería</option>
         </select>
-        <select id="inv-price" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
-          <option value="">Cualquier precio</option>
-          <option value="low">Menos de 10€</option>
-          <option value="mid">Entre 10€ y 50€</option>
-          <option value="high">Más de 50€</option>
+        <!-- Subcategoría -->
+        <select id="inv-subcat" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+          <option value="">Todas las subcategorías</option>
         </select>
-        <select id="inv-status" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
-          <option value="">Cualquier estado</option>
-          <option value="critical">Stock crítico</option>
-          <option value="ok">Stock óptimo</option>
+        <!-- Proveedor -->
+        <select id="inv-provider" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+          <option value="">Todos los proveedores</option>
         </select>
+        <!-- Estado + Clear -->
+        <div class="flex gap-2">
+          <select id="inv-status" onchange="filterInventory()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+            <option value="">Cualquier estado</option>
+            <option value="critical">⚠️ Stock crítico</option>
+            <option value="ok">✅ Stock óptimo</option>
+          </select>
+          <button onclick="clearInventoryFilters()" title="Limpiar filtros" class="flex-shrink-0 p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:text-brand hover:border-brand hover:bg-brand-muted transition-all">
+            <span class="material-symbols-outlined" style="font-size:18px">filter_alt_off</span>
+          </button>
+        </div>
       </div>
+      <!-- Active filter chips -->
+      <div id="inv-filter-chips" class="flex flex-wrap gap-2 mt-3 hidden"></div>
     </div>
 
     <!-- Table -->
@@ -596,12 +606,12 @@
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
             <tr>
-              <th class="px-6 py-3">Ingrediente</th>
-              <th class="px-4 py-3">Categoría</th>
-              <th class="px-4 py-3">Stock</th>
+              <th class="px-6 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('name')">Ingrediente <span id="sort-name" class="inline-block ml-0.5"></span></th>
+              <th class="px-4 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('cat')">Categoría <span id="sort-cat" class="inline-block ml-0.5"></span></th>
+              <th class="px-4 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('stock')">Stock <span id="sort-stock" class="inline-block ml-0.5"></span></th>
               <th class="px-4 py-3 hidden md:table-cell">Nivel</th>
-              <th class="px-4 py-3 hidden sm:table-cell">Coste/u</th>
-              <th class="px-4 py-3 hidden lg:table-cell">Proveedor</th>
+              <th class="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onclick="sortInventory('cost')">Coste/kg <span id="sort-cost" class="inline-block ml-0.5"></span></th>
+              <th class="px-4 py-3 hidden lg:table-cell cursor-pointer hover:text-brand select-none" onclick="sortInventory('supplier')">Proveedor <span id="sort-supplier" class="inline-block ml-0.5"></span></th>
               <th class="px-4 py-3">Estado</th>
               <th class="px-4 py-3"></th>
             </tr>
@@ -1237,22 +1247,112 @@ function renderInventory(items) {
   }).join('');
 }
 
+let _invSortKey = 'name';
+let _invSortDir = 1; // 1 asc, -1 desc
+
+function sortInventory(key) {
+  if (_invSortKey === key) {
+    _invSortDir *= -1;
+  } else {
+    _invSortKey = key;
+    _invSortDir = 1;
+  }
+  // Update sort indicators
+  ['name','cat','stock','cost','supplier'].forEach(k => {
+    const el = document.getElementById('sort-' + k);
+    if (el) el.textContent = k === _invSortKey ? (_invSortDir === 1 ? '↑' : '↓') : '';
+  });
+  filterInventory();
+}
+
+function clearInventoryFilters() {
+  document.getElementById('inv-search').value = '';
+  document.getElementById('inv-cat').value = '';
+  document.getElementById('inv-subcat').value = '';
+  document.getElementById('inv-provider').value = '';
+  document.getElementById('inv-status').value = '';
+  filterInventory();
+}
+
 function filterInventory() {
-  const q = document.getElementById('inv-search').value.toLowerCase();
+  const q = document.getElementById('inv-search').value.toLowerCase().trim();
   const cat = document.getElementById('inv-cat').value;
-  const price = document.getElementById('inv-price').value;
+  const subcat = document.getElementById('inv-subcat').value;
+  const provider = document.getElementById('inv-provider').value;
   const status = document.getElementById('inv-status').value;
-  const filtered = INVENTORY.filter(i => {
-    if (q && !i.name.toLowerCase().includes(q)) return false;
+
+  let filtered = INVENTORY.filter(i => {
+    if (q && !(
+      (i.name || '').toLowerCase().includes(q) ||
+      (i.brand || '').toLowerCase().includes(q) ||
+      (i.provider_ref || '').toLowerCase().includes(q) ||
+      (i.supplier || '').toLowerCase().includes(q)
+    )) return false;
     if (cat && i.cat !== cat) return false;
-    if (price === 'low' && i.cost >= 10) return false;
-    if (price === 'mid' && (i.cost < 10 || i.cost > 50)) return false;
-    if (price === 'high' && i.cost <= 50) return false;
+    if (subcat && i.subcategory !== subcat) return false;
+    if (provider && i.supplier !== provider) return false;
     if (status === 'critical' && !i.critical) return false;
     if (status === 'ok' && i.critical) return false;
     return true;
   });
+
+  // Sort
+  filtered.sort((a, b) => {
+    const aVal = a[_invSortKey] ?? '';
+    const bVal = b[_invSortKey] ?? '';
+    if (typeof aVal === 'number') return (aVal - bVal) * _invSortDir;
+    return String(aVal).localeCompare(String(bVal)) * _invSortDir;
+  });
+
+  // Update filter chips
+  const chips = [];
+  if (q) chips.push({ label: `"${q}"`, clear: () => { document.getElementById('inv-search').value = ''; filterInventory(); } });
+  if (cat) chips.push({ label: cat, clear: () => { document.getElementById('inv-cat').value = ''; filterInventory(); } });
+  if (subcat) chips.push({ label: subcat, clear: () => { document.getElementById('inv-subcat').value = ''; filterInventory(); } });
+  if (provider) chips.push({ label: provider, clear: () => { document.getElementById('inv-provider').value = ''; filterInventory(); } });
+  if (status) chips.push({ label: status === 'critical' ? 'Stock crítico' : 'Stock óptimo', clear: () => { document.getElementById('inv-status').value = ''; filterInventory(); } });
+  
+  const chipContainer = document.getElementById('inv-filter-chips');
+  if (chips.length) {
+    chipContainer.classList.remove('hidden');
+    chipContainer.innerHTML = '<span class="text-xs text-slate-400 self-center">Filtros activos:</span>' +
+      chips.map((c, idx) => `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-muted text-brand text-xs rounded-full font-medium">${c.label}<button onclick="(${c.clear.toString()})()" class="hover:text-red-500 ml-0.5">&times;</button></span>`).join('');
+  } else {
+    chipContainer.classList.add('hidden');
+  }
+
   renderInventory(filtered);
+}
+
+function populateInventoryFilters() {
+  const cats = [...new Set(INVENTORY.map(i => i.cat).filter(Boolean))].sort();
+  const subcats = [...new Set(INVENTORY.map(i => i.subcategory).filter(Boolean))].sort();
+  const providers = [...new Set(INVENTORY.map(i => i.supplier).filter(v => v && v !== 'Sin proveedor'))].sort();
+  
+  const catSel = document.getElementById('inv-cat');
+  catSel.innerHTML = '<option value="">Todas las categorías</option>' +
+    cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  
+  const subcatSel = document.getElementById('inv-subcat');
+  subcatSel.innerHTML = '<option value="">Todas las subcategorías</option>' +
+    subcats.map(s => `<option value="${s}">${s}</option>`).join('');
+  
+  const provSel = document.getElementById('inv-provider');
+  provSel.innerHTML = '<option value="">Todos los proveedores</option>' +
+    providers.map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+function updateInventoryStats() {
+  const total = INVENTORY.length;
+  const critical = INVENTORY.filter(i => i.critical).length;
+  const fillRate = total > 0 ? Math.round(((total - critical) / total) * 100) : 0;
+  const value = INVENTORY.reduce((sum, i) => sum + (i.cost * i.stock), 0);
+  
+  const fmt = v => v >= 1000 ? (v/1000).toFixed(1) + 'K€' : v.toFixed(0) + '€';
+  document.getElementById('inv-stat-total').textContent = total;
+  document.getElementById('inv-stat-critical').textContent = critical;
+  document.getElementById('inv-stat-fillrate').textContent = fillRate + '%';
+  document.getElementById('inv-stat-value').textContent = fmt(value);
 }
 
 // ── RECIPES ───────────────────────────────────────────────────────
@@ -1547,7 +1647,9 @@ function extractIngredients(text) {
         };
       });
       
-      renderInventory(INVENTORY);
+      populateInventoryFilters();
+      updateInventoryStats();
+      filterInventory();
     } catch (err) {
       console.error('Unexpected error loading inventory:', err);
     }
