@@ -723,7 +723,12 @@
     <div class="card overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
         <h3 class="font-bold text-slate-900" style="font-family:Outfit">Live Stock Matrix</h3>
-        <span id="inv-count" class="text-xs font-medium text-slate-400"></span>
+        <div class="flex items-center gap-3">
+          <span id="inv-count" class="text-xs font-medium text-slate-400"></span>
+          <button onclick="openNewIngredientModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
+            <span class="material-symbols-outlined" style="font-size:16px">add</span>Nuevo
+          </button>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
@@ -1178,9 +1183,34 @@ function closeNewModal() {
   document.getElementById('modal-new').classList.remove('open');
 }
 
+function openNewIngredientModal() {
+  // Clear all fields for creation mode
+  document.getElementById('ing-id').value = ''; // empty = create mode
+  document.getElementById('modal-ingredient-title').textContent = 'Nuevo Ingrediente';
+  document.getElementById('ing-name').value = '';
+  document.getElementById('ing-brand').value = '';
+  document.getElementById('ing-category').value = '';
+  document.getElementById('ing-subcategory').value = '';
+  document.getElementById('ing-provider').value = 'Sin proveedor';
+  document.getElementById('ing-provider-ref').value = '';
+  document.getElementById('ing-format-gr').value = '';
+  document.getElementById('ing-purchase-price').value = '';
+  document.getElementById('ing-output-scenario').value = 'KG_LT';
+  document.getElementById('ing-waste').value = 0;
+  document.getElementById('ing-waste-slider').value = 0;
+  document.getElementById('ing-save-text').textContent = 'Crear Ingrediente';
+  setProcessType('MERMA');
+  calculateNetCost();
+  document.getElementById('modal-ingredient').classList.add('open');
+  // Focus name after animation
+  setTimeout(() => document.getElementById('ing-name').focus(), 100);
+}
+
 function openIngredientModal(id) {
   const item = INVENTORY.find(i => i.id === id);
   if (!item) return;
+  document.getElementById('modal-ingredient-title').textContent = 'Editar Ingrediente';
+  document.getElementById('ing-save-text').textContent = 'Guardar cambios';
   document.getElementById('ing-id').value = item.id;
   document.getElementById('ing-name').value = item.name || '';
   document.getElementById('ing-brand').value = item.brand || '';
@@ -1193,8 +1223,6 @@ function openIngredientModal(id) {
   document.getElementById('ing-output-scenario').value = item.output_scenario || 'KG_LT';
   document.getElementById('ing-waste').value = item.waste_percentage || 0;
   document.getElementById('ing-waste-slider').value = Math.min(item.waste_percentage || 0, 99);
-  
-  // Restore process type
   setProcessType(item.process_type || 'MERMA');
   calculateNetCost();
   document.getElementById('modal-ingredient').classList.add('open');
@@ -1293,59 +1321,121 @@ async function saveIngredient() {
     toast('Error: Cliente Supabase no inicializado');
     return;
   }
+
+  const nameVal = document.getElementById('ing-name').value.trim();
+  if (!nameVal) {
+    toast('⚠️ El nombre del ingrediente es obligatorio');
+    document.getElementById('ing-name').focus();
+    return;
+  }
+
   const btn = document.getElementById('ing-save-btn');
   const spinner = document.getElementById('ing-save-spinner');
   const txt = document.getElementById('ing-save-text');
-  
+  const id = document.getElementById('ing-id').value.trim(); // empty = create mode
+  const isCreateMode = !id;
+
   btn.disabled = true;
   spinner.classList.remove('hidden');
-  txt.textContent = 'Guardando...';
-  
-  const id = document.getElementById('ing-id').value;
+  txt.textContent = isCreateMode ? 'Creando...' : 'Guardando...';
+
   const netCost = calculateNetCost();
-  
-  const updates = {
-    name: document.getElementById('ing-name').value,
-    brand: document.getElementById('ing-brand').value,
-    category: document.getElementById('ing-category').value,
-    subcategory: document.getElementById('ing-subcategory').value,
+
+  const payload = {
+    name: nameVal,
+    brand: document.getElementById('ing-brand').value.trim(),
+    category: document.getElementById('ing-category').value.trim(),
+    subcategory: document.getElementById('ing-subcategory').value.trim(),
     provider_name: document.getElementById('ing-provider').value,
-    provider_ref: document.getElementById('ing-provider-ref').value,
+    provider_ref: document.getElementById('ing-provider-ref').value.trim(),
     purchase_format_gr: parseFloat(document.getElementById('ing-format-gr').value) || null,
     purchase_price: parseFloat(document.getElementById('ing-purchase-price').value) || null,
     output_scenario: document.getElementById('ing-output-scenario').value,
     waste_percentage: parseFloat(document.getElementById('ing-waste').value) || 0,
     process_type: _processType,
-    calculated_net_cost_kg: netCost
+    calculated_net_cost_kg: netCost,
+    unit: 'gr',
+    current_stock: 0,
+    min_stock: 0
   };
-  
+
   try {
-    const { error } = await window.supabase.from('ingredients').update(updates).eq('id', id);
-    if (error) throw error;
-    
-    // Update local state
-    const index = INVENTORY.findIndex(i => i.id === id);
-    if (index > -1) {
-      INVENTORY[index] = { ...INVENTORY[index], ...updates, cat: updates.category, cost: netCost };
-    }
-    
-    closeIngredientModal();
-    toast('✅ Ingrediente actualizado correctamente');
-    
-    // Check if there is an active search and re-filter
-    const searchVal = document.getElementById('inv-search') ? document.getElementById('inv-search').value : '';
-    if (searchVal || document.getElementById('inv-cat').value !== 'todas') {
-      filterInventory();
+    if (isCreateMode) {
+      // ── INSERT ──
+      const { data, error } = await window.supabase
+        .from('ingredients')
+        .insert([payload])
+        .select()
+        .single();
+      if (error) throw error;
+
+      // Add to local INVENTORY
+      const newItem = {
+        id: data.id,
+        name: data.name,
+        cat: data.category || 'Sin categoría',
+        subcategory: data.subcategory || '',
+        brand: data.brand || '',
+        provider_ref: data.provider_ref || '',
+        provider_name: data.provider_name || 'Sin proveedor',
+        purchase_format_gr: data.purchase_format_gr,
+        purchase_price: data.purchase_price,
+        output_scenario: data.output_scenario || 'KG_LT',
+        waste_percentage: data.waste_percentage || 0,
+        process_type: data.process_type || 'MERMA',
+        calculated_net_cost_kg: data.calculated_net_cost_kg || 0,
+        stock: 0,
+        unit: data.unit || 'gr',
+        min: 0,
+        cost: netCost,
+        supplier: data.provider_name || 'Sin proveedor',
+        critical: false
+      };
+      INVENTORY.push(newItem);
+      INVENTORY.sort((a, b) => a.name.localeCompare(b.name));
+
+      closeIngredientModal();
+      toast('✅ Ingrediente creado correctamente');
+
     } else {
-      renderInventory(INVENTORY);
+      // ── UPDATE ──
+      const { error } = await window.supabase
+        .from('ingredients')
+        .update(payload)
+        .eq('id', id);
+      if (error) throw error;
+
+      // Update local INVENTORY
+      const index = INVENTORY.findIndex(i => i.id === id);
+      if (index > -1) {
+        INVENTORY[index] = {
+          ...INVENTORY[index],
+          ...payload,
+          cat: payload.category || 'Sin categoría',
+          cost: netCost,
+          supplier: payload.provider_name
+        };
+      }
+
+      closeIngredientModal();
+      toast('✅ Ingrediente actualizado correctamente');
     }
+
+    // Refresh filters and table
+    populateInventoryFilters();
+    updateInventoryStats();
+    filterInventory();
+
   } catch (err) {
-    console.error('Error actualizando ingrediente:', err);
-    toast('❌ Error al actualizar ingrediente');
+    console.error('Error guardando ingrediente:', err);
+    const msg = err.message?.includes('duplicate') || err.message?.includes('unique')
+      ? '❌ Ya existe un ingrediente con ese nombre'
+      : '❌ Error al guardar el ingrediente';
+    toast(msg);
   } finally {
     btn.disabled = false;
     spinner.classList.add('hidden');
-    txt.textContent = 'Guardar';
+    txt.textContent = id ? 'Guardar cambios' : 'Crear Ingrediente';
   }
 }
 
