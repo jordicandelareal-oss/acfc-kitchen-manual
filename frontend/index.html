@@ -235,6 +235,109 @@
   </div>
 </div>
 
+<!-- ── MODAL: EDITAR INGREDIENTE ────────────────────────────────────── -->
+<div id="modal-ingredient" class="modal-overlay" onclick="if(event.target===this)closeIngredientModal()">
+  <div class="modal-box" style="max-width: 600px;">
+    <div class="flex justify-between items-center mb-5">
+      <h3 id="modal-ingredient-title" class="text-lg font-bold text-slate-900" style="font-family:Outfit">Editar Ingrediente</h3>
+      <button onclick="closeIngredientModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <div class="space-y-4">
+      <input type="hidden" id="ing-id" />
+      
+      <!-- Basic Data -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del Ingrediente</label>
+          <input type="text" id="ing-name" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Marca</label>
+          <input type="text" id="ing-brand" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Categoría</label>
+          <input type="text" id="ing-category" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Subcategoría</label>
+          <input type="text" id="ing-subcategory" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Proveedor</label>
+          <select id="ing-provider" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white">
+            <option value="Mercabarna">Mercabarna</option>
+            <option value="Asia Market">Asia Market</option>
+            <option value="Makro">Makro</option>
+            <option value="Pescados Atlántico">Pescados Atlántico</option>
+            <option value="Latteria Italiana">Latteria Italiana</option>
+            <option value="Pastelería Pro">Pastelería Pro</option>
+            <option value="Bio Natura">Bio Natura</option>
+            <option value="Trufas El Maestro">Trufas El Maestro</option>
+            <option value="Maison Rivière">Maison Rivière</option>
+            <option value="Sin proveedor">Sin proveedor</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Ref. Proveedor</label>
+          <input type="text" id="ing-provider-ref" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+      </div>
+
+      <!-- Costs and Format -->
+      <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Formato compra (gr/ml/ud)</label>
+          <input type="number" id="ing-format-gr" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: 1000" oninput="calculateNetCost()" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Precio compra (€)</label>
+          <input type="number" id="ing-purchase-price" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: 12.50" oninput="calculateNetCost()" />
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Escenario salida</label>
+          <select id="ing-output-scenario" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" onchange="calculateNetCost()">
+            <option value="KG_LT">Por KG/LT</option>
+            <option value="UNIDADES">Por Unidades</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-brand mb-1">Merma / Hidratación (%)</label>
+          <div class="flex items-center gap-3">
+            <input type="range" id="ing-waste-slider" min="0" max="100" value="0" class="flex-1" oninput="document.getElementById('ing-waste').value=this.value; calculateNetCost()" />
+            <input type="number" id="ing-waste" value="0" min="0" max="100" class="w-16 px-2 py-1 border border-brand-muted bg-brand-muted/20 text-brand rounded-lg text-sm font-bold text-center outline-none" oninput="document.getElementById('ing-waste-slider').value=this.value; calculateNetCost()" />
+          </div>
+        </div>
+      </div>
+      
+      <!-- Calculated Result -->
+      <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+        <div>
+          <span class="block text-xs font-semibold text-slate-500">Coste Neto Calculado</span>
+          <span class="block text-[10px] text-slate-400" id="ing-cost-label">Coste final tras aplicar merma</span>
+        </div>
+        <div class="text-xl font-bold text-slate-900 font-mono" id="ing-calculated-cost">0.00 €</div>
+      </div>
+      
+    </div>
+    
+    <div class="mt-6 flex justify-end gap-3">
+      <button onclick="closeIngredientModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+      <button id="ing-save-btn" onclick="saveIngredient()" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px] hidden" id="ing-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+        <span id="ing-save-text">Guardar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MAIN ─────────────────────────────────────────────────────── -->
 <main class="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
 
@@ -942,6 +1045,109 @@ function closeNewModal() {
   document.getElementById('modal-new').classList.remove('open');
 }
 
+function openIngredientModal(id) {
+  const item = INVENTORY.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('ing-id').value = item.id;
+  document.getElementById('ing-name').value = item.name || '';
+  document.getElementById('ing-brand').value = item.brand || '';
+  document.getElementById('ing-category').value = item.cat || '';
+  document.getElementById('ing-subcategory').value = item.subcategory || '';
+  document.getElementById('ing-provider').value = item.provider_name || 'Sin proveedor';
+  document.getElementById('ing-provider-ref').value = item.provider_ref || '';
+  document.getElementById('ing-format-gr').value = item.purchase_format_gr || '';
+  document.getElementById('ing-purchase-price').value = item.purchase_price || '';
+  document.getElementById('ing-output-scenario').value = item.output_scenario || 'KG_LT';
+  document.getElementById('ing-waste').value = item.waste_percentage || 0;
+  document.getElementById('ing-waste-slider').value = item.waste_percentage || 0;
+  
+  calculateNetCost();
+  document.getElementById('modal-ingredient').classList.add('open');
+}
+
+function closeIngredientModal() {
+  document.getElementById('modal-ingredient').classList.remove('open');
+}
+
+function calculateNetCost() {
+  const format = parseFloat(document.getElementById('ing-format-gr').value) || 0;
+  const price = parseFloat(document.getElementById('ing-purchase-price').value) || 0;
+  const waste = parseFloat(document.getElementById('ing-waste').value) || 0;
+  const scenario = document.getElementById('ing-output-scenario').value;
+  
+  let baseCost = 0;
+  if (scenario === 'KG_LT') {
+    if (format > 0) baseCost = (price / format) * 1000;
+  } else {
+    if (format > 0) baseCost = (price / format);
+  }
+  
+  const netCost = baseCost / (1 - (waste / 100));
+  document.getElementById('ing-calculated-cost').textContent = netCost.toFixed(4) + ' €';
+  return netCost;
+}
+
+async function saveIngredient() {
+  if (!window.supabase) {
+    toast('Error: Cliente Supabase no inicializado');
+    return;
+  }
+  const btn = document.getElementById('ing-save-btn');
+  const spinner = document.getElementById('ing-save-spinner');
+  const txt = document.getElementById('ing-save-text');
+  
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  txt.textContent = 'Guardando...';
+  
+  const id = document.getElementById('ing-id').value;
+  const netCost = calculateNetCost();
+  
+  const updates = {
+    name: document.getElementById('ing-name').value,
+    brand: document.getElementById('ing-brand').value,
+    category: document.getElementById('ing-category').value,
+    subcategory: document.getElementById('ing-subcategory').value,
+    provider_name: document.getElementById('ing-provider').value,
+    provider_ref: document.getElementById('ing-provider-ref').value,
+    purchase_format_gr: parseFloat(document.getElementById('ing-format-gr').value) || null,
+    purchase_price: parseFloat(document.getElementById('ing-purchase-price').value) || null,
+    output_scenario: document.getElementById('ing-output-scenario').value,
+    waste_percentage: parseFloat(document.getElementById('ing-waste').value) || 0,
+    calculated_net_cost_kg: netCost
+  };
+  
+  try {
+    const { error } = await window.supabase.from('ingredients').update(updates).eq('id', id);
+    if (error) throw error;
+    
+    // Update local state
+    const index = INVENTORY.findIndex(i => i.id === id);
+    if (index > -1) {
+      INVENTORY[index] = { ...INVENTORY[index], ...updates, cat: updates.category, cost: netCost };
+    }
+    
+    closeIngredientModal();
+    toast('✅ Ingrediente actualizado correctamente');
+    
+    // Check if there is an active search and re-filter
+    const searchVal = document.getElementById('inv-search') ? document.getElementById('inv-search').value : '';
+    if (searchVal || document.getElementById('inv-cat').value !== 'todas') {
+      filterInventory();
+    } else {
+      renderInventory(INVENTORY);
+    }
+  } catch (err) {
+    console.error('Error actualizando ingrediente:', err);
+    toast('❌ Error al actualizar ingrediente');
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    txt.textContent = 'Guardar';
+  }
+}
+
+
 // ── TOAST ─────────────────────────────────────────────────────────
 function toast(msg, duration=3000) {
   const root = document.getElementById('toast-root');
@@ -1009,7 +1215,7 @@ function renderInventory(items) {
       ? `<span class="badge badge-red pulse-red">REORDER</span>`
       : `<span class="badge badge-green">Óptimo</span>`;
     return `
-      <tr class="tr-hover cursor-pointer" onclick="toast('✏️ Edición de ${item.name} próximamente')">
+      <tr class="tr-hover cursor-pointer" onclick="openIngredientModal('${item.id}')">
         <td class="px-6 py-4">
           <p class="font-semibold text-slate-900">${item.name}</p>
         </td>
@@ -1023,7 +1229,7 @@ function renderInventory(items) {
         <td class="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">${item.supplier}</td>
         <td class="px-4 py-4">${statusBadge}</td>
         <td class="px-4 py-4">
-          <button onclick="event.stopPropagation();toast('✏️ Editando ${item.name}...')" class="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
+          <button onclick="event.stopPropagation();openIngredientModal('${item.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
             <span class="material-symbols-outlined" style="font-size:16px">edit</span>
           </button>
         </td>
@@ -1301,6 +1507,7 @@ function extractIngredients(text) {
 
 <script type="module">
   import { supabase } from './src/supabaseClient.js';
+  window.supabase = supabase;
 
   async function loadSupabaseInventory() {
     try {
@@ -1322,11 +1529,20 @@ function extractIngredients(text) {
           id: item.id,
           name: item.name || 'Sin nombre',
           cat: item.category || 'Sin categoría',
+          subcategory: item.subcategory || '',
+          brand: item.brand || '',
+          provider_ref: item.provider_ref || '',
+          provider_name: item.provider_name || item.proveedor_principal || 'Sin proveedor',
+          purchase_format_gr: Number(item.purchase_format_gr) || null,
+          purchase_price: Number(item.purchase_price) || null,
+          output_scenario: item.output_scenario || 'KG_LT',
+          waste_percentage: Number(item.waste_percentage) || 0,
+          calculated_net_cost_kg: Number(item.calculated_net_cost_kg) || 0,
           stock: currentStock,
           unit: item.unit || 'ud',
           min: minStock,
-          cost: Number(item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
-          supplier: item.proveedor_principal || 'Sin proveedor',
+          cost: Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
+          supplier: item.provider_name || item.proveedor_principal || 'Sin proveedor',
           critical: currentStock <= minStock
         };
       });
