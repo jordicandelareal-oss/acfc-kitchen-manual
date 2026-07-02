@@ -2602,9 +2602,9 @@ window.savePlannerDay = async function() {
   
   const payload = {
     date: dateStr,
-    breakfast_recipe_id: _currentPlannerState.breakfast_recipe_id,
-    lunch_recipe_id: _currentPlannerState.lunch_recipe_id,
-    dinner_recipe_id: _currentPlannerState.dinner_recipe_id,
+    breakfast_recipe_id: _currentPlannerState.breakfast_recipe_id || null,
+    lunch_recipe_id: _currentPlannerState.lunch_recipe_id || null,
+    dinner_recipe_id: _currentPlannerState.dinner_recipe_id || null,
     lunch_players: _currentPlannerState.lunch_players,
     lunch_halal: _currentPlannerState.lunch_halal,
     lunch_kosher: _currentPlannerState.lunch_kosher,
@@ -2618,7 +2618,7 @@ window.savePlannerDay = async function() {
   };
   
   try {
-    const { error } = await supabase.from('menu_planner').upsert(payload, { onConflict: 'date' });
+    const { error } = await window.supabase.from('menu_planner').upsert(payload, { onConflict: 'date' });
     if (error) throw error;
     
     PLANNER_DATA[d] = payload;
@@ -2626,7 +2626,7 @@ window.savePlannerDay = async function() {
     closePlannerDayModal();
     toast('✅ Día actualizado');
   } catch(err) {
-    console.error(err);
+    console.error('Error al guardar menú:', err);
     toast('❌ Error: ' + err.message);
   } finally {
     btn.disabled = false;
