@@ -235,6 +235,75 @@
   </div>
 </div>
 
+<!-- ── MODAL: GESTIÓN DE CATEGORÍAS ──────────────────────────────────── -->
+<div id="modal-cat-manager" class="modal-overlay" onclick="if(event.target===this)closeCatManager()">
+  <div class="modal-box" style="max-width:700px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Gestionar Categorías</h3>
+        <p class="text-xs text-slate-400 mt-0.5">Los cambios se reflejan de inmediato en los filtros y formularios</p>
+      </div>
+      <button onclick="closeCatManager()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Two-panel layout -->
+    <div class="flex gap-4 flex-1 min-h-0 overflow-hidden">
+
+      <!-- LEFT: Categories list -->
+      <div class="w-2/5 flex flex-col border border-slate-200 rounded-xl overflow-hidden flex-shrink-0">
+        <div class="px-3 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Categorías</span>
+          <button onclick="startAddCategory()" class="p-1 rounded-lg text-brand hover:bg-brand-muted transition-colors" title="Nueva categoría">
+            <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+          </button>
+        </div>
+        <!-- Add category inline form -->
+        <div id="cat-add-form" class="hidden px-3 py-2 border-b border-slate-100 bg-brand-muted/10">
+          <div class="flex gap-2">
+            <input id="cat-new-name" type="text" placeholder="Nombre categoría..." maxlength="60"
+              class="flex-1 text-sm px-2 py-1.5 border border-brand rounded-lg outline-none focus:ring-1 focus:ring-brand"
+              onkeydown="if(event.key==='Enter')saveNewCategory();if(event.key==='Escape')cancelAddCategory()"/>
+            <button onclick="saveNewCategory()" class="px-2 py-1 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">OK</button>
+            <button onclick="cancelAddCategory()" class="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 hover:bg-slate-50 transition-colors">✕</button>
+          </div>
+        </div>
+        <div id="cat-list" class="flex-1 overflow-y-auto divide-y divide-slate-50"></div>
+      </div>
+
+      <!-- RIGHT: Subcategories for selected category -->
+      <div class="flex-1 flex flex-col border border-slate-200 rounded-xl overflow-hidden">
+        <div class="px-3 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">
+            Subcategorías de: <span id="subcat-panel-title" class="text-brand normal-case">—</span>
+          </span>
+          <button onclick="startAddSubcategory()" id="subcat-add-btn" class="p-1 rounded-lg text-brand hover:bg-brand-muted transition-colors hidden" title="Nueva subcategoría">
+            <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+          </button>
+        </div>
+        <!-- Add subcategory inline form -->
+        <div id="subcat-add-form" class="hidden px-3 py-2 border-b border-slate-100 bg-brand-muted/10">
+          <div class="flex gap-2">
+            <input id="subcat-new-name" type="text" placeholder="Nombre subcategoría..." maxlength="80"
+              class="flex-1 text-sm px-2 py-1.5 border border-brand rounded-lg outline-none focus:ring-1 focus:ring-brand"
+              onkeydown="if(event.key==='Enter')saveNewSubcategory();if(event.key==='Escape')cancelAddSubcategory()"/>
+            <button onclick="saveNewSubcategory()" class="px-2 py-1 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">OK</button>
+            <button onclick="cancelAddSubcategory()" class="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 hover:bg-slate-50 transition-colors">✕</button>
+          </div>
+        </div>
+        <div id="subcat-list" class="flex-1 overflow-y-auto divide-y divide-slate-50">
+          <p class="text-sm text-slate-400 text-center py-10">Selecciona una categoría para ver sus subcategorías</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 flex-shrink-0 flex justify-end">
+      <button onclick="closeCatManager()" class="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: EDITAR INGREDIENTE ────────────────────────────────────── -->
 <div id="modal-ingredient" class="modal-overlay" onclick="if(event.target===this)closeIngredientModal()">
   <div class="modal-box" style="max-width: 600px;">
@@ -584,7 +653,10 @@
         <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Control de Inventario</h1>
         <p class="text-sm text-slate-500 mt-1">Live Stock Matrix — datos en tiempo real</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="openCatManager()" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-brand hover:text-brand transition-colors">
+          <span class="material-symbols-outlined" style="font-size:16px">category</span>Categorías
+        </button>
         <button onclick="toast('📤 Exportando CSV...')" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
           <span class="material-symbols-outlined" style="font-size:16px">file_download</span>CSV
         </button>
@@ -612,20 +684,28 @@
             class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"/>
         </div>
         <!-- Categoría -->
-        <select id="inv-cat" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+        <select id="inv-cat" onchange="filterInventory()"
+          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
+          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
           <option value="">Todas las categorías</option>
         </select>
         <!-- Subcategoría -->
-        <select id="inv-subcat" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+        <select id="inv-subcat" onchange="filterInventory()"
+          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
+          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
           <option value="">Todas las subcategorías</option>
         </select>
         <!-- Proveedor -->
-        <select id="inv-provider" onchange="filterInventory()" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+        <select id="inv-provider" onchange="filterInventory()"
+          class="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full truncate"
+          style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
           <option value="">Todos los proveedores</option>
         </select>
         <!-- Estado + Clear -->
         <div class="flex gap-2">
-          <select id="inv-status" onchange="filterInventory()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+          <select id="inv-status" onchange="filterInventory()"
+            class="appearance-none flex-1 bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-slate-600 outline-none focus:border-brand truncate"
+            style="background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center">
             <option value="">Cualquier estado</option>
             <option value="critical">⚠️ Stock crítico</option>
             <option value="ok">✅ Stock óptimo</option>
@@ -1715,6 +1795,200 @@ function extractIngredients(text) {
   renderSuppliers(SUPPLIERS);
   renderCalendar();
 })();
+
+// ── CATEGORY MANAGER ──────────────────────────────────────────────
+// In-memory category store derived from INVENTORY data.
+// Uses Supabase to rename/rename categories on ingredients directly.
+let _catMgrSelectedCat = null;
+
+function openCatManager() {
+  renderCatManagerList();
+  document.getElementById('modal-cat-manager').classList.add('open');
+}
+function closeCatManager() {
+  document.getElementById('modal-cat-manager').classList.remove('open');
+  _catMgrSelectedCat = null;
+}
+
+function getCatManagerData() {
+  // Build { cat: Set(subcats) } map from live INVENTORY
+  const map = {};
+  INVENTORY.forEach(item => {
+    const c = item.cat || 'Sin categoría';
+    if (!map[c]) map[c] = new Set();
+    if (item.subcategory) map[c].add(item.subcategory);
+  });
+  return map;
+}
+
+function renderCatManagerList() {
+  const map = getCatManagerData();
+  const cats = Object.keys(map).sort();
+  const el = document.getElementById('cat-list');
+  if (!cats.length) {
+    el.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Sin categorías</p>';
+    return;
+  }
+  el.innerHTML = cats.map(cat => {
+    const subCount = map[cat].size;
+    const isSelected = cat === _catMgrSelectedCat;
+    return `
+      <div class="flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? 'bg-brand-muted' : 'hover:bg-slate-50'}"
+           onclick="selectCatManagerCat('${cat.replace(/'/g, "\\'")}')">
+        <span class="flex-1 text-sm font-medium ${isSelected ? 'text-brand' : 'text-slate-700'}">${cat}</span>
+        <span class="text-[10px] text-slate-400">${subCount} sub</span>
+        <button onclick="event.stopPropagation();renameCat('${cat.replace(/'/g, "\\'")}')"
+          class="p-0.5 rounded text-slate-300 hover:text-blue-500 transition-colors" title="Renombrar">
+          <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+        </button>
+        <button onclick="event.stopPropagation();deleteCat('${cat.replace(/'/g, "\\'")}')"
+          class="p-0.5 rounded text-slate-300 hover:text-red-500 transition-colors" title="Eliminar categoría">
+          <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+        </button>
+      </div>`;
+  }).join('');
+}
+
+function selectCatManagerCat(cat) {
+  _catMgrSelectedCat = cat;
+  renderCatManagerList();
+  renderSubcatPanel(cat);
+  document.getElementById('subcat-panel-title').textContent = cat;
+  document.getElementById('subcat-add-btn').classList.remove('hidden');
+}
+
+function renderSubcatPanel(cat) {
+  const map = getCatManagerData();
+  const subcats = map[cat] ? [...map[cat]].sort() : [];
+  const el = document.getElementById('subcat-list');
+  if (!subcats.length) {
+    el.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">Sin subcategorías. Pulsa + para añadir.</p>';
+    return;
+  }
+  el.innerHTML = subcats.map(s => `
+    <div class="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors">
+      <span class="flex-1 text-sm text-slate-700">${s}</span>
+      <button onclick="renameSubcat('${cat.replace(/'/g,"\\'")}','${s.replace(/'/g,"\\'")}') "
+        class="p-0.5 rounded text-slate-300 hover:text-blue-500 transition-colors" title="Renombrar">
+        <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+      </button>
+      <button onclick="deleteSubcat('${cat.replace(/'/g,"\\'")}','${s.replace(/'/g,"\\'")}') "
+        class="p-0.5 rounded text-slate-300 hover:text-red-500 transition-colors" title="Eliminar">
+        <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+      </button>
+    </div>`).join('');
+}
+
+// ── ADD / SAVE CATEGORY ───────────────────────────────────────────
+function startAddCategory() {
+  document.getElementById('cat-add-form').classList.remove('hidden');
+  document.getElementById('cat-new-name').value = '';
+  document.getElementById('cat-new-name').focus();
+}
+function cancelAddCategory() {
+  document.getElementById('cat-add-form').classList.add('hidden');
+}
+async function saveNewCategory() {
+  const name = document.getElementById('cat-new-name').value.trim();
+  if (!name) return;
+  // Category doesn't exist as a row — it's just a field on ingredients.
+  // We can't create an empty category without an ingredient, so we just track it.
+  // For now: add to UI as a local entry and inform user.
+  toast(`✅ Categoría "${name}" lista. Asígnala al crear o editar un ingrediente.`);
+  cancelAddCategory();
+}
+
+// ── RENAME CATEGORY ───────────────────────────────────────────────
+async function renameCat(oldName) {
+  const newName = prompt(`Renombrar categoría "${oldName}" a:`, oldName);
+  if (!newName || newName.trim() === oldName) return;
+  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
+  const { error } = await window.supabase
+    .from('ingredients')
+    .update({ category: newName.trim() })
+    .eq('category', oldName);
+  if (error) { toast('❌ Error al renombrar: ' + error.message); return; }
+  // Update local INVENTORY
+  INVENTORY.forEach(i => { if (i.cat === oldName) { i.cat = newName.trim(); } });
+  toast(`✅ Categoría renombrada a "${newName.trim()}"`);
+  if (_catMgrSelectedCat === oldName) _catMgrSelectedCat = newName.trim();
+  renderCatManagerList();
+  if (_catMgrSelectedCat) selectCatManagerCat(_catMgrSelectedCat);
+  populateInventoryFilters();
+}
+
+// ── DELETE CATEGORY ───────────────────────────────────────────────
+async function deleteCat(cat) {
+  const count = INVENTORY.filter(i => i.cat === cat).length;
+  if (!confirm(`¿Eliminar la categoría "${cat}"?\nEsto quitará la categoría de ${count} ingrediente(s) (no los borra).`)) return;
+  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
+  const { error } = await window.supabase
+    .from('ingredients')
+    .update({ category: null })
+    .eq('category', cat);
+  if (error) { toast('❌ Error al eliminar: ' + error.message); return; }
+  INVENTORY.forEach(i => { if (i.cat === cat) i.cat = 'Sin categoría'; });
+  if (_catMgrSelectedCat === cat) {
+    _catMgrSelectedCat = null;
+    document.getElementById('subcat-panel-title').textContent = '—';
+    document.getElementById('subcat-list').innerHTML = '<p class="text-sm text-slate-400 text-center py-10">Selecciona una categoría para ver sus subcategorías</p>';
+    document.getElementById('subcat-add-btn').classList.add('hidden');
+  }
+  toast(`✅ Categoría "${cat}" eliminada`);
+  renderCatManagerList();
+  populateInventoryFilters();
+}
+
+// ── ADD / SAVE SUBCATEGORY ────────────────────────────────────────
+function startAddSubcategory() {
+  if (!_catMgrSelectedCat) return;
+  document.getElementById('subcat-add-form').classList.remove('hidden');
+  document.getElementById('subcat-new-name').value = '';
+  document.getElementById('subcat-new-name').focus();
+}
+function cancelAddSubcategory() {
+  document.getElementById('subcat-add-form').classList.add('hidden');
+}
+async function saveNewSubcategory() {
+  const name = document.getElementById('subcat-new-name').value.trim();
+  if (!name || !_catMgrSelectedCat) return;
+  toast(`✅ Subcategoría "${name}" lista. Asígnala al editar un ingrediente.`);
+  cancelAddSubcategory();
+}
+
+// ── RENAME SUBCATEGORY ────────────────────────────────────────────
+async function renameSubcat(cat, oldSub) {
+  const newSub = prompt(`Renombrar subcategoría "${oldSub}" a:`, oldSub);
+  if (!newSub || newSub.trim() === oldSub) return;
+  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
+  const { error } = await window.supabase
+    .from('ingredients')
+    .update({ subcategory: newSub.trim() })
+    .eq('category', cat)
+    .eq('subcategory', oldSub);
+  if (error) { toast('❌ Error: ' + error.message); return; }
+  INVENTORY.forEach(i => { if (i.cat === cat && i.subcategory === oldSub) i.subcategory = newSub.trim(); });
+  toast(`✅ Subcategoría renombrada a "${newSub.trim()}"`);
+  renderSubcatPanel(cat);
+  populateInventoryFilters();
+}
+
+// ── DELETE SUBCATEGORY ────────────────────────────────────────────
+async function deleteSubcat(cat, sub) {
+  const count = INVENTORY.filter(i => i.cat === cat && i.subcategory === sub).length;
+  if (!confirm(`¿Eliminar subcategoría "${sub}"?\nAfecta a ${count} ingrediente(s) (no los borra).`)) return;
+  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
+  const { error } = await window.supabase
+    .from('ingredients')
+    .update({ subcategory: null })
+    .eq('category', cat)
+    .eq('subcategory', sub);
+  if (error) { toast('❌ Error: ' + error.message); return; }
+  INVENTORY.forEach(i => { if (i.cat === cat && i.subcategory === sub) i.subcategory = ''; });
+  toast(`✅ Subcategoría "${sub}" eliminada`);
+  renderSubcatPanel(cat);
+  populateInventoryFilters();
+}
 </script>
 
 <script type="module">
