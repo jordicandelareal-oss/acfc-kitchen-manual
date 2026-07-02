@@ -348,16 +348,7 @@
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">Proveedor</label>
           <select id="ing-provider" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white">
-            <option value="Mercabarna">Mercabarna</option>
-            <option value="Asia Market">Asia Market</option>
-            <option value="Makro">Makro</option>
-            <option value="Pescados Atlántico">Pescados Atlántico</option>
-            <option value="Latteria Italiana">Latteria Italiana</option>
-            <option value="Pastelería Pro">Pastelería Pro</option>
-            <option value="Bio Natura">Bio Natura</option>
-            <option value="Trufas El Maestro">Trufas El Maestro</option>
-            <option value="Maison Rivière">Maison Rivière</option>
-            <option value="Sin proveedor">Sin proveedor</option>
+            <option value="Sin proveedor">Cargando proveedores...</option>
           </select>
         </div>
         <div>
@@ -930,7 +921,7 @@
       <div class="flex gap-2">
         <input type="text" id="supp-search" placeholder="Buscar proveedor..." onkeyup="filterSuppliers()"
           class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"/>
-        <button onclick="toast('➕ Formulario de nuevo proveedor próximamente')" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
+        <button onclick="openAddSupplierModal()" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
           <span class="material-symbols-outlined" style="font-size:16px">add</span>Añadir
         </button>
       </div>
@@ -938,10 +929,50 @@
 
     <!-- Supplier stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-slate-900" style="font-family:Outfit">7</p><p class="text-xs text-slate-400 mt-0.5">Proveedores activos</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-success" style="font-family:Outfit">94%</p><p class="text-xs text-slate-400 mt-0.5">On-time delivery</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-brand" style="font-family:Outfit">30d</p><p class="text-xs text-slate-400 mt-0.5">Plazo pago medio</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-warn" style="font-family:Outfit">2</p><p class="text-xs text-slate-400 mt-0.5">Pedidos urgentes</p></div>
+      <div class="card p-4 text-center"><p id="stat-suppliers-total" class="text-2xl font-bold text-slate-900" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Proveedores activos</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-success" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">On-time delivery</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-brand" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Plazo pago medio</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-warn" style="font-family:Outfit">—</p><p class="text-xs text-slate-400 mt-0.5">Pedidos urgentes</p></div>
+    </div>
+
+    <!-- Add Supplier Modal -->
+    <div id="modal-add-supplier" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden" onclick="if(event.target===this)closeAddSupplierModal()">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Añadir Proveedor</h2>
+          <button onclick="closeAddSupplierModal()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400">
+            <span class="material-symbols-outlined" style="font-size:20px">close</span>
+          </button>
+        </div>
+        <div class="flex flex-col gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del proveedor *</label>
+            <input type="text" id="new-supplier-name" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: Makro" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Persona de contacto</label>
+            <input type="text" id="new-supplier-contact" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: Juan García" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
+              <input type="email" id="new-supplier-email" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="pedidos@proveedor.com" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+              <input type="tel" id="new-supplier-phone" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="+34 93 000 00 00" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Notas / descripción</label>
+            <textarea id="new-supplier-notes" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none" placeholder="Ej: Mayorista de hostelería, envíos semanales..."></textarea>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeAddSupplierModal()" class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancelar</button>
+          <button onclick="saveNewSupplier()" class="flex-1 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="supplier-grid"></div>
@@ -1126,85 +1157,8 @@ let INVENTORY = [];
 let RECIPES = [];
 let RECIPE_CATEGORIES = [];
 
-const SUPPLIERS = [
-  {
-    name:'Mercabarna Dist. S.L.',
-    category:'Frescos · Carnicería',
-    status:'active',
-    contact:'pedidos@mercabarnadist.com',
-    phone:'+34 93 123 45 67',
-    payment:'Pago a 30 días',
-    delivery:'Diaria (lun–sáb)',
-    rating:4.8, orders:42,
-    highlight:'Principal proveedor de carnes premium (Wagyu A5, ternera gallega DO) y verduras selectas de temporada.'
-  },
-  {
-    name:'Pescados del Atlántico',
-    category:'Pescados · Mariscos',
-    status:'active',
-    contact:'frescos@atlantico.es',
-    phone:'+34 986 234 567',
-    payment:'Pago a 15 días',
-    delivery:'Diaria (entrega antes de las 6:00h)',
-    rating:4.6, orders:28,
-    highlight:'Lonja propia en Vigo. Garantía de pesca del día. Especialistas en pulpo, vieiras y percebes.'
-  },
-  {
-    name:'Asia Market BCN',
-    category:'Asiático · Especias',
-    status:'active',
-    contact:'wholesale@asiamarket.es',
-    phone:'+34 93 456 78 90',
-    payment:'Pago a 60 días',
-    delivery:'2 veces por semana',
-    rating:4.3, orders:15,
-    highlight:'Único distribuidor autorizado de Arroz Koshihikari en España. Amplio catálogo de salsas y especias asiáticas.'
-  },
-  {
-    name:'Latteria Italiana S.r.l.',
-    category:'Lácteos · Quesos',
-    status:'active',
-    contact:'export@latteria-it.com',
-    phone:'+39 02 456 7890',
-    payment:'Pago a 30 días',
-    delivery:'Semanal (miércoles)',
-    rating:4.9, orders:33,
-    highlight:'Importación directa desde Puglia. Burrata artesana, Parmigiano Reggiano DOP y Grana Padano.'
-  },
-  {
-    name:'Maison Rivière',
-    category:'Foie · Alta Gama',
-    status:'active',
-    contact:'export@maisonriviere.fr',
-    phone:'+33 5 56 789 012',
-    payment:'Pago a 45 días',
-    delivery:'Semanal (viernes)',
-    rating:4.7, orders:11,
-    highlight:'Productor de foie gras mi-cuit y entier de Las Landas (Francia). Producto exclusivo para restauración premium.'
-  },
-  {
-    name:'Bio Natura Direct',
-    category:'Ecológico · Cereales',
-    status:'review',
-    contact:'info@bionatura.es',
-    phone:'+34 93 999 11 22',
-    payment:'Pago a 15 días',
-    delivery:'Quincenal',
-    rating:3.9, orders:7,
-    highlight:'Quinoa real, amaranto y pseudocereales ecológicos certificados. En proceso de auditoría de calidad.'
-  },
-  {
-    name:'Trufas El Maestro',
-    category:'Trufas · Aceites',
-    status:'active',
-    contact:'pedidos@trufasmaestro.com',
-    phone:'+34 976 123 456',
-    payment:'Pago contado',
-    delivery:'Bajo pedido (48h)',
-    rating:5.0, orders:6,
-    highlight:'Único proveedor homologado de trufa negra Tuber melanosporum de Soria. Aceite de trufa auténtico sin aromas artificiales.'
-  },
-];
+// SUPPLIERS is populated dynamically from Supabase
+let SUPPLIERS = [];
 
 const ACTIVITIES = [
   { icon:'inventory_2', color:'brand',   text:'12 unidades de Arroz Koshihikari actualizadas',   time:'hace 5 min'  },
@@ -1994,47 +1948,143 @@ function renderRecipes() {
 function renderSuppliers(list) {
   const el = document.getElementById('supplier-grid');
   if (!el) return;
-  el.innerHTML = list.map((s, i) => {
-    const isActive = s.status === 'active';
-    const stars = '★'.repeat(Math.floor(s.rating)) + (s.rating % 1 >= 0.5 ? '½' : '');
+  if (list.length === 0) {
+    el.innerHTML = `<div class="col-span-3 text-center py-16 text-slate-400">
+      <span class="material-symbols-outlined text-5xl block mb-3">local_shipping</span>
+      <p class="font-semibold text-slate-500">No hay proveedores registrados</p>
+      <p class="text-sm mt-1">Haz clic en «Añadir» para crear el primero</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = list.map((s) => {
+    const nameEscaped = (s.name || '').replace(/'/g, "\\'");
     return `
-      <div class="card p-6 flex flex-col gap-4 ${isActive ? 'supplier-active' : 'border-l-4 border-l-amber-400'} hover:-translate-y-0.5 transition-transform cursor-pointer">
+      <div class="card p-6 flex flex-col gap-4 supplier-active hover:-translate-y-0.5 transition-transform cursor-pointer">
         <div class="flex justify-between items-start">
           <div>
-            <span class="badge ${isActive ? 'badge-slate' : 'badge-amber'} mb-2">${s.category}</span>
-            <h3 class="font-bold text-slate-900 text-base" style="font-family:Outfit">${s.name}</h3>
+            <h3 class="font-bold text-slate-900 text-base" style="font-family:Outfit">${s.name || '—'}</h3>
+            ${s.contact_name ? `<p class="text-xs text-slate-400 mt-0.5">Contacto: ${s.contact_name}</p>` : ''}
           </div>
-          <span class="badge ${isActive ? 'badge-green' : 'badge-amber'}">${isActive ? 'Activo' : 'Revisión'}</span>
+          <span class="badge badge-green">Activo</span>
         </div>
-        <p class="text-sm text-slate-500 leading-relaxed flex-grow">${s.highlight}</p>
-        <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
-          <div><span class="font-semibold text-slate-700 block">Pago</span>${s.payment}</div>
-          <div><span class="font-semibold text-slate-700 block">Entrega</span>${s.delivery}</div>
-          <div><span class="font-semibold text-slate-700 block">Pedidos</span>${s.orders} realizados</div>
-          <div><span class="font-semibold text-slate-700 block">Valoración</span><span class="text-warn">${stars}</span> ${s.rating}</div>
-        </div>
-        <div class="flex justify-between items-center">
-          <div class="text-xs text-slate-400">
-            <span class="material-symbols-outlined align-middle text-brand" style="font-size:14px">mail</span>
-            <span class="ml-1">${s.contact}</span>
-          </div>
+        ${s.email || s.phone ? `<div class="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
+          ${s.email ? `<div><span class="font-semibold text-slate-700 block">Email</span>${s.email}</div>` : '<div></div>'}
+          ${s.phone ? `<div><span class="font-semibold text-slate-700 block">Teléfono</span>${s.phone}</div>` : '<div></div>'}
+        </div>` : ''}
+        ${s.notes ? `<p class="text-sm text-slate-500 leading-relaxed flex-grow">${s.notes}</p>` : ''}
+        <div class="flex justify-between items-center pt-1">
+          <span class="text-xs text-slate-400">ID: ${s.id ? s.id.slice(0,8) + '...' : '—'}</span>
           <div class="flex gap-1.5">
-            <button onclick="toast('📞 Llamando a ${s.name}...')" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-brand hover:border-brand transition-colors">
-              <span class="material-symbols-outlined" style="font-size:16px">call</span>
-            </button>
-            <button onclick="toast('📋 Generando pedido a ${s.name}...')" class="px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-semibold hover:bg-brand-dark transition-colors">
-              Pedir
-            </button>
+            ${s.phone ? `<button onclick="toast('📞 Llamando a ${nameEscaped}...')" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-brand hover:border-brand transition-colors"><span class="material-symbols-outlined" style="font-size:16px">call</span></button>` : ''}
+            ${s.email ? `<a href="mailto:${s.email}" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-brand hover:border-brand transition-colors"><span class="material-symbols-outlined" style="font-size:16px">mail</span></a>` : ''}
           </div>
         </div>
       </div>`;
   }).join('');
+
+  // Update stats counter
+  const totalEl = document.getElementById('stat-suppliers-total');
+  if (totalEl) totalEl.textContent = list.length;
 }
 
 function filterSuppliers() {
   const q = document.getElementById('supp-search')?.value.toLowerCase() || '';
-  const filtered = SUPPLIERS.filter(s => !q || s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+  const filtered = SUPPLIERS.filter(s => !q || (s.name || '').toLowerCase().includes(q) || (s.contact_name || '').toLowerCase().includes(q));
   renderSuppliers(filtered);
+}
+
+async function fetchAndRenderSuppliers() {
+  const el = document.getElementById('supplier-grid');
+  if (el) el.innerHTML = '<p class="col-span-3 text-center text-slate-400 py-10">Cargando proveedores...</p>';
+  try {
+    const { data, error } = await supabaseClient
+      .from('suppliers')
+      .select('*')
+      .order('name', { ascending: true });
+
+    // Handle table-not-found or RLS errors gracefully
+    if (error) {
+      const isTableMissing = error.message?.includes('does not exist') ||
+                             error.code === '42P01' ||
+                             error.code === 'PGRST200';
+      if (isTableMissing) {
+        console.warn('Tabla suppliers no encontrada. Ejecuta la migración 007 en Supabase.');
+        if (el) el.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">
+          <span class="material-symbols-outlined text-5xl block mb-3">local_shipping</span>
+          <p class="font-semibold text-slate-500">Tabla de proveedores pendiente de configurar</p>
+          <p class="text-xs mt-1 text-slate-400">Ejecuta la migración SQL en Supabase para activar este módulo</p>
+        </div>`;
+        return;
+      }
+      throw error;
+    }
+
+    SUPPLIERS = data || [];
+    renderSuppliers(SUPPLIERS);
+    await populateProviderDropdown();
+  } catch (err) {
+    console.error('Error fetching suppliers:', err.message || err);
+    if (el) el.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">
+      <span class="material-symbols-outlined text-5xl block mb-3">wifi_off</span>
+      <p class="font-semibold text-slate-500">No se pudieron cargar los proveedores</p>
+      <p class="text-xs mt-1">${err.message || 'Error de conexión'}</p>
+      <button onclick="fetchAndRenderSuppliers()" class="mt-3 px-4 py-1.5 bg-brand text-white text-xs rounded-lg hover:bg-brand-dark transition-colors">Reintentar</button>
+    </div>`;
+  }
+}
+
+async function populateProviderDropdown() {
+  const sel = document.getElementById('ing-provider');
+  if (!sel) return;
+  const currentVal = sel.value;
+  try {
+    let suppList = SUPPLIERS;
+    if (suppList.length === 0) {
+      const { data } = await supabaseClient.from('suppliers').select('id, name').order('name');
+      suppList = data || [];
+    }
+    sel.innerHTML = '<option value="Sin proveedor">Sin proveedor</option>' +
+      suppList.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    if (currentVal) sel.value = currentVal;
+  } catch (err) {
+    console.error('Error populating supplier dropdown:', err);
+    sel.innerHTML = '<option value="Sin proveedor">Sin proveedor</option>';
+  }
+}
+
+function openAddSupplierModal() {
+  document.getElementById('new-supplier-name').value = '';
+  document.getElementById('new-supplier-contact').value = '';
+  document.getElementById('new-supplier-email').value = '';
+  document.getElementById('new-supplier-phone').value = '';
+  document.getElementById('new-supplier-notes').value = '';
+  document.getElementById('modal-add-supplier').classList.remove('hidden');
+}
+
+function closeAddSupplierModal() {
+  document.getElementById('modal-add-supplier').classList.add('hidden');
+}
+
+async function saveNewSupplier() {
+  const name = document.getElementById('new-supplier-name').value.trim();
+  if (!name) { toast('⚠️ El nombre es obligatorio'); return; }
+  const payload = {
+    name,
+    contact_name: document.getElementById('new-supplier-contact').value.trim() || null,
+    email: document.getElementById('new-supplier-email').value.trim() || null,
+    phone: document.getElementById('new-supplier-phone').value.trim() || null,
+    notes: document.getElementById('new-supplier-notes').value.trim() || null,
+  };
+  try {
+    const { error } = await supabaseClient.from('suppliers').insert(payload);
+    if (error) throw error;
+    toast('✅ Proveedor guardado correctamente');
+    closeAddSupplierModal();
+    await fetchAndRenderSuppliers();
+  } catch (err) {
+    console.error('Error saving supplier:', err);
+    toast('❌ Error al guardar: ' + err.message);
+  }
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────
@@ -2135,12 +2185,13 @@ function extractIngredients(text) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
-(function init() {
+(async function init() {
   initDashboard();
   renderInventory(INVENTORY);
   renderRecipes();
-  renderSuppliers(SUPPLIERS);
   renderCalendar();
+  // Suppliers: load asynchronously — never blocks the app
+  fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
 })();
 
 // ── CATEGORY MANAGER ──────────────────────────────────────────────
