@@ -1814,7 +1814,7 @@ function renderRecipes() {
           return {
             id: ing.id,
             name: ing.name || 'Sin nombre',
-            nutritional_category,
+            nutritional_category: nutritionalCategory,
             qty: `${qty} ${unit}`,
             rawQty: qty,
             unit: unit,
@@ -1961,6 +1961,10 @@ function renderRecipes() {
                         <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
                           <span>Costo Real Ración:</span>
                           <span class="font-bold text-brand text-sm">${costPerPortion.toFixed(2)}€</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
+                          <span>Costo Total (${portions} pax):</span>
+                          <span class="font-bold text-slate-900 text-sm">${totalRecipeCost.toFixed(2)}€</span>
                         </div>
                         <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
                           <span>PVP Sugerido (70% Margen):</span>

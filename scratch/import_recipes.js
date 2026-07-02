@@ -132,16 +132,55 @@ const nameOverrides = {
 
 function getIngredientId(rawName) {
   const norm = normalize(rawName);
+  if (!norm) return null;
+  
   // Check direct map
   if (ingredientMap.has(norm)) {
     return ingredientMap.get(norm);
   }
+  
   // Check override
   const overrideName = nameOverrides[norm];
   if (overrideName && ingredientMap.has(normalize(overrideName))) {
     return ingredientMap.get(normalize(overrideName));
   }
-  // Let's try partial matching
+  
+  // Clean common words and try token-based matching
+  const stopWords = new Set(['de', 'del', 'con', 'y', 'la', 'el', 'los', 'las', 'para', 'a', 'al', 'en', 'fresca', 'fresco', 'seco', 'seca', 'pequeno', 'pequena']);
+  const getTokens = (s) => s.split(/[\s_+\-/()]+/).map(w => normalize(w)).filter(w => w.length > 1 && !stopWords.has(w));
+  
+  const normTokens = getTokens(norm);
+  if (normTokens.length > 0) {
+    // 1. Exact match on token-sets (disregarding order or stop words)
+    for (const [key, id] of ingredientMap.entries()) {
+      const keyTokens = getTokens(key);
+      if (keyTokens.length === 0) continue;
+      
+      const allNormInKey = normTokens.every(t => keyTokens.includes(t));
+      const allKeyInNorm = keyTokens.every(t => normTokens.includes(t));
+      
+      if (allNormInKey || allKeyInNorm) {
+        return id;
+      }
+    }
+    
+    // 2. Best token intersection matching (for cases like minor spelling or extra descriptions)
+    let bestId = null;
+    let bestScore = 0;
+    for (const [key, id] of ingredientMap.entries()) {
+      const keyTokens = getTokens(key);
+      const intersection = normTokens.filter(t => keyTokens.includes(t));
+      if (intersection.length > bestScore) {
+        bestScore = intersection.length;
+        bestId = id;
+      }
+    }
+    if (bestScore >= Math.min(2, normTokens.length)) {
+      return bestId;
+    }
+  }
+  
+  // Let's try partial matching as fallback
   for (const [key, id] of ingredientMap.entries()) {
     if (key.length > 3 && (key.includes(norm) || norm.includes(key))) {
       return id;
