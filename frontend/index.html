@@ -1997,7 +1997,7 @@ async function fetchAndRenderSuppliers() {
   const el = document.getElementById('supplier-grid');
   if (el) el.innerHTML = '<p class="col-span-3 text-center text-slate-400 py-10">Cargando proveedores...</p>';
   try {
-    const { data, error } = await supabaseClient
+    const { data, error } = await window.supabase
       .from('suppliers')
       .select('*')
       .order('name', { ascending: true });
@@ -2040,7 +2040,7 @@ async function populateProviderDropdown() {
   try {
     let suppList = SUPPLIERS;
     if (suppList.length === 0) {
-      const { data } = await supabaseClient.from('suppliers').select('id, name').order('name');
+      const { data } = await window.supabase.from('suppliers').select('id, name').order('name');
       suppList = data || [];
     }
     sel.innerHTML = '<option value="Sin proveedor">Sin proveedor</option>' +
@@ -2076,7 +2076,7 @@ async function saveNewSupplier() {
     notes: document.getElementById('new-supplier-notes').value.trim() || null,
   };
   try {
-    const { error } = await supabaseClient.from('suppliers').insert(payload);
+    const { error } = await window.supabase.from('suppliers').insert(payload);
     if (error) throw error;
     toast('✅ Proveedor guardado correctamente');
     closeAddSupplierModal();
