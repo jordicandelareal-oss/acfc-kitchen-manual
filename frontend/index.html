@@ -392,6 +392,25 @@
         </div>
       </div>
 
+      <!-- Control de Stock -->
+      <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+        <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Control de Stock</span>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Actual</label>
+            <input type="number" id="ing-stock-actual" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Mínimo</label>
+            <input type="number" id="ing-stock-minimo" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 100" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Máximo</label>
+            <input type="number" id="ing-stock-maximo" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 2000" />
+          </div>
+        </div>
+      </div>
+
       <!-- Bidirectional process control -->
       <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
         <!-- Toggle MERMA / HIDRATACION -->
@@ -1203,6 +1222,9 @@ function openNewIngredientModal() {
   document.getElementById('ing-output-scenario').value = 'KG_LT';
   document.getElementById('ing-waste').value = 0;
   document.getElementById('ing-waste-slider').value = 0;
+  document.getElementById('ing-stock-actual').value = 0;
+  document.getElementById('ing-stock-minimo').value = 0;
+  document.getElementById('ing-stock-maximo').value = 0;
   document.getElementById('ing-save-text').textContent = 'Crear Ingrediente';
   setProcessType('MERMA');
   calculateNetCost();
@@ -1228,6 +1250,9 @@ function openIngredientModal(id) {
   document.getElementById('ing-output-scenario').value = item.output_scenario || 'KG_LT';
   document.getElementById('ing-waste').value = item.waste_percentage || 0;
   document.getElementById('ing-waste-slider').value = Math.min(item.waste_percentage || 0, 99);
+  document.getElementById('ing-stock-actual').value = item.stock_actual || 0;
+  document.getElementById('ing-stock-minimo').value = item.stock_minimo || 0;
+  document.getElementById('ing-stock-maximo').value = item.stock_maximo || 0;
   setProcessType(item.process_type || 'MERMA');
   calculateNetCost();
   document.getElementById('modal-ingredient').classList.add('open');
@@ -1360,8 +1385,9 @@ async function saveIngredient() {
     process_type: _processType,
     calculated_net_cost_kg: netCost,
     unit: 'gr',
-    current_stock: 0,
-    min_stock: 0
+    stock_actual: parseFloat(document.getElementById('ing-stock-actual').value) || 0,
+    stock_minimo: parseFloat(document.getElementById('ing-stock-minimo').value) || 0,
+    stock_maximo: parseFloat(document.getElementById('ing-stock-maximo').value) || 0
   };
 
   try {
@@ -1389,12 +1415,16 @@ async function saveIngredient() {
         waste_percentage: data.waste_percentage || 0,
         process_type: data.process_type || 'MERMA',
         calculated_net_cost_kg: data.calculated_net_cost_kg || 0,
-        stock: 0,
+        stock_actual: data.stock_actual || 0,
+        stock_minimo: data.stock_minimo || 0,
+        stock_maximo: data.stock_maximo || 0,
+        stock: data.stock_actual || 0,
         unit: data.unit || 'gr',
-        min: 0,
+        min: data.stock_minimo || 0,
+        max: data.stock_maximo || 0,
         cost: netCost,
         supplier: data.provider_name || 'Sin proveedor',
-        critical: false
+        critical: (data.stock_actual || 0) <= (data.stock_minimo || 0)
       };
       INVENTORY.push(newItem);
       INVENTORY.sort((a, b) => a.name.localeCompare(b.name));
@@ -1418,7 +1448,14 @@ async function saveIngredient() {
           ...payload,
           cat: payload.category || 'Sin categoría',
           cost: netCost,
-          supplier: payload.provider_name
+          supplier: payload.provider_name,
+          stock_actual: payload.stock_actual,
+          stock_minimo: payload.stock_minimo,
+          stock_maximo: payload.stock_maximo,
+          stock: payload.stock_actual,
+          min: payload.stock_minimo,
+          max: payload.stock_maximo,
+          critical: payload.stock_actual <= payload.stock_minimo
         };
       }
 
@@ -1496,7 +1533,10 @@ function initDashboard() {
 }
 
 // ── INVENTORY ─────────────────────────────────────────────────────
-function stockPct(item) { return Math.min(100, Math.round((item.stock / (item.min * 1.5)) * 100)); }
+function stockPct(item) {
+  const max = item.stock_maximo || (item.stock_minimo * 1.5) || 1;
+  return Math.min(100, Math.round(((item.stock_actual || 0) / max) * 100));
+}
 
 function renderInventory(items) {
   const tbody = document.getElementById('inv-tbody');
@@ -1509,18 +1549,18 @@ function renderInventory(items) {
     const pct = stockPct(item);
     const barColor = item.critical ? '#ef4444' : pct < 70 ? '#d97706' : '#059669';
     const statusBadge = item.critical
-      ? `<span class="badge badge-red pulse-red">REORDER</span>`
-      : `<span class="badge badge-green">Óptimo</span>`;
+      ? `<span class="badge badge-red pulse-red">REORDENAR</span>`
+      : `<span class="badge badge-green">OK</span>`;
     return `
       <tr class="tr-hover cursor-pointer" onclick="openIngredientModal('${item.id}')">
         <td class="px-6 py-4">
           <p class="font-semibold text-slate-900">${item.name}</p>
         </td>
         <td class="px-4 py-4"><span class="badge badge-slate">${item.cat}</span></td>
-        <td class="px-4 py-4 font-semibold ${item.critical ? 'text-red-600' : 'text-slate-900'}">${item.stock} ${item.unit}</td>
+        <td class="px-4 py-4 font-semibold ${item.critical ? 'text-red-600' : 'text-slate-900'}">${item.stock_actual} ${item.unit}</td>
         <td class="px-4 py-4 hidden md:table-cell" style="min-width:120px">
           <div class="prog-track w-24"><div class="prog-fill" style="width:${pct}%;background:${barColor}"></div></div>
-          <p class="text-[10px] text-slate-400 mt-1">min: ${item.min} ${item.unit}</p>
+          <p class="text-[10px] text-slate-400 mt-1">min: ${item.stock_minimo} ${item.unit} · max: ${item.stock_maximo} ${item.unit}</p>
         </td>
         <td class="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">${item.cost.toFixed(2)}€</td>
         <td class="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">${item.supplier}</td>
@@ -1633,7 +1673,7 @@ function updateInventoryStats() {
   const total = INVENTORY.length;
   const critical = INVENTORY.filter(i => i.critical).length;
   const fillRate = total > 0 ? Math.round(((total - critical) / total) * 100) : 0;
-  const value = INVENTORY.reduce((sum, i) => sum + (i.cost * i.stock), 0);
+  const value = INVENTORY.reduce((sum, i) => sum + (i.cost * i.stock_actual), 0);
   
   const fmt = v => v >= 1000 ? (v/1000).toFixed(1) + 'K€' : v.toFixed(0) + '€';
   document.getElementById('inv-stat-total').textContent = total;

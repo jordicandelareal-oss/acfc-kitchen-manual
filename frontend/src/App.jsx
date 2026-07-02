@@ -238,7 +238,10 @@ const MenusTab = ({ data, loading }) => {
 // ─── Tab: Compras ─────────────────────────────────────────────────────────────
 const ComprasTab = ({ data, loading, month, onMonthChange }) => {
   if (loading) return <div className="loading-spinner" />;
-  const lowStock = data.filter(i => (i.current_stock ?? 0) < (i.min_stock ?? 0));
+  const getStock = i => i.stock_actual !== undefined && i.stock_actual !== null ? i.stock_actual : (i.current_stock ?? 0);
+  const getMin = i => i.stock_minimo !== undefined && i.stock_minimo !== null ? i.stock_minimo : (i.min_stock ?? 0);
+  
+  const lowStock = data.filter(i => getStock(i) < getMin(i));
   return (
     <div>
       {lowStock.length > 0 && (
@@ -258,23 +261,27 @@ const ComprasTab = ({ data, loading, month, onMonthChange }) => {
           </select>
         </div>
         <div className="item-list">
-          {data.map((item, idx) => (
-            <div key={idx} className="item-row">
-              <div className="item-info">
-                <span className="item-name">{item.name}</span>
-                <span className="item-meta">
-                  Stock: {item.current_stock ?? '?'} {item.unit} · Mín: {item.min_stock ?? '?'}
-                  {item.proveedor_principal ? ` · ${item.proveedor_principal}` : ''}
-                </span>
+          {data.map((item, idx) => {
+            const stock = getStock(item);
+            const min = getMin(item);
+            return (
+              <div key={idx} className="item-row">
+                <div className="item-info">
+                  <span className="item-name">{item.name}</span>
+                  <span className="item-meta">
+                    Stock: {stock} {item.unit} · Mín: {min} {item.unit}
+                    {item.proveedor_principal ? ` · ${item.proveedor_principal}` : ''}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {item.precio_mas_bajo && (
+                    <span className="price-badge">€{Number(item.precio_mas_bajo).toFixed(2)}</span>
+                  )}
+                  <StockBadge qty={stock} min={min} />
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {item.precio_mas_bajo && (
-                  <span className="price-badge">€{Number(item.precio_mas_bajo).toFixed(2)}</span>
-                )}
-                <StockBadge qty={item.current_stock} min={item.min_stock} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {!data.length && <p className="empty-msg">No hay datos para este mes.</p>}
         </div>
         <button className="btn-primary" style={{ marginTop: 20 }}>

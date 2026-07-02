@@ -21,7 +21,7 @@ export const fetchShoppingList = async () => {
   try {
     const { data, error } = await supabase
       .from('ingredients')
-      .select('id, name, unit, current_stock, min_stock, precio_mas_bajo, proveedor_principal')
+      .select('id, name, unit, current_stock, min_stock, stock_actual, stock_minimo, stock_maximo, precio_mas_bajo, proveedor_principal')
       .order('name', { ascending: true });
     if (error) throw error;
     return { success: true, items: data || [] };
@@ -51,6 +51,9 @@ export const fetchInsumos = async (filters = {}) => {
         precios_por_proveedor,
         current_stock,
         min_stock,
+        stock_actual,
+        stock_minimo,
+        stock_maximo,
         updated_at
       `)
       .order('category', { ascending: true })
