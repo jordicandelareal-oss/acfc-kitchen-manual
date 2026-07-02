@@ -478,6 +478,113 @@
   </div>
 </div>
 
+<!-- ── MODAL: EDITAR / NUEVA RECETA ────────────────────────────────── -->
+<div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this)closeRecipeModal()">
+  <div class="modal-box max-h-[90vh] flex flex-col" style="max-width: 650px;">
+    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+      <h3 id="modal-recipe-title" class="text-lg font-bold text-slate-900" style="font-family:Outfit">Nueva Receta</h3>
+      <button onclick="closeRecipeModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <div class="space-y-4 overflow-y-auto flex-1 pr-2">
+      <input type="hidden" id="recipe-id" />
+      
+      <!-- Basic Data -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre de la Receta</label>
+          <input type="text" id="recipe-name-input" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: Paella Valenciana" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Porciones (Pax)</label>
+          <input type="number" id="recipe-portions-input" value="1" min="1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+        </div>
+      </div>
+      
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Familia / Categoría</label>
+        <select id="recipe-category-select" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white">
+        </select>
+      </div>
+
+      <!-- Ingredients Builder -->
+      <div class="border-t border-slate-100 pt-4 space-y-3">
+        <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Añadir Ingredientes</span>
+        
+        <div class="relative">
+          <div class="flex gap-2">
+            <input type="text" id="recipe-ing-search" onkeyup="searchRecipeIngredient(this.value)" placeholder="Buscar ingrediente por nombre..." 
+              class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+            <button onclick="clearRecipeIngSearch()" class="px-3 py-2 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500">Limpiar</button>
+          </div>
+          <!-- Autocomplete results dropdown -->
+          <div id="recipe-ing-autocomplete-list" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden z-50">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-slate-400 border-b border-slate-100">
+                <th class="py-2">Ingrediente</th>
+                <th class="py-2 text-right w-24">Cantidad</th>
+                <th class="py-2 text-center w-20">Unidad</th>
+                <th class="py-2 w-10"></th>
+              </tr>
+            </thead>
+            <tbody id="recipe-ingredients-builder-body" class="divide-y divide-slate-50">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="border-t border-slate-100 pt-4">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Instrucciones de Elaboración (un paso por línea)</label>
+        <textarea id="recipe-instructions-input" rows="4" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none placeholder-slate-400" placeholder="Paso 1: Sofreír la cebolla y el ajo&#10;Paso 2: Añadir los ingredientes frescos"></textarea>
+      </div>
+    </div>
+    
+    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 bg-white flex-shrink-0">
+      <button onclick="closeRecipeModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+      <button id="recipe-save-btn" onclick="saveRecipe()" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px] hidden" id="recipe-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+        <span id="recipe-save-text">Guardar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: GESTOR DE FAMILIAS DE RECETA ──────────────────────────── -->
+<div id="modal-recipe-categories" class="modal-overlay" onclick="if(event.target===this)closeRecipeCategoriesModal()">
+  <div class="modal-box max-h-[85vh] flex flex-col" style="max-width: 480px;">
+    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+      <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Familias de Receta</h3>
+      <button onclick="closeRecipeCategoriesModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <div class="flex-grow overflow-y-auto pr-2 divide-y divide-slate-100" id="recipe-categories-list">
+      <!-- Dynamically populated categories -->
+    </div>
+    
+    <div class="mt-4 pt-4 border-t border-slate-100 space-y-3 flex-shrink-0">
+      <div id="recipe-cat-add-form" class="flex gap-2 hidden">
+        <input type="text" id="recipe-cat-new-name" placeholder="Nombre de la nueva familia..." 
+          class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand" />
+        <button onclick="saveNewRecipeCategory()" class="px-4 py-2 bg-success text-white text-xs font-semibold rounded-lg hover:bg-success-dark">Guardar</button>
+        <button onclick="cancelAddRecipeCategory()" class="px-3 py-2 border border-slate-200 text-xs text-slate-500 rounded-lg hover:bg-slate-50">Cancelar</button>
+      </div>
+      <div class="flex justify-between items-center">
+        <button onclick="startAddRecipeCategory()" class="flex items-center gap-1 text-xs font-bold text-brand hover:text-brand-dark">
+          <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva Familia
+        </button>
+        <button onclick="closeRecipeCategoriesModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── MAIN ─────────────────────────────────────────────────────── -->
 <main class="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
 
@@ -782,11 +889,19 @@
         <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Recetas y Escandallos</h1>
         <p class="text-sm text-slate-500 mt-1">Fichas de coste, márgenes y explosión de ingredientes</p>
       </div>
-      <div class="flex gap-2">
-        <select class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 outline-none">
-          <option>Todas las familias</option><option>Arroces</option><option>Pescados</option><option>Carnes</option><option>Postres</option>
+      <div class="flex flex-wrap gap-2 items-center">
+        <input type="text" id="recipe-search" placeholder="Buscar receta..." onkeyup="filterRecipes()"
+          class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"/>
+        
+        <select id="recipe-family-filter" onchange="filterRecipes()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 outline-none select-custom pr-8">
+          <option value="">Todas las familias</option>
         </select>
-        <button onclick="toast('➕ Formulario de nueva receta próximamente')" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
+
+        <button onclick="openRecipeCategoriesModal()" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+          <span class="material-symbols-outlined" style="font-size:16px">folder</span>Familias
+        </button>
+
+        <button onclick="openNewRecipeModal()" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
           <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva receta
         </button>
       </div>
@@ -794,10 +909,10 @@
 
     <!-- Summary stats -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-slate-900" style="font-family:Outfit">24</p><p class="text-xs text-slate-400 mt-0.5">Recetas activas</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-success" style="font-family:Outfit">67%</p><p class="text-xs text-slate-400 mt-0.5">Margen medio</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-brand" style="font-family:Outfit">4.82€</p><p class="text-xs text-slate-400 mt-0.5">Coste/ración medio</p></div>
-      <div class="card p-4 text-center"><p class="text-2xl font-bold text-warn" style="font-family:Outfit">3</p><p class="text-xs text-slate-400 mt-0.5">Coste alto (&gt;10€)</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-slate-900" id="recipe-stat-count" style="font-family:Outfit">0</p><p class="text-xs text-slate-400 mt-0.5">Recetas activas</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-success" id="recipe-stat-margin" style="font-family:Outfit">0%</p><p class="text-xs text-slate-400 mt-0.5">Margen medio</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-brand" id="recipe-stat-cost" style="font-family:Outfit">0.00€</p><p class="text-xs text-slate-400 mt-0.5">Coste/ración medio</p></div>
+      <div class="card p-4 text-center"><p class="text-2xl font-bold text-warn" id="recipe-stat-high" style="font-family:Outfit">0</p><p class="text-xs text-slate-400 mt-0.5">Coste alto (&gt;10€)</p></div>
     </div>
 
     <!-- Recipe cards -->
@@ -1008,72 +1123,8 @@ const SCREENS = ['dashboard','inventory','recetas','proveedores','planner','reci
 
 let INVENTORY = [];
 
-const RECIPES = [
-  {
-    name:'Risotto de Setas Silvestres',
-    family:'Arroces', portions:10,
-    cost_per:3.85, price:14.00, margin:72,
-    ingredients:[
-      { name:'Arroz Koshihikari', qty:'1 kg', cost:'4.50€' },
-      { name:'Setas Boletus',     qty:'400g', cost:'12.00€' },
-      { name:'Parmigiano Reggiano', qty:'150g', cost:'3.30€' },
-      { name:'Vino Blanco',       qty:'200ml', cost:'0.80€' },
-      { name:'Caldo de Verduras', qty:'2L',    cost:'1.50€' },
-      { name:'Mantequilla',       qty:'80g',   cost:'0.60€' },
-      { name:'Cebolla',           qty:'200g',  cost:'0.30€' },
-      { name:'Aceite AOVE',       qty:'50ml',  cost:'0.50€' },
-    ],
-    total_cost: 38.50,
-    notes:'Cocción al dente 18 min. Mantecado fuera del fuego.'
-  },
-  {
-    name:'Salmón a la Plancha con Beurre Blanc',
-    family:'Pescados', portions:6,
-    cost_per:9.20, price:32.00, margin:71,
-    ingredients:[
-      { name:'Salmón Noruega',  qty:'1.5 kg', cost:'38.00€' },
-      { name:'Mantequilla',     qty:'150g',   cost:'1.10€' },
-      { name:'Chalota',         qty:'100g',   cost:'0.60€' },
-      { name:'Vino Blanco',     qty:'150ml',  cost:'0.60€' },
-      { name:'Nata líquida',    qty:'100ml',  cost:'0.80€' },
-      { name:'Limón',           qty:'2 ud',   cost:'0.50€' },
-    ],
-    total_cost: 55.20,
-    notes:'Marinado 30 min con sal, AOVE y eneldo. Plancha a 200°C.'
-  },
-  {
-    name:'Steak Wagyu A5 con Salsa Teriyaki',
-    family:'Carnes', portions:4,
-    cost_per:38.50, price:115.00, margin:67,
-    ingredients:[
-      { name:'Wagyu Beef A5',    qty:'1 kg',   cost:'125.00€' },
-      { name:'Salsa Soja',       qty:'100ml',  cost:'1.20€' },
-      { name:'Sake',             qty:'80ml',   cost:'2.00€' },
-      { name:'Mirin',            qty:'80ml',   cost:'1.50€' },
-      { name:'Jengibre fresco',  qty:'30g',    cost:'0.60€' },
-      { name:'Aceite de sésamo', qty:'20ml',   cost:'0.80€' },
-      { name:'Flor de sal',      qty:'5g',     cost:'0.50€' },
-    ],
-    total_cost: 154.00,
-    notes:'Temperado 45 min antes. Plancha de hierro fundido máxima temperatura. Reposo 5 min.'
-  },
-  {
-    name:'Crema de Calabaza con Foie',
-    family:'Entrantes', portions:8,
-    cost_per:6.30, price:18.00, margin:65,
-    ingredients:[
-      { name:'Calabaza',         qty:'2 kg',   cost:'4.80€' },
-      { name:'Foie Gras Mi-Cuit',qty:'200g',   cost:'19.60€' },
-      { name:'Caldo de Pollo',   qty:'1.5L',   cost:'2.00€' },
-      { name:'Nata 35%',         qty:'200ml',  cost:'1.60€' },
-      { name:'Cebolla',          qty:'300g',   cost:'0.45€' },
-      { name:'Jengibre',         qty:'20g',    cost:'0.40€' },
-      { name:'Aceite AOVE',      qty:'30ml',   cost:'0.30€' },
-    ],
-    total_cost: 50.40,
-    notes:'Turmix tras cocción 30 min. Servir con lámina de foie a temperatura ambiente.'
-  },
-];
+let RECIPES = [];
+let RECIPE_CATEGORIES = [];
 
 const SUPPLIERS = [
   {
@@ -1682,7 +1733,9 @@ function updateInventoryStats() {
   document.getElementById('inv-stat-value').textContent = fmt(value);
 }
 
-// ── RECIPES ───────────────────────────────────────────────────────
+// Local recipe view states (stored by recipe ID: 'cocina' or 'escandallo')
+let _recipeViewStates = {};
+
 function toggleRecipe(id) {
   const el = document.getElementById('recipe-detail-' + id);
   if (!el) return;
@@ -1691,87 +1744,231 @@ function toggleRecipe(id) {
   if (btn) btn.textContent = el.classList.contains('open') ? 'expand_less' : 'expand_more';
 }
 
+function setRecipeView(recipeId, viewType) {
+  _recipeViewStates[recipeId] = viewType;
+  
+  // Toggle active buttons
+  const btnCocina = document.getElementById(`btn-view-cocina-${recipeId}`);
+  const btnEscandallo = document.getElementById(`btn-view-escandallo-${recipeId}`);
+  if (btnCocina && btnEscandallo) {
+    if (viewType === 'cocina') {
+      btnCocina.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 shadow-sm transition-all";
+      btnEscandallo.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-700 transition-all";
+    } else {
+      btnEscandallo.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-700 shadow-sm transition-all";
+      btnCocina.className = "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-700 transition-all";
+    }
+  }
+
+  // Toggle active containers
+  const viewCocinaEl = document.getElementById(`recipe-view-cocina-${recipeId}`);
+  const viewEscandalloEl = document.getElementById(`recipe-view-escandallo-${recipeId}`);
+  if (viewCocinaEl && viewEscandalloEl) {
+    if (viewType === 'cocina') {
+      viewCocinaEl.classList.remove('hidden');
+      viewEscandalloEl.classList.add('hidden');
+    } else {
+      viewEscandalloEl.classList.remove('hidden');
+      viewCocinaEl.classList.add('hidden');
+    }
+  }
+}
+
 function renderRecipes() {
   const el = document.getElementById('recipe-list');
   if (!el) return;
+  
+  if (RECIPES.length === 0) {
+    el.innerHTML = `<div class="p-8 text-center text-slate-400">No hay recetas que mostrar.</div>`;
+    return;
+  }
+
   el.innerHTML = RECIPES.map((r, i) => {
-    const marginColor = r.margin >= 70 ? 'success' : r.margin >= 60 ? 'warn' : 'danger';
-    const marginBadge = r.margin >= 70 ? 'badge-green' : r.margin >= 60 ? 'badge-amber' : 'badge-red';
+    let totalCost = 0;
+    let totalGrams = 0;
+    
+    const parsedIngs = (r.recipe_ingredients || []).map(ri => {
+      const ing = ri.ingredients || {};
+      const qty = Number(ri.quantity_per_portion) || 0;
+      const unit = ri.unit || 'Gr';
+      const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin clasificar';
+      
+      let itemCost = 0;
+      let unitCostText = "0.00€";
+      const uLower = unit.toLowerCase();
+      if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+        const costPerKg = Number(ing.calculated_net_cost_kg || ing.precio_mas_bajo || ing.precio_por_kg || 0);
+        itemCost = (qty / 1000) * costPerKg;
+        unitCostText = `${costPerKg.toFixed(2)}€/kg`;
+        totalGrams += qty;
+      } else {
+        const costPerUnit = Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+        itemCost = qty * costPerUnit;
+        unitCostText = `${costPerUnit.toFixed(2)}€/ud`;
+      }
+      
+      totalCost += itemCost;
+      
+      return {
+        id: ing.id,
+        name: ing.name || 'Sin nombre',
+        nutritional_category,
+        qty: `${qty} ${unit}`,
+        rawQty: qty,
+        unit: unit,
+        unitCostText,
+        waste_percentage: Number(ing.waste_percentage) || 0,
+        cost: itemCost
+      };
+    });
+
+    const portions = Number(r.portions) || 1;
+    const costPerPortion = totalCost;
+    const totalRecipeCost = totalCost * portions;
+    const suggestedPrice = costPerPortion / 0.30; 
+    const margin = 70;
+    const marginColor = 'success';
+    
+    const viewType = _recipeViewStates[r.id] || 'cocina';
+    
     return `
       <div class="card overflow-hidden">
-        <div class="px-6 py-5 flex flex-wrap justify-between items-start gap-4 cursor-pointer" onclick="toggleRecipe(${i})">
+        <div class="px-6 py-5 flex flex-wrap justify-between items-start gap-4 cursor-pointer" onclick="toggleRecipe('${r.id}')">
           <div class="flex items-center gap-4">
             <div class="kpi-icon bg-brand-muted"><span class="material-symbols-outlined text-brand" style="font-size:22px">restaurant_menu</span></div>
             <div>
               <h3 class="font-bold text-slate-900" style="font-family:Outfit">${r.name}</h3>
-              <p class="text-xs text-slate-400 mt-0.5"><span class="badge badge-slate mr-2">${r.family}</span>${r.portions} pax · Coste total: ${r.total_cost.toFixed(2)}€</p>
+              <p class="text-xs text-slate-400 mt-0.5"><span class="badge badge-slate mr-2">${r.category || 'Sin familia'}</span>${portions} pax · Coste total: ${totalRecipeCost.toFixed(2)}€</p>
             </div>
           </div>
           <div class="flex items-center gap-4">
             <div class="text-right">
-              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${r.cost_per.toFixed(2)}€</p>
+              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${costPerPortion.toFixed(2)}€</p>
               <p class="text-xs text-slate-400">por ración</p>
             </div>
             <div class="text-right">
-              <p class="text-xl font-bold text-${marginColor}" style="font-family:Outfit">${r.margin}%</p>
-              <p class="text-xs text-slate-400">margen</p>
+              <p class="text-xl font-bold text-${marginColor}" style="font-family:Outfit">${margin}%</p>
+              <p class="text-xs text-slate-400">margen obj.</p>
             </div>
             <div class="text-right hidden sm:block">
-              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${r.price.toFixed(2)}€</p>
-              <p class="text-xs text-slate-400">precio venta</p>
+              <p class="text-xl font-bold text-slate-900" style="font-family:Outfit">${suggestedPrice.toFixed(2)}€</p>
+              <p class="text-xs text-slate-400">PVP sugerido</p>
             </div>
-            <button id="recipe-toggle-${i}" class="p-2 rounded-xl text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors ml-2">
+            <button id="recipe-toggle-${r.id}" class="p-2 rounded-xl text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors ml-2" onclick="event.stopPropagation(); toggleRecipe('${r.id}')">
               <span class="material-symbols-outlined" style="font-size:22px">expand_more</span>
             </button>
           </div>
         </div>
-        <div id="recipe-detail-${i}" class="recipe-detail">
+        
+        <div id="recipe-detail-${r.id}" class="recipe-detail">
           <div class="px-6 pb-6 border-t border-slate-100 pt-5">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <!-- Ingredients table -->
-              <div class="lg:col-span-2">
-                <h4 class="text-sm font-bold text-slate-700 mb-3">Desglose de ingredientes</h4>
-                <table class="w-full text-sm">
-                  <thead><tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
-                    <th class="pb-2 text-left font-semibold">Ingrediente</th>
-                    <th class="pb-2 text-right font-semibold">Cantidad</th>
-                    <th class="pb-2 text-right font-semibold">Coste</th>
-                  </tr></thead>
-                  <tbody class="divide-y divide-slate-50">
-                    ${r.ingredients.map(ing => `
-                      <tr class="text-slate-700">
-                        <td class="py-2.5">${ing.name}</td>
-                        <td class="py-2.5 text-right text-slate-500">${ing.qty}</td>
-                        <td class="py-2.5 text-right font-semibold">${ing.cost}</td>
-                      </tr>`).join('')}
-                    <tr class="border-t border-slate-200 font-bold text-slate-900">
-                      <td class="pt-3">Total (${r.portions} pax)</td>
-                      <td></td>
-                      <td class="pt-3 text-right">${r.total_cost.toFixed(2)}€</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="flex justify-between items-center mb-4">
+              <h4 class="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
+              
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'cocina')" id="btn-view-cocina-${r.id}" 
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
+                  Cocina
+                </button>
+                <button onclick="event.stopPropagation(); setRecipeView('${r.id}', 'escandallo')" id="btn-view-escandallo-${r.id}" 
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all">
+                  Escandallo
+                </button>
               </div>
-              <!-- Notes + actions -->
-              <div class="space-y-4">
-                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Notas técnicas</p>
-                  <p class="text-sm text-slate-600 leading-relaxed">${r.notes}</p>
+            </div>
+
+            <!-- VISTA A: COCINA / FICHA TÉCNICA -->
+            <div id="recipe-view-cocina-${r.id}" class="${viewType === 'cocina' ? '' : 'hidden'}">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
+                        <th class="pb-2 text-left font-semibold">Ingrediente</th>
+                        <th class="pb-2 text-right font-semibold">Cantidad</th>
+                        <th class="pb-2 text-right font-semibold">Unidad</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                      ${parsedIngs.map(ing => `
+                        <tr class="text-slate-700">
+                          <td class="py-2.5 font-medium">${ing.name}</td>
+                          <td class="py-2.5 text-right text-slate-500 font-mono">${ing.rawQty}</td>
+                          <td class="py-2.5 text-right text-slate-400">${ing.unit}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
                 </div>
-                <div class="bg-brand-muted rounded-xl p-4 border border-brand/10">
-                  <div class="flex justify-between text-sm mb-1"><span class="text-slate-600">Margen objetivo ≥65%</span><span class="font-bold text-brand">${r.margin >= 65 ? '✓ Cumple' : '✗ Revisar'}</span></div>
-                  <div class="prog-track"><div class="prog-fill bg-brand" style="width:${r.margin}%"></div></div>
-                </div>
-                <div class="flex gap-2">
-                  <button onclick="toast('📄 Generando PDF del escandallo...')" class="flex-1 flex items-center justify-center gap-1.5 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                    <span class="material-symbols-outlined" style="font-size:16px">picture_as_pdf</span>PDF
-                  </button>
-                  <button onclick="toast('✏️ Editando receta...')" class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
-                    <span class="material-symbols-outlined" style="font-size:16px">edit</span>Editar
-                  </button>
+                
+                <div class="space-y-4">
+                  <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
+                    <div class="text-sm text-slate-600 space-y-2">
+                      ${r.instructions ? r.instructions.split('\n').map((step, idx) => `<p class="leading-relaxed"><strong class="text-brand mr-1">${idx+1}.</strong> ${step}</p>`).join('') : '<p class="italic text-slate-400">Sin instrucciones registradas.</p>'}
+                    </div>
+                  </div>
+                  
+                  <div class="flex gap-2 flex-wrap">
+                    <button onclick="openNewRecipeModal('${r.id}')" class="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors">
+                      <span class="material-symbols-outlined" style="font-size:16px">edit</span>Editar
+                    </button>
+                    <button onclick="deleteRecipe('${r.id}')" class="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors" title="Eliminar Receta">
+                      <span class="material-symbols-outlined" style="font-size:16px">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- VISTA B: FINANCIERO / ESCANDALLO -->
+            <div id="recipe-view-escandallo-${r.id}" class="${viewType === 'escandallo' ? '' : 'hidden'}">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 overflow-x-auto">
+                  <table class="w-full text-xs text-left">
+                    <thead>
+                      <tr class="text-slate-400 uppercase border-b border-slate-100">
+                        <th class="pb-2 font-semibold">Ingrediente</th>
+                        <th class="pb-2 font-semibold">Clasificación</th>
+                        <th class="pb-2 text-right font-semibold">Porción</th>
+                        <th class="pb-2 text-right font-semibold">Costo Unitario</th>
+                        <th class="pb-2 text-right font-semibold">Merma</th>
+                        <th class="pb-2 text-right font-semibold">Costo</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                      ${parsedIngs.map(ing => `
+                        <tr class="text-slate-700">
+                          <td class="py-2.5 font-medium text-slate-900">${ing.name}</td>
+                          <td class="py-2.5"><span class="badge badge-slate">${ing.nutritional_category}</span></td>
+                          <td class="py-2.5 text-right font-mono">${ing.rawQty} ${ing.unit}</td>
+                          <td class="py-2.5 text-right font-mono text-slate-500">${ing.unitCostText}</td>
+                          <td class="py-2.5 text-right font-mono text-slate-500">${ing.waste_percentage}%</td>
+                          <td class="py-2.5 text-right font-mono font-bold text-slate-800">${ing.cost.toFixed(3)}€</td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="space-y-4">
+                  <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Métricas de Negocio</p>
+                    <div class="flex justify-between text-xs text-slate-600">
+                      <span>Gramaje Total Ración:</span>
+                      <span class="font-bold text-slate-900">${totalGrams.toFixed(0)} gr</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
+                      <span>Costo Real Ración:</span>
+                      <span class="font-bold text-brand text-sm">${costPerPortion.toFixed(2)}€</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-600 border-t border-slate-100 pt-2">
+                      <span>PVP Sugerido (70% Margen):</span>
+                      <span class="font-bold text-success text-sm">${suggestedPrice.toFixed(2)}€</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>`;
@@ -2130,6 +2327,10 @@ async function deleteSubcat(cat, sub) {
   import { supabase } from './src/supabaseClient.js';
   window.supabase = supabase;
 
+  // Cache variables for recipes screen
+  let ALL_RECIPES = [];
+  let _recipeIngredientsBuilder = [];
+
   async function loadSupabaseInventory() {
     try {
       const { data, error } = await supabase
@@ -2143,8 +2344,8 @@ async function deleteSubcat(cat, sub) {
       }
       
       INVENTORY = data.map(item => {
-        const currentStock = Number(item.current_stock) || 0;
-        const minStock = Number(item.min_stock) || 0;
+        const currentStock = Number(item.stock_actual !== null && item.stock_actual !== undefined ? item.stock_actual : item.current_stock) || 0;
+        const minStock = Number(item.stock_minimo !== null && item.stock_minimo !== undefined ? item.stock_minimo : item.min_stock) || 0;
         
         return {
           id: item.id,
@@ -2165,7 +2366,8 @@ async function deleteSubcat(cat, sub) {
           min: minStock,
           cost: Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
           supplier: item.provider_name || item.proveedor_principal || 'Sin proveedor',
-          critical: currentStock <= minStock
+          critical: currentStock <= minStock,
+          nutritional_category: item.nutritional_category || 'Sin asignar'
         };
       });
       
@@ -2176,6 +2378,447 @@ async function deleteSubcat(cat, sub) {
       console.error('Unexpected error loading inventory:', err);
     }
   }
+
+  // ── RECIPES DYNAMIC LOADER ──────────────────────────────────────
+  async function loadSupabaseRecipes() {
+    try {
+      // 1. Fetch categories
+      const { data: cats, error: catError } = await supabase
+        .from('recipe_categories')
+        .select('*')
+        .order('name');
+        
+      if (catError) throw catError;
+      RECIPE_CATEGORIES = cats || [];
+      
+      // Populate category filters and select options in modals
+      const filterSelect = document.getElementById('recipe-family-filter');
+      const modalSelect = document.getElementById('recipe-category-select');
+      
+      if (filterSelect) {
+        filterSelect.innerHTML = '<option value="">Todas las familias</option>' + 
+          RECIPE_CATEGORIES.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      }
+      if (modalSelect) {
+        modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      }
+
+      // 2. Fetch recipes with nested relations
+      const { data: recs, error: recError } = await supabase
+        .from('recipes')
+        .select(`
+          id,
+          name,
+          category,
+          portions,
+          instructions,
+          recipe_ingredients (
+            quantity_per_portion,
+            unit,
+            ingredients (
+              id,
+              name,
+              calculated_net_cost_kg,
+              nutritional_category,
+              precio_por_u,
+              precio_mas_bajo,
+              waste_percentage
+            )
+          )
+        `)
+        .order('name');
+        
+      if (recError) throw recError;
+      
+      ALL_RECIPES = recs || [];
+      filterRecipes();
+    } catch (err) {
+      console.error('Error loading recipes:', err.message);
+      toast('❌ Error al cargar recetas: ' + err.message);
+    }
+  }
+
+  function filterRecipes() {
+    const searchVal = (document.getElementById('recipe-search')?.value || '').toLowerCase().trim();
+    const familyVal = document.getElementById('recipe-family-filter')?.value || '';
+    
+    RECIPES = ALL_RECIPES.filter(r => {
+      const matchSearch = r.name.toLowerCase().includes(searchVal);
+      const matchFamily = !familyVal || r.category === familyVal;
+      return matchSearch && matchFamily;
+    });
+    
+    // Update summary stats
+    let totalRaciones = RECIPES.length;
+    let sumCost = 0;
+    let highCostCount = 0;
+    let totalMarginSum = 0;
+    
+    RECIPES.forEach(r => {
+      let rCost = 0;
+      (r.recipe_ingredients || []).forEach(ri => {
+        const ing = ri.ingredients || {};
+        const qty = Number(ri.quantity_per_portion) || 0;
+        const unit = ri.unit || 'Gr';
+        const uLower = unit.toLowerCase();
+        if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+          rCost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
+        } else {
+          rCost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+        }
+      });
+      sumCost += rCost;
+      if (rCost > 10) highCostCount++;
+    });
+    
+    const avgCost = totalRaciones ? sumCost / totalRaciones : 0;
+    
+    document.getElementById('recipe-stat-count').textContent = totalRaciones;
+    document.getElementById('recipe-stat-cost').textContent = `${avgCost.toFixed(2)}€`;
+    document.getElementById('recipe-stat-high').textContent = highCostCount;
+    document.getElementById('recipe-stat-margin').textContent = '70%'; // targeted
+    
+    renderRecipes();
+  }
+
+  // ── NEW / EDIT RECIPE MODAL ──────────────────────────────────────
+  function openNewRecipeModal(editId = null) {
+    const titleEl = document.getElementById('modal-recipe-title');
+    const nameInput = document.getElementById('recipe-name-input');
+    const portionsInput = document.getElementById('recipe-portions-input');
+    const catSelect = document.getElementById('recipe-category-select');
+    const instInput = document.getElementById('recipe-instructions-input');
+    const idInput = document.getElementById('recipe-id');
+    
+    // Populate select
+    catSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    
+    if (editId) {
+      titleEl.textContent = 'Editar Receta';
+      const r = ALL_RECIPES.find(recipe => recipe.id === editId);
+      idInput.value = r.id;
+      nameInput.value = r.name;
+      portionsInput.value = r.portions || 1;
+      
+      const matchedCat = RECIPE_CATEGORIES.find(c => c.name === r.category);
+      if (matchedCat) catSelect.value = matchedCat.id;
+      
+      instInput.value = r.instructions || '';
+      
+      _recipeIngredientsBuilder = (r.recipe_ingredients || []).map(ri => ({
+        id: ri.ingredients?.id,
+        name: ri.ingredients?.name || 'Sin nombre',
+        qty: Number(ri.quantity_per_portion) || 0,
+        unit: ri.unit || 'Gr'
+      }));
+    } else {
+      titleEl.textContent = 'Nueva Receta';
+      idInput.value = '';
+      nameInput.value = '';
+      portionsInput.value = 1;
+      instInput.value = '';
+      _recipeIngredientsBuilder = [];
+    }
+    
+    renderRecipeIngredientsBuilder();
+    document.getElementById('modal-recipe').classList.add('open');
+  }
+
+  function closeRecipeModal() {
+    document.getElementById('modal-recipe').classList.remove('open');
+    clearRecipeIngSearch();
+  }
+
+  function searchRecipeIngredient(query) {
+    const listEl = document.getElementById('recipe-ing-autocomplete-list');
+    if (!query.trim()) {
+      listEl.innerHTML = '';
+      listEl.classList.add('hidden');
+      return;
+    }
+    
+    const matches = INVENTORY.filter(i => i.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+    if (!matches.length) {
+      listEl.innerHTML = `<div class="p-3 text-xs text-slate-400 italic">No se encontraron ingredientes.</div>`;
+      listEl.classList.remove('hidden');
+      return;
+    }
+    
+    listEl.innerHTML = matches.map(m => `
+      <div onclick="selectRecipeIngredient('${m.id}', '${m.name.replace(/'/g, "\\'")}', '${m.unit}')" 
+        class="px-4 py-2 text-xs text-slate-700 hover:bg-brand-muted hover:text-brand cursor-pointer font-semibold flex justify-between">
+        <span>${m.name}</span>
+        <span class="text-[10px] text-slate-400 font-mono">${m.cat} · ${m.unit}</span>
+      </div>`).join('');
+    listEl.classList.remove('hidden');
+  }
+
+  function selectRecipeIngredient(id, name, unit) {
+    // Avoid duplicates
+    if (_recipeIngredientsBuilder.some(item => item.id === id)) {
+      toast('⚠️ Este ingrediente ya ha sido añadido.');
+      clearRecipeIngSearch();
+      return;
+    }
+    _recipeIngredientsBuilder.push({ id, name, qty: 100, unit: unit || 'Gr' });
+    renderRecipeIngredientsBuilder();
+    clearRecipeIngSearch();
+  }
+
+  function clearRecipeIngSearch() {
+    document.getElementById('recipe-ing-search').value = '';
+    const listEl = document.getElementById('recipe-ing-autocomplete-list');
+    listEl.innerHTML = '';
+    listEl.classList.add('hidden');
+  }
+
+  function removeRecipeIngredientRow(idx) {
+    _recipeIngredientsBuilder.splice(idx, 1);
+    renderRecipeIngredientsBuilder();
+  }
+
+  function renderRecipeIngredientsBuilder() {
+    const tbody = document.getElementById('recipe-ingredients-builder-body');
+    if (!tbody) return;
+    
+    if (!_recipeIngredientsBuilder.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 italic">No hay ingredientes añadidos. Usa el buscador de arriba.</td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = _recipeIngredientsBuilder.map((item, idx) => `
+      <tr class="align-middle">
+        <td class="py-2.5 font-medium text-slate-700">${item.name}</td>
+        <td class="py-2.5">
+          <input type="number" step="0.01" value="${item.qty}" 
+            onchange="updateRecipeBuilderQty(${idx}, this.value)"
+            class="w-20 px-2 py-1 text-right border border-slate-200 rounded-lg text-xs font-mono" />
+        </td>
+        <td class="py-2.5">
+          <select onchange="updateRecipeBuilderUnit(${idx}, this.value)" 
+            class="w-16 px-1 py-1 border border-slate-200 rounded-lg text-xs bg-white text-center">
+            <option value="Gr" ${item.unit === 'Gr' ? 'selected' : ''}>Gr</option>
+            <option value="Ml" ${item.unit === 'Ml' ? 'selected' : ''}>Ml</option>
+            <option value="ud" ${item.unit === 'ud' ? 'selected' : ''}>ud</option>
+          </select>
+        </td>
+        <td class="py-2.5 text-center">
+          <button onclick="removeRecipeIngredientRow(${idx})" class="p-1 rounded text-slate-300 hover:text-red-500">
+            <span class="material-symbols-outlined text-[16px]">delete</span>
+          </button>
+        </td>
+      </tr>`).join('');
+  }
+
+  window.updateRecipeBuilderQty = (idx, val) => {
+    _recipeIngredientsBuilder[idx].qty = parseFloat(val) || 0;
+  };
+  window.updateRecipeBuilderUnit = (idx, val) => {
+    _recipeIngredientsBuilder[idx].unit = val;
+  };
+
+  async function saveRecipe() {
+    const id = document.getElementById('recipe-id').value;
+    const name = document.getElementById('recipe-name-input').value.trim();
+    const portions = parseInt(document.getElementById('recipe-portions-input').value) || 1;
+    const categoryId = document.getElementById('recipe-category-select').value;
+    const instructions = document.getElementById('recipe-instructions-input').value.trim();
+    
+    if (!name) { toast('⚠️ Por favor ingresa el nombre de la receta'); return; }
+    if (!_recipeIngredientsBuilder.length) { toast('⚠️ Añade al menos un ingrediente'); return; }
+    
+    const catObj = RECIPE_CATEGORIES.find(c => c.id === categoryId);
+    const categoryName = catObj ? catObj.name : 'General';
+    
+    // UI feedback
+    const btn = document.getElementById('recipe-save-btn');
+    const spinner = document.getElementById('recipe-save-spinner');
+    const text = document.getElementById('recipe-save-text');
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    text.textContent = 'Guardando...';
+    
+    try {
+      const payload = {
+        name,
+        portions,
+        category: categoryName,
+        category_id: categoryId,
+        instructions
+      };
+      
+      let recipeId = id;
+      if (id) {
+        const { error } = await supabase.from('recipes').update(payload).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('recipes').insert(payload).select('id').single();
+        if (error) throw error;
+        recipeId = data.id;
+      }
+      
+      // Save ingredients relations: clear first
+      const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+      if (delErr) throw delErr;
+      
+      // Group duplicates before insert just in case
+      const grouped = {};
+      _recipeIngredientsBuilder.forEach(item => {
+        if (grouped[item.id]) {
+          grouped[item.id].quantity_per_portion += Number(item.qty);
+        } else {
+          grouped[item.id] = {
+            recipe_id: recipeId,
+            ingredient_id: item.id,
+            quantity_per_portion: Number(item.qty),
+            unit: item.unit
+          };
+        }
+      });
+      
+      const { error: insErr } = await supabase.from('recipe_ingredients').insert(Object.values(grouped));
+      if (insErr) throw insErr;
+      
+      toast(`✅ Receta "${name}" guardada con éxito.`);
+      closeRecipeModal();
+      loadSupabaseRecipes();
+    } catch (err) {
+      console.error(err);
+      toast('❌ Error al guardar receta: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      text.textContent = 'Guardar';
+    }
+  }
+
+  async function deleteRecipe(recipeId) {
+    if (!confirm('¿Seguro que deseas eliminar esta receta permanentemente?')) return;
+    try {
+      const { error } = await supabase.from('recipes').delete().eq('id', recipeId);
+      if (error) throw error;
+      toast('✅ Receta eliminada correctamente');
+      loadSupabaseRecipes();
+    } catch (err) {
+      toast('❌ Error al eliminar receta: ' + err.message);
+    }
+  }
+
+  // ── FAMILIES / CATEGORIES MODAL ──────────────────────────────────
+  function openRecipeCategoriesModal() {
+    renderRecipeCategoriesList();
+    document.getElementById('modal-recipe-categories').classList.add('open');
+  }
+
+  function closeRecipeCategoriesModal() {
+    document.getElementById('modal-recipe-categories').classList.remove('open');
+    cancelAddRecipeCategory();
+  }
+
+  function renderRecipeCategoriesList() {
+    const container = document.getElementById('recipe-categories-list');
+    if (!container) return;
+    
+    if (!RECIPE_CATEGORIES.length) {
+      container.innerHTML = `<p class="p-6 text-center text-slate-400 italic">No hay familias registradas.</p>`;
+      return;
+    }
+    
+    container.innerHTML = RECIPE_CATEGORIES.map(c => `
+      <div class="flex items-center justify-between py-3">
+        <span class="text-sm font-semibold text-slate-700 font-display">${c.name}</span>
+        <div class="flex gap-1">
+          <button onclick="renameRecipeCategory('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="p-1 rounded text-slate-400 hover:text-brand">
+            <span class="material-symbols-outlined text-[16px]">edit</span>
+          </button>
+          <button onclick="deleteRecipeCategory('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="p-1 rounded text-slate-400 hover:text-red-500">
+            <span class="material-symbols-outlined text-[16px]">delete</span>
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  function startAddRecipeCategory() {
+    document.getElementById('recipe-cat-add-form').classList.remove('hidden');
+    document.getElementById('recipe-cat-new-name').value = '';
+    document.getElementById('recipe-cat-new-name').focus();
+  }
+
+  function cancelAddRecipeCategory() {
+    document.getElementById('recipe-cat-add-form').classList.add('hidden');
+  }
+
+  async function saveNewRecipeCategory() {
+    const name = document.getElementById('recipe-cat-new-name').value.trim();
+    if (!name) return;
+    
+    try {
+      const { error } = await supabase.from('recipe_categories').insert({ name });
+      if (error) throw error;
+      toast(`✅ Familia "${name}" creada.`);
+      cancelAddRecipeCategory();
+      loadSupabaseRecipes();
+      openRecipeCategoriesModal();
+    } catch (err) {
+      toast('❌ Error al crear familia: ' + err.message);
+    }
+  }
+
+  async function renameRecipeCategory(id, oldName) {
+    const newName = prompt(`Renombrar familia "${oldName}" a:`, oldName);
+    if (!newName || newName.trim() === oldName) return;
+    
+    try {
+      const { error } = await supabase.from('recipe_categories').update({ name: newName.trim() }).eq('id', id);
+      if (error) throw error;
+      toast('✅ Familia renombrada.');
+      loadSupabaseRecipes();
+      openRecipeCategoriesModal();
+    } catch (err) {
+      toast('❌ Error: ' + err.message);
+    }
+  }
+
+  async function deleteRecipeCategory(id, name) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar la familia "${name}"?`)) return;
+    try {
+      const { error } = await supabase.from('recipe_categories').delete().eq('id', id);
+      if (error) throw error;
+      toast('✅ Familia eliminada.');
+      loadSupabaseRecipes();
+      openRecipeCategoriesModal();
+    } catch (err) {
+      toast('❌ Error: ' + err.message);
+    }
+  }
+
+  // Hook loadSupabaseRecipes to showScreen when recipes screen is activated
+  const origShowScreen = window.showScreen;
+  window.showScreen = function(id) {
+    origShowScreen(id);
+    if (id === 'recetas') {
+      loadSupabaseRecipes();
+    }
+  };
+
+  // Expose functions globally
+  window.loadSupabaseRecipes = loadSupabaseRecipes;
+  window.filterRecipes = filterRecipes;
+  window.openNewRecipeModal = openNewRecipeModal;
+  window.closeRecipeModal = closeRecipeModal;
+  window.searchRecipeIngredient = searchRecipeIngredient;
+  window.selectRecipeIngredient = selectRecipeIngredient;
+  window.clearRecipeIngSearch = clearRecipeIngSearch;
+  window.removeRecipeIngredientRow = removeRecipeIngredientRow;
+  window.saveRecipe = saveRecipe;
+  window.deleteRecipe = deleteRecipe;
+  window.openRecipeCategoriesModal = openRecipeCategoriesModal;
+  window.closeRecipeCategoriesModal = closeRecipeCategoriesModal;
+  window.startAddRecipeCategory = startAddRecipeCategory;
+  window.cancelAddRecipeCategory = cancelAddRecipeCategory;
+  window.saveNewRecipeCategory = saveNewRecipeCategory;
+  window.renameRecipeCategory = renameRecipeCategory;
+  window.deleteRecipeCategory = deleteRecipeCategory;
 
   loadSupabaseInventory();
 </script>

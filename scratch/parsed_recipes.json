@@ -1,0 +1,3534 @@
+[
+  {
+    "name": "Pepino",
+    "category": "Base",
+    "portions": 0.01,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Lechuga iceberg",
+      "Mezclum",
+      "zanahoria",
+      "Aceitunas negras",
+      "Maiz"
+    ]
+  },
+  {
+    "name": "Vinagre manzana",
+    "category": "Base",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Grasa",
+      "Proteina",
+      "Verdura",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Tomate daniela",
+    "category": "Base",
+    "portions": 0.03,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Ajo morado",
+      "jengibre",
+      "Aceite girasol"
+    ]
+  },
+  {
+    "name": "Pimienta negra",
+    "category": "Base",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "clavo",
+        "ingredient_id": "c42ec74e-1de6-4b4d-849b-2e349bd5a1fd",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Semillas de  kalonji",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Sin asignar",
+      "Lacteos",
+      "Sin asignar",
+      "Lacteos",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Patata bolsa",
+    "category": "Base",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Parmesano",
+    "category": "Base",
+    "portions": 0.08,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Quinoa",
+      "pepino",
+      "tomate daniela",
+      "Maiz",
+      "Pimiento rojo"
+    ]
+  },
+  {
+    "name": "sal",
+    "category": "Base",
+    "portions": 0.05,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "tomate daniela",
+      "sal",
+      "Queso mozzarella",
+      "Aceite oliva",
+      "Vinagre manzana"
+    ]
+  },
+  {
+    "name": "pasas",
+    "category": "Base",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "limon",
+        "ingredient_id": "3af05568-0725-4caa-9d5e-78021cf83c40",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "vinagre manzana",
+        "ingredient_id": "4d4c9c6d-9bfa-4f09-8c61-e0aa4e81f15d",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "maiz",
+        "ingredient_id": "6c8a70d1-7e6c-4a5f-9510-104fce04811c",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Tomate daniela",
+    "category": "Base",
+    "portions": 0.03,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Ajo morado",
+      "Pimentón de la vera",
+      "Tomate Triturado",
+      "Ñora",
+      "Aceite oliva"
+    ]
+  },
+  {
+    "name": "Pimienta negra",
+    "category": "Base",
+    "portions": 1.19,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Leche semidesnatada",
+      "C. Arroz chocolate",
+      "Muesli",
+      "C. Copos choco",
+      "Cereales bolas chocolate"
+    ]
+  },
+  {
+    "name": "Pepino",
+    "category": "Base",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Vinagre manzana",
+        "ingredient_id": "4d4c9c6d-9bfa-4f09-8c61-e0aa4e81f15d",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Pan de molde",
+    "category": "Base",
+    "portions": 0,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "Pimienta negra",
+    "category": "Pasta",
+    "portions": 0.51,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Macarrones",
+      "Bacon",
+      "Nata",
+      "Aceite oliva",
+      "Sal"
+    ]
+  },
+  {
+    "name": "Pimienta negra",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Chile en polvo",
+        "ingredient_id": "c8675c6b-20f0-489f-b5a6-adf47839384d",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Pimentón de la vera",
+        "ingredient_id": "b7574cd0-2789-40e2-9e26-3f416edce2ce",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Queso pasta",
+        "ingredient_id": "aaeffd6d-2c44-420a-8e28-cc09ea324505",
+        "quantity_per_portion": 15,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "Pimienta negra",
+    "category": "Pasta",
+    "portions": 0.51,
+    "ingredients": [],
+    "instructions": [
+      "Cous cous",
+      "Cebolla morada",
+      "Pepino",
+      "Tomate daniela",
+      "Cilantro",
+      "menta"
+    ]
+  },
+  {
+    "name": "Queso pasta",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Sin asignar",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Aceite oliva",
+    "category": "Pasta",
+    "portions": 0.02,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Spaguettis",
+      "Bacon",
+      "Ajo morado",
+      "Chile molido"
+    ]
+  },
+  {
+    "name": "Pechuga de pollo",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Vinagre manzana",
+        "ingredient_id": "4d4c9c6d-9bfa-4f09-8c61-e0aa4e81f15d",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Salsa cesar",
+        "ingredient_id": "e6228f88-95ff-4db3-88e8-e42a6d2430c1",
+        "quantity_per_portion": 30,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Picatostes",
+        "ingredient_id": "53fb7356-1516-40d7-b34e-6fbf8bab5691",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Huevos",
+        "ingredient_id": "b3ebc3ab-9cb8-46f7-ae87-41e79ea34180",
+        "quantity_per_portion": 0.3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Parmesano",
+        "ingredient_id": "f9983dcf-8bd9-4d57-b1c0-364cb0f77167",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Pasta fusilli",
+        "ingredient_id": "413482e9-7c21-4d8f-8da9-b870438e809c",
+        "quantity_per_portion": 100,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Aceite oliva",
+    "category": "Pasta",
+    "portions": 2.43,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Tallarines",
+      "Contra muslo pollo S/H",
+      "col",
+      "cebolla"
+    ]
+  },
+  {
+    "name": "Aceite oliva",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Cebolla",
+        "ingredient_id": "74b67f06-02de-4d7c-adcb-8b3096a75228",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "zanahoria",
+    "category": "Pasta",
+    "portions": 0.84,
+    "ingredients": [],
+    "instructions": [
+      "(P147)",
+      "Ingredientes",
+      "Macarrones",
+      "cebolla",
+      "Pechuga de pollo",
+      "romero"
+    ]
+  },
+  {
+    "name": "Sal",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Aceitunas negras",
+        "ingredient_id": "1ac63e42-ce0b-45c8-b715-ab8bdec6538a",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Tomate Daniela",
+        "ingredient_id": "d1cb0f82-d016-487e-b21c-530eca7c3290",
+        "quantity_per_portion": 60,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tomate frito",
+        "ingredient_id": "c8122c80-587a-498e-943e-a124ec1d5515",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tomate concentrado",
+        "ingredient_id": "840b2c47-4188-4433-b499-ac8f17820ad4",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pechuga de pollo",
+        "ingredient_id": "bdfc06ef-80fc-437c-a635-a562d356ba8f",
+        "quantity_per_portion": 80,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Queso Pasta",
+        "ingredient_id": "aaeffd6d-2c44-420a-8e28-cc09ea324505",
+        "quantity_per_portion": 15,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Vinagre manzana",
+        "ingredient_id": "4d4c9c6d-9bfa-4f09-8c61-e0aa4e81f15d",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Verdura",
+      "Proteina",
+      "Especies y Aromaticas"
+    ]
+  },
+  {
+    "name": "ajo morado",
+    "category": "Pasta",
+    "portions": 1.42,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Macarrones",
+      "Pechuga de pollo",
+      "Tomate frito",
+      "Aceite oliva"
+    ]
+  },
+  {
+    "name": "ajo morado",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Espinaca fresca",
+        "ingredient_id": "9e10ae4f-ff4e-45f7-944b-4b7922ac15c6",
+        "quantity_per_portion": 50,
+        "unit": "GR"
+      },
+      {
+        "rawName": "parmesano",
+        "ingredient_id": "f9983dcf-8bd9-4d57-b1c0-364cb0f77167",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "vinagre vino",
+        "ingredient_id": null,
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Champiñones",
+        "ingredient_id": "3431f4b4-dc64-4dae-ae2f-835092b554a5",
+        "quantity_per_portion": 30,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Sal",
+    "category": "Pasta",
+    "portions": 0.42,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Spaguettis",
+      "Carne picada Vacuno",
+      "Tomate Triturado",
+      "Zanahoria",
+      "apio"
+    ]
+  },
+  {
+    "name": "Cebolla",
+    "category": "Pasta",
+    "portions": 0.02,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Quinoa",
+      "Pimiento rojo",
+      "pepino",
+      "Lechuga iceberg"
+    ]
+  },
+  {
+    "name": "Cebolla",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Vino blanco",
+        "ingredient_id": "9103da58-887f-4f4d-8952-7f8523bd73a2",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Lacteos",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "Tomate daniela",
+    "category": "Pasta",
+    "portions": 0.29,
+    "ingredients": [],
+    "instructions": [
+      "Macarrones",
+      "Pechuga de pollo",
+      "Cebolla",
+      "Ajo morado",
+      "Aceite oliva",
+      "Queso pasta"
+    ]
+  },
+  {
+    "name": "Sal",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Queso Pasta",
+        "ingredient_id": "aaeffd6d-2c44-420a-8e28-cc09ea324505",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Brocoli",
+        "ingredient_id": "bd131d30-7181-44ea-9ce9-aec7c72c78c1",
+        "quantity_per_portion": 80,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Grasa",
+      "Lacteos"
+    ]
+  },
+  {
+    "name": "Nata",
+    "category": "Pasta",
+    "portions": 0.02,
+    "ingredients": [],
+    "instructions": [
+      "Pechuga de pollo",
+      "Nata",
+      "Aceite oliva",
+      "Sal",
+      "Pimienta negra",
+      "Cebolla"
+    ]
+  },
+  {
+    "name": "Nata",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Espinacas",
+        "ingredient_id": "bab13754-fe83-4fc8-a066-17d500242956",
+        "quantity_per_portion": 70,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Lacteos",
+      "Grasa",
+      "Sin asignar",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Queso Pasta",
+    "category": "Pasta",
+    "portions": 6.17,
+    "ingredients": [],
+    "instructions": [
+      "Aceite oliva",
+      "Sal",
+      "Pimienta negra",
+      "Cebolla",
+      "Queso Pasta",
+      "Brocoli"
+    ]
+  },
+  {
+    "name": "Queso Pasta",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Grasa",
+      "Sin asignar",
+      "Sin asignar",
+      "Verdura",
+      "Lacteos",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Tomate concentrado",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "parmesano",
+      "albahaca",
+      "Pesto trappanese",
+      "Tomate cherri"
+    ]
+  },
+  {
+    "name": "Champiñones",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Sin asignar",
+      "Sin asignar",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Azúcar",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Sin asignar",
+      "Sin asignar",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Azúcar",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Huevos",
+      "zanahoria",
+      "Judia verde plana",
+      "Cacahuete",
+      "tamarindo",
+      "salsa pescado"
+    ]
+  },
+  {
+    "name": "Azúcar",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "2",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Azúcar",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "Elaboracion",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Elaboracion",
+      "1"
+    ]
+  },
+  {
+    "name": "Elaboracion",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "2",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Elaboracion",
+      "1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "name": "2",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "4",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Elaboracion",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ]
+  },
+  {
+    "name": "4",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "6",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "6",
+    "category": "Pasta",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "Mantequilla",
+    "category": "Arroces",
+    "portions": 1.87,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Arroz redondo",
+      "Col",
+      "Alcachofas",
+      "Garrofon",
+      "Judia verde plana"
+    ]
+  },
+  {
+    "name": "Aceite oliva",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Garbanzo cocido",
+    "category": "Arroces",
+    "portions": 1.31,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Contra muslo pollo S/H",
+      "cebolla",
+      "huevos",
+      "Salsa soja",
+      "Azúcar"
+    ]
+  },
+  {
+    "name": "Canela",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Zanahoria",
+        "ingredient_id": "b4513c67-430a-4751-ba8c-278ffef41aa3",
+        "quantity_per_portion": 25,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Col",
+        "ingredient_id": "d58ce74c-33c5-4626-aceb-cc0e0263363b",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Salsa soja",
+        "ingredient_id": "b7ea2d2d-3e8b-43fb-81ea-040b110d8817",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Azúcar",
+        "ingredient_id": "6874f479-076c-42c0-84de-a67061f697f8",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Ajinomoto",
+        "ingredient_id": "c1d8ca42-a534-41f6-8480-c2710dc0c5ad",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Harina de maiz",
+        "ingredient_id": "e9408eb4-3ea1-4758-9a29-2f1c6166d051",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Vino blanco",
+        "ingredient_id": "9103da58-887f-4f4d-8952-7f8523bd73a2",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Huevos",
+        "ingredient_id": "b3ebc3ab-9cb8-46f7-ae87-41e79ea34180",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Sin asignar",
+      "Grasa",
+      "Sin asignar",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "Caldo de pollo deshidratado",
+    "category": "Arroces",
+    "portions": 0.18,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Carne picada Vacuno",
+      "cebolla",
+      "Huevos",
+      "pan rallado",
+      "Leche semidesnatada"
+    ]
+  },
+  {
+    "name": "sal",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Col china",
+        "ingredient_id": "e018b8b7-d7e6-421e-b14d-50385010b043",
+        "quantity_per_portion": 35,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Salsa kimchi",
+        "ingredient_id": "7ae7dc15-cc46-46a7-9945-4a7528aaccef",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "zanahoria",
+        "ingredient_id": "b4513c67-430a-4751-ba8c-278ffef41aa3",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pasta ajo jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Arroz redondo",
+        "ingredient_id": "7f7642c2-1e04-47b2-a003-4cc4545a682b",
+        "quantity_per_portion": 100,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Proteina"
+    ]
+  },
+  {
+    "name": "sal",
+    "category": "Arroces",
+    "portions": 0.42,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "arroz largo",
+      "sal",
+      "aceite oliva",
+      "curcuma",
+      "comino"
+    ]
+  },
+  {
+    "name": "Caldo de pollo deshidratado",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Allioli",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Limon",
+        "ingredient_id": "3af05568-0725-4caa-9d5e-78021cf83c40",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Aceite oliva",
+        "ingredient_id": "0a166784-0236-4e1c-a968-e5491532d8e8",
+        "quantity_per_portion": 25,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "gas",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Limon",
+        "ingredient_id": "3af05568-0725-4caa-9d5e-78021cf83c40",
+        "quantity_per_portion": 30,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Verdura",
+      "No encontrado",
+      "Lacteos"
+    ]
+  },
+  {
+    "name": "pimenta roja",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Pechuga de pollo",
+      "Arroz redondo",
+      "cebolla",
+      "aguacate",
+      "tomate daniela"
+    ]
+  },
+  {
+    "name": "Cilantro",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Mantequilla",
+        "ingredient_id": "b7761ff5-f2bf-400e-a829-c96a95ebd7ad",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Aceite girasol",
+        "ingredient_id": "a5f94d59-5c39-448f-9d27-321aff35b03a",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Especias biryani",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Coco en polvo",
+        "ingredient_id": "9011ec49-3972-481b-84e8-0ab2981b9619",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Menta",
+        "ingredient_id": "47532e98-ceba-4987-81a8-4d4923c25c7a",
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Calabacín",
+    "category": "Arroces",
+    "portions": 1.43,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Contra muslo pollo S/H",
+      "Cebolla",
+      "Ajo morado",
+      "jengibre",
+      "Aceite girasol"
+    ]
+  },
+  {
+    "name": "Caldo de pollo deshidratado",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "tomate triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz redondo",
+        "ingredient_id": "7f7642c2-1e04-47b2-a003-4cc4545a682b",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Arroces",
+    "portions": 0.53,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "pieza cabeza lomo de cerdo",
+      "Mantequilla",
+      "Manzana Golden",
+      "Miel",
+      "Zanahoria"
+    ]
+  },
+  {
+    "name": "patatas",
+    "category": "Arroces",
+    "portions": 1.13,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Arroz Basmati",
+      "Cuartos traseros",
+      "Yogurt griego",
+      "Tomate Daniela",
+      "Tomate Triturado"
+    ]
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pasta curry verde",
+        "ingredient_id": "f47238d0-3cf4-48d9-9094-31f4173e0688",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Basmati",
+        "ingredient_id": "bf261c05-abeb-46d1-9352-1c9f1a2882c3",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Leche de coco",
+        "ingredient_id": "28e1f40b-4c35-4581-82e9-0a27d8ce94f1",
+        "quantity_per_portion": 100,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Hoja de lima",
+        "ingredient_id": "f4473178-956a-42f2-805d-873adef19e68",
+        "quantity_per_portion": 1.25,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Lemongrass",
+        "ingredient_id": "0fc4c682-4efb-4c1d-8e0d-f7149e518669",
+        "quantity_per_portion": 2.5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "pimenta roja golden",
+        "ingredient_id": "ec37a617-784b-41fc-9488-d8a739325563",
+        "quantity_per_portion": 2.5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "galanga",
+        "ingredient_id": "2fa08595-4c04-489d-a917-5ef737fe5bc7",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Lacteos",
+      "Verdura",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "cebolla",
+    "category": "Arroces",
+    "portions": 0.28,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Carne picada Vacuno",
+      "Berenjena",
+      "Cebolla",
+      "Ajo morado",
+      "Jengibre polvo"
+    ]
+  },
+  {
+    "name": "patatas",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Ajo morado",
+        "ingredient_id": "2102c8e9-e8cf-4094-981c-fe41c2fa6b42",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Curcuma",
+        "ingredient_id": "8b4491fc-dc7b-4f3d-b02e-137138b83f83",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Cardamomo",
+        "ingredient_id": "285592e4-f09b-4bd5-a6d0-439904f84b28",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Garam Massala",
+        "ingredient_id": "87a94139-a67f-4afe-b336-93a3911dc5f5",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Curry",
+        "ingredient_id": "fd1152f7-cf47-4609-82ab-12866ae6d3de",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Tomate Triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 50,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 120,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Tobanjan",
+    "category": "Arroces",
+    "portions": 0.08,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Cuartos traseros",
+      "Salsa Barbacoa",
+      "Sal",
+      "Pimienta negra",
+      "Pimentón de la vera"
+    ]
+  },
+  {
+    "name": "Aceitunas negras",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Nata",
+        "ingredient_id": "08bdf08e-31c0-49a0-aff9-ee1bce1c75e9",
+        "quantity_per_portion": 20,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Leche evaporada",
+        "ingredient_id": "5b032b66-4910-4cce-85b0-025d30b11a08",
+        "quantity_per_portion": 20,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Ajinomoto",
+        "ingredient_id": "c1d8ca42-a534-41f6-8480-c2710dc0c5ad",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Mantequilla",
+        "ingredient_id": "b7761ff5-f2bf-400e-a829-c96a95ebd7ad",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz redondo",
+        "ingredient_id": "7f7642c2-1e04-47b2-a003-4cc4545a682b",
+        "quantity_per_portion": 120,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Azúcar",
+    "category": "Arroces",
+    "portions": 0.84,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Contra muslo pollo S/H",
+      "cebolla",
+      "Salsa soja",
+      "Azúcar"
+    ]
+  },
+  {
+    "name": "Yogurt griego",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Chiles verdes",
+        "ingredient_id": null,
+        "quantity_per_portion": 0.25,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Basmati",
+        "ingredient_id": "bf261c05-abeb-46d1-9352-1c9f1a2882c3",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "guisantes",
+        "ingredient_id": "7f5df490-274b-4cb8-b696-953b7b0205f4",
+        "quantity_per_portion": 20,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Patatas",
+        "ingredient_id": "61c019bb-effb-4431-80f4-14bb4c458359",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Aceite girasol",
+        "ingredient_id": "a5f94d59-5c39-448f-9d27-321aff35b03a",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Nata",
+        "ingredient_id": "08bdf08e-31c0-49a0-aff9-ee1bce1c75e9",
+        "quantity_per_portion": 25,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Caldo de pollo deshidratado",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Carne picada Vacuno",
+      "Tofu",
+      "Cebolla",
+      "Ajo morado",
+      "Jengibre polvo"
+    ]
+  },
+  {
+    "name": "Pasta ajo jengibre",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Salsa soja",
+        "ingredient_id": "b7ea2d2d-3e8b-43fb-81ea-040b110d8817",
+        "quantity_per_portion": 6,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz redondo",
+        "ingredient_id": "7f7642c2-1e04-47b2-a003-4cc4545a682b",
+        "quantity_per_portion": 100,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "#REF!",
+      "H.Carbono",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Tobanjan",
+    "category": "Arroces",
+    "portions": 0.08,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "Cebolla",
+    "category": "Arroces",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimentón de la vera",
+        "ingredient_id": "b7574cd0-2789-40e2-9e26-3f416edce2ce",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Chile molido",
+        "ingredient_id": "abadda48-9e75-435d-9842-fdd6ff2fb6c4",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Garbanzo cocido",
+        "ingredient_id": "4471dfed-480f-46eb-a069-3d351136b490",
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "calabaza",
+    "category": "Guisos",
+    "portions": 2.12,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "pieza cabeza lomo de cerdo",
+      "Mantequilla",
+      "Manzana Golden",
+      "Miel",
+      "Zanahoria"
+    ]
+  },
+  {
+    "name": "Yogurt griego",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Chiles verdes",
+        "ingredient_id": null,
+        "quantity_per_portion": 0.25,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Basmati",
+        "ingredient_id": "bf261c05-abeb-46d1-9352-1c9f1a2882c3",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "guisantes",
+        "ingredient_id": "7f5df490-274b-4cb8-b696-953b7b0205f4",
+        "quantity_per_portion": 20,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Patatas",
+        "ingredient_id": "61c019bb-effb-4431-80f4-14bb4c458359",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Aceite girasol",
+        "ingredient_id": "a5f94d59-5c39-448f-9d27-321aff35b03a",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Nata",
+        "ingredient_id": "08bdf08e-31c0-49a0-aff9-ee1bce1c75e9",
+        "quantity_per_portion": 25,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "patatas",
+    "category": "Guisos",
+    "portions": 1.13,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Arroz Basmati",
+      "Cuartos traseros",
+      "Yogurt griego",
+      "Tomate Daniela",
+      "Tomate Triturado"
+    ]
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pasta curry verde",
+        "ingredient_id": "f47238d0-3cf4-48d9-9094-31f4173e0688",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Basmati",
+        "ingredient_id": "bf261c05-abeb-46d1-9352-1c9f1a2882c3",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 5,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Leche de coco",
+        "ingredient_id": "28e1f40b-4c35-4581-82e9-0a27d8ce94f1",
+        "quantity_per_portion": 100,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Lima keffir",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Lemongrass",
+        "ingredient_id": "0fc4c682-4efb-4c1d-8e0d-f7149e518669",
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "picante especial",
+        "ingredient_id": "3d87299b-6c40-4223-a100-cc751babacdc",
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "cebolla",
+    "category": "Guisos",
+    "portions": 0.28,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Cebolla",
+      "Ajo morado",
+      "laurel",
+      "sal",
+      "Aceite oliva"
+    ]
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pasta curry verde",
+        "ingredient_id": "f47238d0-3cf4-48d9-9094-31f4173e0688",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 90,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Leche de coco",
+        "ingredient_id": "28e1f40b-4c35-4581-82e9-0a27d8ce94f1",
+        "quantity_per_portion": 80,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Lima keffir",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Lemongrass",
+        "ingredient_id": "0fc4c682-4efb-4c1d-8e0d-f7149e518669",
+        "quantity_per_portion": 0,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "No encontrado",
+      "No encontrado",
+      "No encontrado",
+      "Sin asignar",
+      "No encontrado"
+    ]
+  },
+  {
+    "name": "zanahoria",
+    "category": "Guisos",
+    "portions": 1.01,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Pechuga de pollo",
+      "Cebolla",
+      "Ajo morado",
+      "jengibre",
+      "Aceite girasol"
+    ]
+  },
+  {
+    "name": "Pelota cocido",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Hueso ternera",
+        "ingredient_id": "3d87299b-6c40-4223-a100-cc751babacdc",
+        "quantity_per_portion": 60,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Carcasa Pollo",
+        "ingredient_id": null,
+        "quantity_per_portion": 0.1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Patatas",
+        "ingredient_id": "61c019bb-effb-4431-80f4-14bb4c458359",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Zanahoria",
+        "ingredient_id": "b4513c67-430a-4751-ba8c-278ffef41aa3",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cebolla",
+        "ingredient_id": "74b67f06-02de-4d7c-adcb-8b3096a75228",
+        "quantity_per_portion": 30,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Col",
+        "ingredient_id": "d58ce74c-33c5-4626-aceb-cc0e0263363b",
+        "quantity_per_portion": 30,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Ajo morado",
+        "ingredient_id": "2102c8e9-e8cf-4094-981c-fe41c2fa6b42",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Fideo fino",
+        "ingredient_id": null,
+        "quantity_per_portion": 70,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Garbanzos",
+        "ingredient_id": "0cce4a84-460c-4564-b431-5d9b7ea5f3fe",
+        "quantity_per_portion": 30,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Lacteos",
+      "Verdura",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Guisos",
+    "portions": 0.53,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Carne picada Vacuno",
+      "Berenjena",
+      "Cebolla",
+      "Ajo morado",
+      "Jengibre polvo"
+    ]
+  },
+  {
+    "name": "patatas",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Ajo morado",
+        "ingredient_id": "2102c8e9-e8cf-4094-981c-fe41c2fa6b42",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Curcuma",
+        "ingredient_id": "8b4491fc-dc7b-4f3d-b02e-137138b83f83",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Cardamomo",
+        "ingredient_id": "285592e4-f09b-4bd5-a6d0-439904f84b28",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Garam Massala",
+        "ingredient_id": "87a94139-a67f-4afe-b336-93a3911dc5f5",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Curry",
+        "ingredient_id": "fd1152f7-cf47-4609-82ab-12866ae6d3de",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Tomate Triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 50,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 120,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Tobanjan",
+    "category": "Guisos",
+    "portions": 0.04,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Contra muslo pollo S/H",
+      "Cebolla",
+      "Ajo morado",
+      "jengibre",
+      "Aceite girasol"
+    ]
+  },
+  {
+    "name": "Aceitunas negras",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Nata",
+        "ingredient_id": "08bdf08e-31c0-49a0-aff9-ee1bce1c75e9",
+        "quantity_per_portion": 20,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Leche evaporada",
+        "ingredient_id": "5b032b66-4910-4cce-85b0-025d30b11a08",
+        "quantity_per_portion": 20,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Ajinomoto",
+        "ingredient_id": "c1d8ca42-a534-41f6-8480-c2710dc0c5ad",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Mantequilla",
+        "ingredient_id": "b7761ff5-f2bf-400e-a829-c96a95ebd7ad",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Arroz redondo",
+        "ingredient_id": "7f7642c2-1e04-47b2-a003-4cc4545a682b",
+        "quantity_per_portion": 120,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 2,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Salsa pescado",
+    "category": "Guisos",
+    "portions": 0.53,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "jengibre",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "salsa soja",
+        "ingredient_id": "b7ea2d2d-3e8b-43fb-81ea-040b110d8817",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tomate Triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Elaboracion",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "15",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Elaboracion",
+      "1"
+    ]
+  },
+  {
+    "name": "Elaboracion",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "3",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "2",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "16",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Elaboracion",
+      "1",
+      "2",
+      "3"
+    ]
+  },
+  {
+    "name": "2",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "4",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "17",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Elaboracion",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ]
+  },
+  {
+    "name": "4",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "6",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "6"
+    ]
+  },
+  {
+    "name": "6",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "Ingredientes",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "5",
+      "6",
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "Ingredientes",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "1",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": []
+  },
+  {
+    "name": "1",
+    "category": "Guisos",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "4",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "5",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "6",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Cebolla morada",
+    "category": "Carnes y Pescados",
+    "portions": 0.59,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Patatas fritas",
+      "Pechuga de pollo",
+      "Pan rallado crujirnte",
+      "huevos",
+      "Harina"
+    ]
+  },
+  {
+    "name": "Pimentón de la vera",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Ensalada verde",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "H.Carbono",
+      "Proteina",
+      "Proteina",
+      "Sin asignar",
+      "Sin asignar"
+    ]
+  },
+  {
+    "name": "Sal",
+    "category": "Carnes y Pescados",
+    "portions": 1.74,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Pure de patatas",
+      "Carne picada vacuno",
+      "cebolla",
+      "Ajo morado",
+      "Leche semidesnatada"
+    ]
+  },
+  {
+    "name": "Pure de patatas",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pepino",
+        "ingredient_id": "f07b4a61-3893-4b51-a64d-c4286cb7a1e3",
+        "quantity_per_portion": 50,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Limon",
+        "ingredient_id": "3af05568-0725-4caa-9d5e-78021cf83c40",
+        "quantity_per_portion": 4,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Nata",
+        "ingredient_id": "08bdf08e-31c0-49a0-aff9-ee1bce1c75e9",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Leche semidesnatada",
+        "ingredient_id": "7820a2a9-87e0-4ae1-ac7e-3a0c5131ce19",
+        "quantity_per_portion": 100,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "mantequilla",
+    "category": "Carnes y Pescados",
+    "portions": 0.08,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "Cebolla",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimentón de la vera",
+        "ingredient_id": "b7574cd0-2789-40e2-9e26-3f416edce2ce",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Chile molido",
+        "ingredient_id": "abadda48-9e75-435d-9842-fdd6ff2fb6c4",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tortillas Trigo",
+        "ingredient_id": "218640be-19b4-4b43-8525-1057153e925c",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 80,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Proteina",
+      "Sin asignar",
+      "Sin asignar",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Sal",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "Verdura",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "Pure de patatas",
+    "category": "Carnes y Pescados",
+    "portions": 0.38,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Cuartos traseros",
+      "Salsa Barbacoa",
+      "Sal",
+      "Pimienta negra",
+      "Pimentón de la vera"
+    ]
+  },
+  {
+    "name": "Aceite girasol",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Ajo morado",
+        "ingredient_id": "2102c8e9-e8cf-4094-981c-fe41c2fa6b42",
+        "quantity_per_portion": 5,
+        "unit": "GR"
+      },
+      {
+        "rawName": "jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pimiento rojo",
+        "ingredient_id": "fbf28c70-6e2c-42a7-bf42-b8f465cd91c6",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Puerro",
+        "ingredient_id": "945195fd-ec7c-4ec4-b66a-b2d6a1fae564",
+        "quantity_per_portion": 10,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Salsa soja",
+        "ingredient_id": "b7ea2d2d-3e8b-43fb-81ea-040b110d8817",
+        "quantity_per_portion": 25,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Vino blanco",
+        "ingredient_id": "9103da58-887f-4f4d-8952-7f8523bd73a2",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 110,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Proteina",
+      "Verdura",
+      "H.Carbono",
+      "Verdura",
+      "Grasa"
+    ]
+  },
+  {
+    "name": "Pure de patatas",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "Patata panadera",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 0,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Calabacín",
+        "ingredient_id": "431d1b49-e683-477d-abc4-e2d5e4da8f3f",
+        "quantity_per_portion": 40,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Sin asignar",
+      "Proteina",
+      "Sin asignar",
+      "Proteina",
+      "No encontrado"
+    ]
+  },
+  {
+    "name": "Tomate daniela",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Cebolla frita",
+        "ingredient_id": "f9bb80e8-36cd-4440-9d05-4cf4036ff286",
+        "quantity_per_portion": 10,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Queso lonchas",
+        "ingredient_id": "4921ac5e-e4db-42f0-ac23-fcb67c1ebfaa",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Ketchup",
+        "ingredient_id": "f41c849c-e338-4a48-b957-f9d676c557fb",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Mayonesa",
+        "ingredient_id": "6925117f-b6f1-475c-8cee-ef53e6469b1d",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Mostaza",
+        "ingredient_id": "285726ff-fc5c-4ced-90f0-06656d8f91c5",
+        "quantity_per_portion": 15,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "cebolla",
+    "category": "Carnes y Pescados",
+    "portions": 0.37,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "cebolla",
+    "category": "Carnes y Pescados",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "curcuma",
+        "ingredient_id": "8b4491fc-dc7b-4f3d-b02e-137138b83f83",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Chile molido",
+        "ingredient_id": "abadda48-9e75-435d-9842-fdd6ff2fb6c4",
+        "quantity_per_portion": 1,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Sal",
+        "ingredient_id": "dfa74d85-429d-4c85-92c9-9079e1775cb8",
+        "quantity_per_portion": 3,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Pimienta negra",
+        "ingredient_id": "9983a77f-ef46-4dfb-a7d9-67dfb5f31a59",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "cilantro",
+        "ingredient_id": "862a8073-a121-4cb5-b8ee-f0061edfb19e",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tomate Triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 20,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Lechuga iceberg",
+    "category": "Carnes y Pescados",
+    "portions": 0.35,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Contra muslo pollo S/H"
+    ]
+  },
+  {
+    "name": "Racion  ensalada",
+    "category": "Carnes y Pescados",
+    "portions": 0.78,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  },
+  {
+    "name": "pimienta negra",
+    "category": "Vegetariano",
+    "portions": 1,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Garbanzos",
+      "Leche de coco",
+      "Tomate triturado",
+      "Cebolla",
+      "Ajo Morado"
+    ]
+  },
+  {
+    "name": "Comino molido",
+    "category": "Vegetariano",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "Arroz Largo",
+        "ingredient_id": "580bb8e4-f7ef-4bd4-9180-dfc1f9d0024d",
+        "quantity_per_portion": 120,
+        "unit": "GR"
+      },
+      {
+        "rawName": "espinaca fresca",
+        "ingredient_id": "9e10ae4f-ff4e-45f7-944b-4b7922ac15c6",
+        "quantity_per_portion": 20,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "aguacate",
+        "ingredient_id": "dfb86626-6c14-480f-b2fd-89dadbe48b40",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Calabacín",
+        "ingredient_id": "431d1b49-e683-477d-abc4-e2d5e4da8f3f",
+        "quantity_per_portion": 80,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": [
+      "Lacteos",
+      "Verdura",
+      "Proteina",
+      "Verdura",
+      "Verdura"
+    ]
+  },
+  {
+    "name": "jengibre",
+    "category": "Vegetariano",
+    "portions": 1.5,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes",
+      "Berenjena",
+      "Calabacín",
+      "tomate daniela",
+      "cebolla",
+      "pimiento rojo"
+    ]
+  },
+  {
+    "name": "Cebolla",
+    "category": "Vegetariano",
+    "portions": 1,
+    "ingredients": [
+      {
+        "rawName": "jengibre",
+        "ingredient_id": "09aae8dd-ba95-4087-a5c4-21c785d4638e",
+        "quantity_per_portion": 3,
+        "unit": "GR"
+      },
+      {
+        "rawName": "Curcuma",
+        "ingredient_id": "8b4491fc-dc7b-4f3d-b02e-137138b83f83",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Cardamomo",
+        "ingredient_id": "285592e4-f09b-4bd5-a6d0-439904f84b28",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Garam Massala",
+        "ingredient_id": "87a94139-a67f-4afe-b336-93a3911dc5f5",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Curry",
+        "ingredient_id": "fd1152f7-cf47-4609-82ab-12866ae6d3de",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Comino molido",
+        "ingredient_id": "9ebae943-c539-407a-9793-074ce261f12a",
+        "quantity_per_portion": 1,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Caldo de pollo deshidratado",
+        "ingredient_id": "87a3d12e-15f8-4355-a73e-be3398d18005",
+        "quantity_per_portion": 2,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Tomate Triturado",
+        "ingredient_id": "9d0245f0-2ea2-4cdb-8dae-d38f96069c24",
+        "quantity_per_portion": 50,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "tomate daniela",
+        "ingredient_id": "d1cb0f82-d016-487e-b21c-530eca7c3290",
+        "quantity_per_portion": 20,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Arroz integral",
+        "ingredient_id": "86ccaebd-d010-408e-a2d2-f6417ed9560d",
+        "quantity_per_portion": 120,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "Elaboracion",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      },
+      {
+        "rawName": "1",
+        "ingredient_id": null,
+        "quantity_per_portion": 0,
+        "unit": "Gr"
+      }
+    ],
+    "instructions": []
+  },
+  {
+    "name": "Aceite Oliva",
+    "category": "Vegetariano",
+    "portions": 0.03,
+    "ingredients": [],
+    "instructions": [
+      "Ingredientes"
+    ]
+  }
+]
