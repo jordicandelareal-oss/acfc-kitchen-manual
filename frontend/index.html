@@ -2788,15 +2788,15 @@ window.savePlannerDay = async function() {
     breakfast_recipe_id: _currentPlannerState.breakfast_recipe_id || null,
     lunch_recipe_id: _currentPlannerState.lunch_recipe_id || null,
     dinner_recipe_id: _currentPlannerState.dinner_recipe_id || null,
-    lunch_players: _currentPlannerState.lunch_players,
-    lunch_halal: _currentPlannerState.lunch_halal,
-    lunch_kosher: _currentPlannerState.lunch_kosher,
-    lunch_vegan: _currentPlannerState.lunch_vegan,
+    lunch_players: _currentPlannerState.lunch_players || 0,
+    lunch_halal: _currentPlannerState.lunch_halal || 0,
+    lunch_kosher: _currentPlannerState.lunch_kosher || 0,
+    lunch_vegan: _currentPlannerState.lunch_vegan || 0,
     lunch_allergies: _currentPlannerState.lunch_allergies || '',
-    dinner_players: _currentPlannerState.dinner_players,
-    dinner_halal: _currentPlannerState.dinner_halal,
-    dinner_kosher: _currentPlannerState.dinner_kosher,
-    dinner_vegan: _currentPlannerState.dinner_vegan,
+    dinner_players: _currentPlannerState.dinner_players || 0,
+    dinner_halal: _currentPlannerState.dinner_halal || 0,
+    dinner_kosher: _currentPlannerState.dinner_kosher || 0,
+    dinner_vegan: _currentPlannerState.dinner_vegan || 0,
     dinner_allergies: _currentPlannerState.dinner_allergies || ''
   };
   
@@ -2844,20 +2844,20 @@ window.saveWeeklyConfig = async function() {
   
   try {
     const config = {
-      breakfast_players_count: Number(document.getElementById('weekly-breakfast-players').value),
-      breakfast_diet_halal: Number(document.getElementById('weekly-breakfast-halal').value),
-      breakfast_diet_kosher: Number(document.getElementById('weekly-breakfast-kosher').value),
-      breakfast_diet_vegan: Number(document.getElementById('weekly-breakfast-vegan').value),
-      breakfast_allergies_notes: document.getElementById('weekly-breakfast-allergies').value || '',
-      lunch_players: Number(document.getElementById('weekly-lunch-players').value),
-      lunch_halal: Number(document.getElementById('weekly-lunch-halal').value),
-      lunch_kosher: Number(document.getElementById('weekly-lunch-kosher').value),
-      lunch_vegan: Number(document.getElementById('weekly-lunch-vegan').value),
+      breakfast_players: Number(document.getElementById('weekly-breakfast-players').value) || 0,
+      breakfast_halal: Number(document.getElementById('weekly-breakfast-halal').value) || 0,
+      breakfast_kosher: Number(document.getElementById('weekly-breakfast-kosher').value) || 0,
+      breakfast_vegan: Number(document.getElementById('weekly-breakfast-vegan').value) || 0,
+      breakfast_allergies: document.getElementById('weekly-breakfast-allergies').value || '',
+      lunch_players: Number(document.getElementById('weekly-lunch-players').value) || 0,
+      lunch_halal: Number(document.getElementById('weekly-lunch-halal').value) || 0,
+      lunch_kosher: Number(document.getElementById('weekly-lunch-kosher').value) || 0,
+      lunch_vegan: Number(document.getElementById('weekly-lunch-vegan').value) || 0,
       lunch_allergies: document.getElementById('weekly-lunch-allergies').value || '',
-      dinner_players: Number(document.getElementById('weekly-dinner-players').value),
-      dinner_halal: Number(document.getElementById('weekly-dinner-halal').value),
-      dinner_kosher: Number(document.getElementById('weekly-dinner-kosher').value),
-      dinner_vegan: Number(document.getElementById('weekly-dinner-vegan').value),
+      dinner_players: Number(document.getElementById('weekly-dinner-players').value) || 0,
+      dinner_halal: Number(document.getElementById('weekly-dinner-halal').value) || 0,
+      dinner_kosher: Number(document.getElementById('weekly-dinner-kosher').value) || 0,
+      dinner_vegan: Number(document.getElementById('weekly-dinner-vegan').value) || 0,
       dinner_allergies: document.getElementById('weekly-dinner-allergies').value || ''
     };
     
