@@ -849,11 +849,11 @@
       <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
     </div>
     
-    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 mb-4 pb-1">
+    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2">
       <!-- Categories rendered here -->
     </div>
     
-    <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="recipe-selector-grid">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pr-2" id="recipe-selector-grid">
       <!-- Populated via JS -->
     </div>
   </div>
@@ -2785,13 +2785,13 @@ window.applyRecipeSelectorFilters = function() {
   });
   
   grid.innerHTML = filtered.map(r => `
-    <div class="card overflow-hidden cursor-pointer hover:border-brand hover:scale-105 active:scale-95 transition-all duration-200 flex flex-col h-full relative group" onclick="selectRecipeForPlanner('${r.id}')">
-      ${r.image_url ? `<img src="${r.image_url}" class="w-full h-28 object-cover" onerror="this.style.display='none'" />` : `<div class="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
+    <div class="card overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col h-full relative" onclick="selectRecipeForPlanner('${r.id}')">
+      ${r.image_url ? `<img src="${r.image_url}" class="w-full h-28 object-cover rounded-t-lg" onerror="this.style.display='none'" />` : `<div class="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-400 rounded-t-lg"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
       <div class="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-slate-100/50">
         <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">${r.category}</span>
       </div>
-      <div class="p-3 bg-white flex-1 flex flex-col justify-center">
-        <p class="text-sm font-bold text-slate-900 leading-snug line-clamp-2">${r.name}</p>
+      <div class="p-2 bg-white flex-1 flex flex-col justify-center">
+        <p class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">${r.name}</p>
       </div>
     </div>
   `).join('');
@@ -3212,6 +3212,7 @@ async function deleteSubcat(cat, sub) {
     initDashboard();
     renderInventory(INVENTORY);
     renderRecipes();
+    loadSupabaseRecipes().catch(e => console.error("Error loading recipes on init", e));
     // Fetch planner data before rendering calendar
     fetchPlannerData().then(renderCalendar).catch(err => {
       console.error('Planner init error:', err);
