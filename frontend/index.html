@@ -2983,7 +2983,7 @@ async function deleteSubcat(cat, sub) {
       
       if (filterSelect) {
         filterSelect.innerHTML = '<option value="">Todas las familias</option>' + 
-          RECIPE_CATEGORIES.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+          RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
       }
       if (modalSelect) {
         modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -2996,6 +2996,7 @@ async function deleteSubcat(cat, sub) {
           id,
           name,
           category,
+          category_id,
           portions,
           instructions,
           recipe_ingredients (
@@ -3033,7 +3034,7 @@ async function deleteSubcat(cat, sub) {
       RECIPES = ALL_RECIPES.filter(r => {
         const nameStr = r.name || '';
         const matchSearch = nameStr.toLowerCase().includes(searchVal);
-        const matchFamily = !familyVal || r.category === familyVal;
+        const matchFamily = !familyVal || r.category_id === familyVal;
         return matchSearch && matchFamily;
       });
       
@@ -3099,8 +3100,12 @@ async function deleteSubcat(cat, sub) {
       portionsInput.value = r.portions || 1;
       imageInput.value = r.image_url || '';
       
-      const matchedCat = RECIPE_CATEGORIES.find(c => c.name === r.category);
-      if (matchedCat) catSelect.value = matchedCat.id;
+      if (r.category_id) {
+        catSelect.value = r.category_id;
+      } else {
+        const matchedCat = RECIPE_CATEGORIES.find(c => c.name === r.category);
+        if (matchedCat) catSelect.value = matchedCat.id;
+      }
       
       instInput.value = r.instructions || '';
       
