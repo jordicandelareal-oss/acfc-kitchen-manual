@@ -3364,12 +3364,14 @@ async function deleteSubcat(cat, sub) {
     const instInput = document.getElementById('recipe-instructions-input');
     const idInput = document.getElementById('recipe-id');
     const imageInput = document.getElementById('recipe-image-input');
+    const safeCategories = (typeof RECIPE_CATEGORIES !== 'undefined') ? RECIPE_CATEGORIES : [];
     // Populate select
-    catSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    catSelect.innerHTML = safeCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     
-    if (editId) {
+    if (editId && typeof editId === 'string') {
       titleEl.textContent = 'Editar Receta';
-      const r = ALL_RECIPES.find(recipe => recipe.id === editId);
+      const safeRecipes = (typeof RECIPES !== 'undefined') ? RECIPES : [];
+      const r = safeRecipes.find(recipe => recipe.id === editId);
       idInput.value = r.id;
       nameInput.value = r.name;
       portionsInput.value = r.portions || 1;
@@ -3378,7 +3380,7 @@ async function deleteSubcat(cat, sub) {
       if (r.category_id) {
         catSelect.value = r.category_id;
       } else {
-        const matchedCat = RECIPE_CATEGORIES.find(c => c.name === r.category);
+        const matchedCat = safeCategories.find(c => c.name === r.category);
         if (matchedCat) catSelect.value = matchedCat.id;
       }
       
