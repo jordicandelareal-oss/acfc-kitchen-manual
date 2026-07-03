@@ -700,6 +700,96 @@
   </div>
 </div>
 
+<!-- ── MODAL: WEEKLY MASS CONFIG ─────────────────────────────────── -->
+<div id="modal-weekly-config" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeWeeklyConfigModal()">
+  <div class="bg-white w-full max-w-2xl flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative overflow-y-auto">
+    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Configuración Semanal</h3>
+        <p class="text-sm text-slate-500 font-semibold">Aplica valores predeterminados para 7 días</p>
+      </div>
+      <button onclick="closeWeeklyConfigModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+
+    <div class="space-y-6 flex-1 overflow-y-auto pr-2 pb-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Semana de inicio (Fecha)</label>
+        <input type="date" id="weekly-config-date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+        <p class="text-[11px] text-slate-400 mt-1">Se aplicarán los datos a los 7 días consecutivos a partir de esta fecha.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- LUNCH -->
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+          <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-orange-500 text-[18px]">light_mode</span> Almuerzo</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 mb-1 block">Comensales Totales</label>
+              <input type="number" id="weekly-lunch-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Halal</label>
+                <input type="number" id="weekly-lunch-halal" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Kosher</label>
+                <input type="number" id="weekly-lunch-kosher" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Vegano</label>
+                <input type="number" id="weekly-lunch-vegan" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 mb-1 block">Alergias / Notas</label>
+              <input type="text" id="weekly-lunch-allergies" placeholder="Ej: 2 Celíacos, 1 Sin lactosa" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
+            </div>
+          </div>
+        </div>
+
+        <!-- DINNER -->
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+          <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-indigo-500 text-[18px]">dark_mode</span> Cena</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 mb-1 block">Comensales Totales</label>
+              <input type="number" id="weekly-dinner-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Halal</label>
+                <input type="number" id="weekly-dinner-halal" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Kosher</label>
+                <input type="number" id="weekly-dinner-kosher" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+              <div>
+                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Vegano</label>
+                <input type="number" id="weekly-dinner-vegan" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 mb-1 block">Alergias / Notas</label>
+              <input type="text" id="weekly-dinner-allergies" placeholder="Ej: 2 Celíacos, 1 Sin lactosa" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+      <button onclick="closeWeeklyConfigModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+      <button onclick="saveWeeklyConfig()" id="weekly-save-btn" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px] hidden" id="weekly-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+        <span id="weekly-save-text">Aplicar a 7 días</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: RECIPE SELECTOR ─────────────────────────────────────── -->
 <div id="modal-recipe-selector" class="modal-overlay hidden z-[60]" onclick="if(event.target===this)closeRecipeSelector()">
   <div class="modal-box w-full max-w-3xl flex flex-col max-h-[90vh]">
@@ -1179,7 +1269,10 @@
         <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Planificador Mensual</h1>
         <p class="text-sm text-slate-500 mt-1">Julio 2026 — Menú diario almuerzo + cena</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+        <button onclick="openWeeklyConfigModal()" class="flex items-center gap-2 px-3 md:px-4 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl text-[13px] md:text-sm font-semibold hover:border-brand hover:text-brand hover:shadow-sm transition-all whitespace-nowrap">
+          <span class="material-symbols-outlined text-[18px]">settings</span> Configuración Semanal
+        </button>
         <button onclick="toast('⬅️ Navegación de mes próximamente')" class="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500">
           <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span>
         </button>
@@ -2652,12 +2745,12 @@ window.savePlannerDay = async function() {
     lunch_halal: _currentPlannerState.lunch_halal,
     lunch_kosher: _currentPlannerState.lunch_kosher,
     lunch_vegan: _currentPlannerState.lunch_vegan,
-    lunch_allergies: _currentPlannerState.lunch_allergies,
+    lunch_allergies: _currentPlannerState.lunch_allergies || '',
     dinner_players: _currentPlannerState.dinner_players,
     dinner_halal: _currentPlannerState.dinner_halal,
     dinner_kosher: _currentPlannerState.dinner_kosher,
     dinner_vegan: _currentPlannerState.dinner_vegan,
-    dinner_allergies: _currentPlannerState.dinner_allergies
+    dinner_allergies: _currentPlannerState.dinner_allergies || ''
   };
   
   try {
@@ -2675,6 +2768,89 @@ window.savePlannerDay = async function() {
     btn.disabled = false;
     spinner.classList.add('hidden');
     text.textContent = 'Guardar Día';
+  }
+}
+
+window.openWeeklyConfigModal = function() {
+  document.getElementById('modal-weekly-config').classList.remove('hidden');
+  document.getElementById('modal-weekly-config').classList.add('flex');
+}
+window.closeWeeklyConfigModal = function() {
+  document.getElementById('modal-weekly-config').classList.add('hidden');
+  document.getElementById('modal-weekly-config').classList.remove('flex');
+}
+
+window.saveWeeklyConfig = async function() {
+  const startDateStr = document.getElementById('weekly-config-date').value;
+  if (!startDateStr) {
+    toast('❌ Debes seleccionar una fecha de inicio.');
+    return;
+  }
+  
+  const btn = document.getElementById('weekly-save-btn');
+  const spinner = document.getElementById('weekly-save-spinner');
+  const text = document.getElementById('weekly-save-text');
+  
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  text.textContent = 'Aplicando...';
+  
+  try {
+    const config = {
+      lunch_players: Number(document.getElementById('weekly-lunch-players').value),
+      lunch_halal: Number(document.getElementById('weekly-lunch-halal').value),
+      lunch_kosher: Number(document.getElementById('weekly-lunch-kosher').value),
+      lunch_vegan: Number(document.getElementById('weekly-lunch-vegan').value),
+      lunch_allergies: document.getElementById('weekly-lunch-allergies').value || '',
+      dinner_players: Number(document.getElementById('weekly-dinner-players').value),
+      dinner_halal: Number(document.getElementById('weekly-dinner-halal').value),
+      dinner_kosher: Number(document.getElementById('weekly-dinner-kosher').value),
+      dinner_vegan: Number(document.getElementById('weekly-dinner-vegan').value),
+      dinner_allergies: document.getElementById('weekly-dinner-allergies').value || ''
+    };
+    
+    // Create payload for 7 days
+    const upserts = [];
+    const baseParts = startDateStr.split('-');
+    const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + i);
+      const isoDate = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+      
+      const existing = Object.values(PLANNER_DATA).find(p => p.date === isoDate) || {};
+      
+      upserts.push({
+        date: isoDate,
+        breakfast_recipe_id: existing.breakfast_recipe_id || null,
+        lunch_recipe_id: existing.lunch_recipe_id || null,
+        dinner_recipe_id: existing.dinner_recipe_id || null,
+        ...config
+      });
+    }
+    
+    const { error } = await window.supabase.from('menu_planner').upsert(upserts, { onConflict: 'date' });
+    if (error) throw error;
+    
+    upserts.forEach(up => {
+      // Assuming we are still in July 2026 for the UI month view
+      if (up.date.startsWith('2026-07-')) {
+        const day = parseInt(up.date.split('-')[2], 10);
+        PLANNER_DATA[day] = up;
+      }
+    });
+    
+    renderCalendar();
+    closeWeeklyConfigModal();
+    toast('✅ Configuración semanal aplicada');
+  } catch(err) {
+    console.error('Error config semanal:', err);
+    toast('❌ Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    text.textContent = 'Aplicar a 7 días';
   }
 }
 
@@ -2743,19 +2919,7 @@ function extractIngredients(text) {
   return found.slice(0, 10);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
-(async function init() {
-  initDashboard();
-  renderInventory(INVENTORY);
-  renderRecipes();
-  // Fetch planner data before rendering calendar
-  fetchPlannerData().then(renderCalendar).catch(err => {
-    console.error('Planner init error:', err);
-    renderCalendar(); // Fallback render
-  });
-  // Suppliers: load asynchronously — never blocks the app
-  fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
-})();
+// ── INIT moved to module script ──
 
 // ── CATEGORY MANAGER ──────────────────────────────────────────────
 // In-memory category store derived from INVENTORY data.
@@ -2955,6 +3119,22 @@ async function deleteSubcat(cat, sub) {
 <script type="module">
   import { supabase } from './src/supabaseClient.js';
   window.supabase = supabase;
+
+  // ── INIT ──────────────────────────────────────────────────────────
+  async function init() {
+    initDashboard();
+    renderInventory(INVENTORY);
+    renderRecipes();
+    // Fetch planner data before rendering calendar
+    fetchPlannerData().then(renderCalendar).catch(err => {
+      console.error('Planner init error:', err);
+      renderCalendar(); // Fallback render
+    });
+    // Suppliers: load asynchronously — never blocks the app
+    fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
+  }
+  
+  init();
 
   // Cache variables for recipes screen
   let ALL_RECIPES = [];
