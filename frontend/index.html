@@ -508,16 +508,34 @@
       <div class="border-t border-slate-100 pt-4 space-y-3">
         <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Añadir Ingredientes</span>
         
-        <div class="relative">
-          <div class="flex gap-2">
-            <input type="text" id="recipe-ing-search" onkeyup="searchRecipeIngredient(this.value)" placeholder="Buscar ingrediente por nombre..." 
-              class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-            <button onclick="clearRecipeIngSearch()" class="px-3 py-2 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500">Limpiar</button>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-grow">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Buscar Insumo</label>
+            <div class="flex gap-2">
+              <input type="text" id="recipe-ing-search" onkeyup="searchRecipeIngredient(this.value)" placeholder="Buscar ingrediente por nombre..." 
+                class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+              <button onclick="clearRecipeIngSearch()" class="px-3 py-2 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500">Limpiar</button>
+            </div>
+            <!-- Autocomplete results dropdown -->
+            <div id="recipe-ing-autocomplete-list" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden z-50">
+            </div>
           </div>
-          <!-- Autocomplete results dropdown -->
-          <div id="recipe-ing-autocomplete-list" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden z-50">
+          
+          <div class="w-full sm:w-32">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Cantidad</label>
+            <div class="relative">
+              <input type="number" id="recipe-ing-qty" step="0.01" min="0" placeholder="0.00" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand pr-8 disabled:bg-slate-50 disabled:text-slate-400" disabled />
+              <span id="recipe-ing-unit" class="absolute right-3 top-[9px] text-[10px] font-bold text-slate-400 uppercase">--</span>
+            </div>
+          </div>
+
+          <div class="flex items-end">
+             <button onclick="addRecipeIngredientFromForm()" id="recipe-ing-add-btn" class="w-full sm:w-auto px-4 py-2 bg-brand text-white font-semibold rounded-lg text-sm hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:bg-slate-300" disabled>Añadir</button>
           </div>
         </div>
+        <!-- Hidden inputs -->
+        <input type="hidden" id="recipe-ing-id" />
+        <input type="hidden" id="recipe-ing-name" />
 
         <div class="overflow-x-auto">
           <table class="w-full text-xs text-left">
@@ -2033,7 +2051,7 @@ function renderRecipes() {
         
         const parsedIngs = (r.recipe_ingredients || []).map(ri => {
           const ing = ri.ingredients || {};
-          const qty = Number(ri.quantity_per_portion) || 0;
+          const qty = Number(ri.quantity) || Number(ri.quantity_per_portion) || 0;
           const unit = ri.unit || 'Gr';
           const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin asignar';
           
@@ -3335,7 +3353,7 @@ async function deleteSubcat(cat, sub) {
       _recipeIngredientsBuilder = (r.recipe_ingredients || []).map(ri => ({
         id: ri.ingredients?.id,
         name: ri.ingredients?.name || 'Sin nombre',
-        qty: Number(ri.quantity_per_portion) || 0,
+        qty: Number(ri.quantity) || Number(ri.quantity_per_portion) || 0,
         unit: ri.unit || 'Gr'
       }));
     } else {
@@ -3382,19 +3400,61 @@ async function deleteSubcat(cat, sub) {
   }
 
   function selectRecipeIngredient(id, name, unit) {
-    // Avoid duplicates
-    if (_recipeIngredientsBuilder.some(item => item.id === id)) {
-      toast('⚠️ Este ingrediente ya ha sido añadido.');
-      clearRecipeIngSearch();
+    document.getElementById('recipe-ing-search').value = name;
+    document.getElementById('recipe-ing-id').value = id;
+    document.getElementById('recipe-ing-name').value = name;
+    document.getElementById('recipe-ing-unit').textContent = unit || 'ud';
+    document.getElementById('recipe-ing-autocomplete-list').classList.add('hidden');
+    
+    const qtyInput = document.getElementById('recipe-ing-qty');
+    qtyInput.disabled = false;
+    qtyInput.focus();
+    
+    document.getElementById('recipe-ing-add-btn').disabled = false;
+  }
+
+  function addRecipeIngredientFromForm() {
+    const id = document.getElementById('recipe-ing-id').value;
+    const name = document.getElementById('recipe-ing-name').value;
+    const qty = parseFloat(document.getElementById('recipe-ing-qty').value);
+    const unit = document.getElementById('recipe-ing-unit').textContent;
+    
+    if (!id || !name) {
+      toast('⚠️ Selecciona un ingrediente del buscador primero.');
       return;
     }
-    _recipeIngredientsBuilder.push({ id, name, qty: 100, unit: unit || 'Gr' });
+    if (isNaN(qty) || qty <= 0) {
+      toast('⚠️ Introduce una cantidad válida mayor que 0.');
+      return;
+    }
+    
+    if (_recipeIngredientsBuilder.some(item => item.id === id)) {
+      toast('⚠️ Este ingrediente ya ha sido añadido. Puedes editar su cantidad en la tabla.');
+      return;
+    }
+    
+    _recipeIngredientsBuilder.push({ id, name, qty, unit });
     renderRecipeIngredientsBuilder();
     clearRecipeIngSearch();
   }
 
   function clearRecipeIngSearch() {
     document.getElementById('recipe-ing-search').value = '';
+    
+    const idInput = document.getElementById('recipe-ing-id');
+    if (idInput) idInput.value = '';
+    const nameInput = document.getElementById('recipe-ing-name');
+    if (nameInput) nameInput.value = '';
+    const qtyInput = document.getElementById('recipe-ing-qty');
+    if (qtyInput) {
+      qtyInput.value = '';
+      qtyInput.disabled = true;
+    }
+    const unitLabel = document.getElementById('recipe-ing-unit');
+    if (unitLabel) unitLabel.textContent = '--';
+    const btn = document.getElementById('recipe-ing-add-btn');
+    if (btn) btn.disabled = true;
+    
     const listEl = document.getElementById('recipe-ing-autocomplete-list');
     listEl.innerHTML = '';
     listEl.classList.add('hidden');
@@ -3495,11 +3555,13 @@ async function deleteSubcat(cat, sub) {
       const grouped = {};
       _recipeIngredientsBuilder.forEach(item => {
         if (grouped[item.id]) {
+          grouped[item.id].quantity += Number(item.qty);
           grouped[item.id].quantity_per_portion += Number(item.qty);
         } else {
           grouped[item.id] = {
             recipe_id: recipeId,
             ingredient_id: item.id,
+            quantity: Number(item.qty),
             quantity_per_portion: Number(item.qty),
             unit: item.unit
           };
@@ -3638,6 +3700,7 @@ async function deleteSubcat(cat, sub) {
   window.closeRecipeModal = closeRecipeModal;
   window.searchRecipeIngredient = searchRecipeIngredient;
   window.selectRecipeIngredient = selectRecipeIngredient;
+  window.addRecipeIngredientFromForm = addRecipeIngredientFromForm;
   window.clearRecipeIngSearch = clearRecipeIngSearch;
   window.removeRecipeIngredientRow = removeRecipeIngredientRow;
   window.saveRecipe = saveRecipe;
