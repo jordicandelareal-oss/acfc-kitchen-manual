@@ -838,7 +838,7 @@
 </div>
 
 <!-- ── MODAL: RECIPE SELECTOR ─────────────────────────────────────── -->
-<div id="modal-recipe-selector" class="modal-overlay hidden z-[60]" onclick="if(event.target===this)closeRecipeSelector()">
+<div id="modal-recipe-selector" class="modal-overlay z-[1100]" onclick="if(event.target===this)closeRecipeSelector()">
   <div class="modal-box w-full max-w-3xl flex flex-col max-h-[90vh]">
     <div class="flex justify-between items-center mb-5 flex-shrink-0">
       <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Seleccionar Receta</h3>
@@ -2733,13 +2733,11 @@ window.openRecipeSelector = function(target) {
   _currentPlannerTarget = target;
   document.getElementById('recipe-selector-search').value = '';
   filterRecipeSelector('');
-  document.getElementById('modal-recipe-selector').classList.remove('hidden');
-  document.getElementById('modal-recipe-selector').classList.add('flex');
+  document.getElementById('modal-recipe-selector').classList.add('open');
 }
 
 window.closeRecipeSelector = function() {
-  document.getElementById('modal-recipe-selector').classList.add('hidden');
-  document.getElementById('modal-recipe-selector').classList.remove('flex');
+  document.getElementById('modal-recipe-selector').classList.remove('open');
 }
 
 window.filterRecipeSelector = function(query) {
