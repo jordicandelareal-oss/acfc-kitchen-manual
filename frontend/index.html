@@ -1940,7 +1940,7 @@ function renderRecipes() {
           const ing = ri.ingredients || {};
           const qty = Number(ri.quantity_per_portion) || 0;
           const unit = ri.unit || 'Gr';
-          const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin clasificar';
+          const nutritionalCategory = ing.nutritional_category || ing.category || 'Sin asignar';
           
           let itemCost = 0;
           let unitCostText = "0.00€";
@@ -3006,6 +3006,7 @@ async function deleteSubcat(cat, sub) {
               name,
               calculated_net_cost_kg,
               nutritional_category,
+              precio_por_kg,
               precio_por_u,
               precio_mas_bajo,
               waste_percentage
