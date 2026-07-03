@@ -2587,9 +2587,9 @@ function renderCalendar() {
     let dinnerName = 'Añadir';
     
     if (menu) {
-       const br = ALL_RECIPES.find(r => r.id === menu.breakfast_recipe_id);
-       const lr = ALL_RECIPES.find(r => r.id === menu.lunch_recipe_id);
-       const dr = ALL_RECIPES.find(r => r.id === menu.dinner_recipe_id);
+       const br = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.breakfast_recipe_id);
+       const lr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.lunch_recipe_id);
+       const dr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.dinner_recipe_id);
        if (br) breakfastName = br.name;
        if (lr) lunchName = lr.name;
        if (dr) dinnerName = dr.name;
@@ -2706,7 +2706,7 @@ window.renderPlannerTarget = function(target) {
   const name = document.getElementById(`planner-${target}-name`);
   
   if (recipeId) {
-    const r = ALL_RECIPES.find(rec => rec.id === recipeId);
+    const r = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(rec => rec.id === recipeId);
     if (r) {
       btn.classList.add('hidden');
       card.classList.remove('hidden');
@@ -2746,7 +2746,7 @@ window.filterRecipeSelector = function(query) {
   const grid = document.getElementById('recipe-selector-grid');
   const q = query.toLowerCase();
   
-  const filtered = ALL_RECIPES.filter(r => 
+  const filtered = (typeof RECIPES !== 'undefined' ? RECIPES : []).filter(r => 
     (r.name && r.name.toLowerCase().includes(q)) || 
     (r.category && r.category.toLowerCase().includes(q))
   );
