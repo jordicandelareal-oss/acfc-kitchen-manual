@@ -583,8 +583,9 @@
 </div>
 
 <!-- ── MODAL: PLANNER DAY EDIT ────────────────────────────────────── -->
-<div id="modal-planner-day" class="modal-overlay hidden" onclick="if(event.target===this)closePlannerDayModal()">
-  <div class="modal-box w-full max-w-2xl flex flex-col max-h-[90vh]">
+<div id="modal-planner-day" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closePlannerDayModal()">
+  <div class="bg-white w-full max-w-2xl flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative">
+    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex justify-between items-center mb-5 flex-shrink-0">
       <div>
         <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Planificar Día</h3>
@@ -628,24 +629,24 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
-            <input type="number" id="planner-lunch-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-lunch-players" onchange="updatePlannerState('lunch', 'players', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
-            <input type="number" id="planner-lunch-halal" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-lunch-halal" onchange="updatePlannerState('lunch', 'halal', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-            <input type="number" id="planner-lunch-kosher" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-lunch-kosher" onchange="updatePlannerState('lunch', 'kosher', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-            <input type="number" id="planner-lunch-vegan" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-lunch-vegan" onchange="updatePlannerState('lunch', 'vegan', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
         </div>
         <div class="mt-3">
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas</label>
-          <input type="text" id="planner-lunch-allergies" placeholder="Ej: 2 Celíacos, 1 Sin frutos secos" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+          <input type="text" id="planner-lunch-allergies" onchange="updatePlannerState('lunch', 'allergies', this.value)" placeholder="Ej: 2 Celíacos, 1 Sin frutos secos" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
         </div>
       </div>
 
@@ -666,24 +667,24 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
-            <input type="number" id="planner-dinner-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-dinner-players" onchange="updatePlannerState('dinner', 'players', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
-            <input type="number" id="planner-dinner-halal" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-dinner-halal" onchange="updatePlannerState('dinner', 'halal', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-            <input type="number" id="planner-dinner-kosher" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-dinner-kosher" onchange="updatePlannerState('dinner', 'kosher', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-            <input type="number" id="planner-dinner-vegan" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+            <input type="number" id="planner-dinner-vegan" onchange="updatePlannerState('dinner', 'vegan', this.value)" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
           </div>
         </div>
         <div class="mt-3">
           <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas</label>
-          <input type="text" id="planner-dinner-allergies" placeholder="Ej: 2 Celíacos, 1 Sin frutos secos" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
+          <input type="text" id="planner-dinner-allergies" onchange="updatePlannerState('dinner', 'allergies', this.value)" placeholder="Ej: 2 Celíacos, 1 Sin frutos secos" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
         </div>
       </div>
       
@@ -1200,7 +1201,7 @@
     </div>
 
     <!-- Day headers -->
-    <div class="grid grid-cols-7 gap-2">
+    <div class="hidden md:grid grid-cols-7 gap-2">
       <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Lun</div>
       <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mar</div>
       <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mié</div>
@@ -1209,7 +1210,8 @@
       <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Sáb</div>
       <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Dom</div>
     </div>
-    <div class="grid grid-cols-7 gap-2" id="cal-grid"></div>
+    <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
+    <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
 
   </div>
 
@@ -2427,21 +2429,28 @@ async function fetchPlannerData() {
 
 function renderCalendar() {
   const grid = document.getElementById('cal-grid');
+  const mList = document.getElementById('cal-list-mobile');
   if (!grid) return;
   const today = new Date().getDate();
   const offset = 2; // Wed 1 July -> Mon=0, Tue=1, Wed=2
   let html = '';
   for (let i = 0; i < offset; i++) html += '<div></div>';
+  
+  let mHtml = '';
+
   for (let d = 1; d <= 31; d++) {
     const isToday = d === today;
     const menu = PLANNER_DATA[d];
     
+    let breakfastName = 'Añadir';
     let lunchName = 'Añadir';
     let dinnerName = 'Añadir';
     
     if (menu) {
+       const br = ALL_RECIPES.find(r => r.id === menu.breakfast_recipe_id);
        const lr = ALL_RECIPES.find(r => r.id === menu.lunch_recipe_id);
        const dr = ALL_RECIPES.find(r => r.id === menu.dinner_recipe_id);
+       if (br) breakfastName = br.name;
        if (lr) lunchName = lr.name;
        if (dr) dinnerName = dr.name;
     }
@@ -2456,6 +2465,7 @@ function renderCalendar() {
         </div>
         ${hasMenu ? `
           <div class="flex-grow flex flex-col justify-end gap-1 mt-1">
+            ${menu.breakfast_recipe_id ? `<p class="text-[10px] font-semibold text-slate-700 leading-tight truncate" title="${breakfastName}">☕ ${breakfastName}</p>` : ''}
             ${menu.lunch_recipe_id ? `<p class="text-[10px] font-semibold text-brand leading-tight truncate" title="${lunchName}">🌞 ${lunchName}</p>` : ''}
             ${menu.dinner_recipe_id ? `<p class="text-[10px] text-slate-500 leading-tight truncate" title="${dinnerName}">🌙 ${dinnerName}</p>` : ''}
           </div>` : `
@@ -2463,8 +2473,46 @@ function renderCalendar() {
             <span class="text-[9px] text-slate-200">+ Añadir</span>
           </div>`}
       </div>`;
+      
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const dateObj = new Date(2026, 6, d);
+      const dayName = dayNames[dateObj.getDay()];
+      
+      mHtml += `
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative">
+        ${isToday ? '<span class="absolute top-3 right-3 w-2 h-2 rounded-full bg-brand"></span>' : ''}
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">${dayName} ${d} de Julio</p>
+        
+        <div class="space-y-2 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">☕</span>
+            <span class="text-sm ${menu && menu.breakfast_recipe_id ? 'text-slate-800 font-semibold' : 'text-slate-400 italic'} truncate flex-1">${breakfastName}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🌞</span>
+            <span class="text-sm ${menu && menu.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'} truncate flex-1">${lunchName}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🌙</span>
+            <span class="text-sm ${menu && menu.dinner_recipe_id ? 'text-slate-600 font-semibold' : 'text-slate-400 italic'} truncate flex-1">${dinnerName}</span>
+          </div>
+        </div>
+        
+        <button onclick="openPlannerDayModal(${d})" class="w-full flex justify-center items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold transition-colors border border-slate-200">
+          <span class="material-symbols-outlined text-[16px]">edit</span> Editar Detalles
+        </button>
+      </div>`;
   }
   grid.innerHTML = html;
+  if (mList) mList.innerHTML = mHtml;
+}
+
+window.updatePlannerState = function(meal, field, value) {
+  if (field === 'allergies') {
+    _currentPlannerState[`${meal}_${field}`] = value;
+  } else {
+    _currentPlannerState[`${meal}_${field}`] = parseInt(value) || 0;
+  }
 }
 
 window.openPlannerDayModal = function(d) {
@@ -2592,13 +2640,8 @@ window.savePlannerDay = async function() {
   const d = _currentPlannerDay;
   const dateStr = `2026-07-${d.toString().padStart(2, '0')}`;
   
-  ['lunch', 'dinner'].forEach(m => {
-    _currentPlannerState[`${m}_players`] = parseInt(document.getElementById(`planner-${m}-players`).value) || 0;
-    _currentPlannerState[`${m}_halal`] = parseInt(document.getElementById(`planner-${m}-halal`).value) || 0;
-    _currentPlannerState[`${m}_kosher`] = parseInt(document.getElementById(`planner-${m}-kosher`).value) || 0;
-    _currentPlannerState[`${m}_vegan`] = parseInt(document.getElementById(`planner-${m}-vegan`).value) || 0;
-    _currentPlannerState[`${m}_allergies`] = document.getElementById(`planner-${m}-allergies`).value.trim();
-  });
+  // State is now maintained by updatePlannerState and selectRecipeForPlanner
+  // No need to scrape DOM values. Just ensure we use _currentPlannerState directly.
   
   const payload = {
     date: dateStr,
