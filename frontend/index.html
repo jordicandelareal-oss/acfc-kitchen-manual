@@ -849,7 +849,11 @@
       <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
     </div>
     
-    <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-2 sm:grid-cols-3 gap-4" id="recipe-selector-grid">
+    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 mb-4 pb-1">
+      <!-- Categories rendered here -->
+    </div>
+    
+    <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="recipe-selector-grid">
       <!-- Populated via JS -->
     </div>
   </div>
@@ -2729,10 +2733,35 @@ window.clearPlannerRecipe = function(target) {
   renderPlannerTarget(target);
 }
 
+let _currentRecipeSelectorCat = '';
+let _currentRecipeSelectorQuery = '';
+
+window.renderRecipeSelectorCategories = function() {
+  const container = document.getElementById('recipe-selector-categories');
+  const safeCategories = (typeof RECIPE_CATEGORIES !== 'undefined') ? RECIPE_CATEGORIES : [];
+  let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Todas</button>`;
+  
+  safeCategories.forEach(c => {
+    const isSelected = _currentRecipeSelectorCat === c.id;
+    html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c.name}</button>`;
+  });
+  
+  container.innerHTML = html;
+};
+
+window.setRecipeSelectorCategory = function(catId) {
+  _currentRecipeSelectorCat = catId;
+  renderRecipeSelectorCategories();
+  applyRecipeSelectorFilters();
+};
+
 window.openRecipeSelector = function(target) {
   _currentPlannerTarget = target;
+  _currentRecipeSelectorCat = '';
+  _currentRecipeSelectorQuery = '';
   document.getElementById('recipe-selector-search').value = '';
-  filterRecipeSelector('');
+  renderRecipeSelectorCategories();
+  applyRecipeSelectorFilters();
   document.getElementById('modal-recipe-selector').classList.add('open');
 }
 
@@ -2741,20 +2770,28 @@ window.closeRecipeSelector = function() {
 }
 
 window.filterRecipeSelector = function(query) {
+  _currentRecipeSelectorQuery = query;
+  applyRecipeSelectorFilters();
+}
+
+window.applyRecipeSelectorFilters = function() {
   const grid = document.getElementById('recipe-selector-grid');
-  const q = query.toLowerCase();
+  const q = _currentRecipeSelectorQuery.toLowerCase();
   
-  const filtered = (typeof RECIPES !== 'undefined' ? RECIPES : []).filter(r => 
-    (r.name && r.name.toLowerCase().includes(q)) || 
-    (r.category && r.category.toLowerCase().includes(q))
-  );
+  const filtered = (typeof RECIPES !== 'undefined' ? RECIPES : []).filter(r => {
+    const matchesSearch = (r.name && r.name.toLowerCase().includes(q)) || (r.category && r.category.toLowerCase().includes(q));
+    const matchesCat = _currentRecipeSelectorCat === '' || r.category_id === _currentRecipeSelectorCat;
+    return matchesSearch && matchesCat;
+  });
   
   grid.innerHTML = filtered.map(r => `
-    <div class="card overflow-hidden cursor-pointer hover:border-brand transition-colors flex flex-col h-full" onclick="selectRecipeForPlanner('${r.id}')">
-      ${r.image_url ? `<img src="${r.image_url}" class="w-full h-24 object-cover" onerror="this.style.display='none'" />` : `<div class="w-full h-24 bg-slate-100 flex items-center justify-center text-slate-400"><span class="material-symbols-outlined text-3xl">restaurant</span></div>`}
-      <div class="p-3">
-        <p class="text-xs font-bold text-slate-900 leading-tight">${r.name}</p>
-        <p class="text-[10px] text-slate-500 mt-1">${r.category}</p>
+    <div class="card overflow-hidden cursor-pointer hover:border-brand hover:scale-105 active:scale-95 transition-all duration-200 flex flex-col h-full relative group" onclick="selectRecipeForPlanner('${r.id}')">
+      ${r.image_url ? `<img src="${r.image_url}" class="w-full h-28 object-cover" onerror="this.style.display='none'" />` : `<div class="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-200 transition-colors"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
+      <div class="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-slate-100/50">
+        <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">${r.category}</span>
+      </div>
+      <div class="p-3 bg-white flex-1 flex flex-col justify-center">
+        <p class="text-sm font-bold text-slate-900 leading-snug line-clamp-2">${r.name}</p>
       </div>
     </div>
   `).join('');
