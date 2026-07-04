@@ -718,6 +718,27 @@
   </div>
 </div>
 
+<!-- ── MODAL: RECIPE SELECTOR (CENTRAL MODAL) ─────────────────────────────────────── -->
+<div id="recipe-selector-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1050] transition-opacity duration-300 opacity-0 pointer-events-none hidden" onclick="closeRecipeSelector()"></div>
+
+<div id="modal-recipe-selector" class="fixed z-[1100] bg-white shadow-2xl transition-all duration-300 flex flex-col w-full max-w-4xl max-h-[85vh] rounded-2xl hidden top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-6 md:p-8">
+  <div class="flex justify-between items-center mb-4 flex-shrink-0">
+    <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Seleccionar Receta</h3>
+    <button onclick="closeRecipeSelector()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  
+  <div class="mb-4 flex-shrink-0">
+    <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-slate-50 focus:bg-white transition-colors" />
+  </div>
+  
+  <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2 mb-4 flex-shrink-0">
+  </div>
+  
+  <div class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="recipe-selector-grid">
+  </div>
+</div>
+
+
 <!-- ── MODAL: WEEKLY MASS CONFIG ─────────────────────────────────── -->
 <div id="modal-weekly-config" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeWeeklyConfigModal()">
   <div class="bg-white w-full max-w-4xl flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative overflow-y-auto">
@@ -1291,9 +1312,8 @@
   </div>
 
   <!-- ════ SCREEN: PLANIFICADOR ═════════════════════════════════ -->
-  <div id="screen-planner" class="screen hidden">
-    <div class="flex gap-6 h-[calc(100vh-140px)]">
-      <div class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-none pb-12">
+  <div id="screen-planner" class="screen hidden w-full">
+    <div class="w-full flex flex-col gap-4">
 
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
@@ -1337,23 +1357,7 @@
     <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
     <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
       </div>
-      
-      <!-- DESKTOP CATALOG SIDEBAR (Dark UI) -->
-      <aside class="hidden xl:flex w-[340px] flex-shrink-0 bg-[#262626] rounded-2xl flex-col shadow-xl sticky top-0 h-full overflow-hidden">
-        <div class="p-5 pb-3 flex justify-between items-center">
-          <h2 class="text-xl font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined">menu_book</span> Catalog</h2>
-          <span class="material-symbols-outlined text-slate-400">search</span>
-        </div>
-        <div class="px-5 mb-4">
-          <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Search recipes..." class="w-full bg-[#3a3b3f] text-white placeholder-slate-400 border-none rounded-lg px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-brand" />
-        </div>
-        <div class="px-5 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none pb-2" id="recipe-selector-categories">
-          <!-- Populated via JS -->
-        </div>
-        <div class="flex-1 overflow-y-auto px-5 pb-5 flex flex-col gap-4 mt-2" id="recipe-selector-grid">
-          <!-- Populated via JS -->
-        </div>
-      </aside>
+      </div>
     </div>
   </div>
 
@@ -2751,32 +2755,17 @@ let _currentRecipeSelectorQuery = '';
 
 window.renderRecipeSelectorCategories = function() {
   const safeCategories = (typeof RECIPE_CATEGORIES !== 'undefined') ? RECIPE_CATEGORIES : [];
-  
-  // Desktop
   const container = document.getElementById('recipe-selector-categories');
   if (container) {
-      let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-[#5e6ad2] text-white shadow-sm' : 'bg-[#3f4044] text-gray-300 hover:bg-[#4a4b4f]'}">Todas</button>`;
-      
-      safeCategories.forEach(c => {
-        const isSelected = _currentRecipeSelectorCat === c.id;
-        html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-[#5e6ad2] text-white shadow-sm' : 'bg-[#3f4044] text-gray-300 hover:bg-[#4a4b4f]'}">${c.name}</button>`;
-      });
-      container.innerHTML = html;
-  }
-
-  // Mobile
-  const mContainer = document.getElementById('mobile-recipe-selector-categories');
-  if (mContainer) {
       let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Todas</button>`;
       
       safeCategories.forEach(c => {
         const isSelected = _currentRecipeSelectorCat === c.id;
         html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c.name}</button>`;
       });
-      mContainer.innerHTML = html;
+      container.innerHTML = html;
   }
 };
-
 
 window.setRecipeSelectorCategory = function(catId) {
   _currentRecipeSelectorCat = catId;
@@ -2805,7 +2794,6 @@ window.dropRecipe = async function(ev, d) {
   
   toast('Asignando...');
   
-  // Merge existing data to not overwrite other meals
   const existing = PLANNER_DATA[d] || {
       breakfast_recipe_id: null,
       lunch_recipe_id: null,
@@ -2834,15 +2822,10 @@ window.dropRecipe = async function(ev, d) {
      if(error) throw error;
      await fetchPlannerData();
      renderCalendar();
-     toast('✅ Receta asignada al Almuerzo (Doble clic en el día para moverla)');
+     toast('✅ Receta asignada al Almuerzo');
   } catch(e) {
      toast('❌ Error: ' + e.message);
   }
-}
-
-
-window.filterMobileRecipeSelector = function(q) {
-   filterRecipeSelector(q);
 }
 
 window.openRecipeSelector = function(target) {
@@ -2850,25 +2833,21 @@ window.openRecipeSelector = function(target) {
   _currentRecipeSelectorCat = '';
   _currentRecipeSelectorQuery = '';
   
-  if (window.innerWidth >= 1280) {
-     const sidebar = document.getElementById('recipe-selector-search');
-     if (sidebar) sidebar.focus();
-     toast('Selecciona una receta del catálogo lateral');
-     closePlannerDayModal();
-  } else {
-     // Mobile: show bottom sheet
-     const searchInput = document.getElementById('mobile-recipe-selector-search');
-     if (searchInput) searchInput.value = '';
-     renderRecipeSelectorCategories();
-     applyRecipeSelectorFilters();
-     
-     const selector = document.getElementById('modal-recipe-selector');
-     const overlay = document.getElementById('recipe-selector-overlay');
-     
-     if (selector && overlay) {
-       selector.classList.remove('translate-y-full');
-       overlay.classList.remove('opacity-0', 'pointer-events-none');
-     }
+  const searchInput = document.getElementById('recipe-selector-search');
+  if (searchInput) searchInput.value = '';
+  
+  renderRecipeSelectorCategories();
+  applyRecipeSelectorFilters();
+  
+  const selector = document.getElementById('modal-recipe-selector');
+  const overlay = document.getElementById('recipe-selector-overlay');
+  
+  if (selector && overlay) {
+    selector.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    setTimeout(() => {
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+    }, 10);
   }
 }
 
@@ -2877,8 +2856,11 @@ window.closeRecipeSelector = function() {
   const overlay = document.getElementById('recipe-selector-overlay');
   
   if (selector && overlay) {
-      selector.classList.add('translate-y-full');
-      overlay.classList.add('opacity-0', 'pointer-events-none');
+    selector.classList.add('hidden');
+    overlay.classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+    }, 300);
   }
 }
 
@@ -2910,44 +2892,19 @@ window.applyRecipeSelectorFilters = function() {
     return;
   }
 
-  // ── Render Desktop Sidebar ───────────────────────────────────────
+  // ── Render Modal Grid ───────────────────────────────────────────
   const grid = document.getElementById('recipe-selector-grid');
   if (grid) {
     if (filtered.length === 0) {
-      grid.innerHTML = `<p style="font-size:12px;color:#94a3b8;padding:8px 0">Sin recetas para este filtro.</p>`;
+      grid.innerHTML = `<p style="font-size:12px;color:#94a3b8;padding:8px 0" class="col-span-3 text-center">Sin recetas para este filtro.</p>`;
     } else {
       grid.innerHTML = filtered.map(r => {
         const catName = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id)?.name || r.category || 'Receta';
         return `
-        <div class="rounded-xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-transform duration-200 relative group border border-[#3a3b3f]" style="height: 120px;" draggable="true" ondragstart="dragRecipe(event, '${r.id}')" onclick="selectRecipeForPlanner('${r.id}')">
-          ${r.image_url ? `<img src="${r.image_url}" style="position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : `<div style="position:absolute;top:0;left:0;right:0;bottom:0;" class="w-full h-full bg-[#3a3b3f] flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
+        <div class="rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200 relative group border border-slate-200 shadow-sm" style="height: 140px;" onclick="selectRecipeForPlanner('${r.id}')">
+          ${r.image_url ? `<img src="${r.image_url}" style="position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : `<div style="position:absolute;top:0;left:0;right:0;bottom:0;" class="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
           <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);" class="pointer-events-none"></div>
-          <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 ${catName.toLowerCase().includes('vegetariano') ? 'bg-green-500/30 text-green-100' : 'bg-white/20 text-white'}">
-            <span class="text-[9px] font-bold uppercase tracking-wider">${catName}</span>
-          </div>
-          ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10"><span class="text-[10px] font-bold tracking-wide font-mono">€${r.computed_cost.toFixed(2)}/p</span></div>` : ''}
-          <div class="absolute bottom-0 left-0 w-full p-2.5 pt-4">
-            <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
-          </div>
-        </div>
-        `;
-      }).join('');
-    }
-  }
-
-  // ── Render Mobile Bottom Sheet ───────────────────────────────────
-  const mGrid = document.getElementById('mobile-recipe-selector-grid');
-  if (mGrid) {
-    if (filtered.length === 0) {
-      mGrid.innerHTML = `<p style="font-size:12px;color:#64748b;padding:8px 0">Sin recetas para este filtro.</p>`;
-    } else {
-      mGrid.innerHTML = filtered.map(r => {
-        const catName = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id)?.name || r.category || 'Receta';
-        return `
-        <div class="rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200 relative group shadow-sm" style="height: 120px;" onclick="selectRecipeForPlanner('${r.id}')">
-          ${r.image_url ? `<img src="${r.image_url}" style="position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : `<div style="position:absolute;top:0;left:0;right:0;bottom:0;" class="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
-          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);" class="pointer-events-none"></div>
-          <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 ${catName.toLowerCase().includes('vegetariano') ? 'bg-green-500/40 text-white' : 'bg-black/40 text-white'}">
+          <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 ${catName.toLowerCase().includes('vegetariano') ? 'bg-green-500/80 text-white' : 'bg-black/60 text-white'}">
             <span class="text-[9px] font-bold uppercase tracking-wider">${catName}</span>
           </div>
           ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10"><span class="text-[10px] font-bold tracking-wide font-mono">€${r.computed_cost.toFixed(2)}/p</span></div>` : ''}
