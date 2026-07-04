@@ -499,12 +499,20 @@
           </select>
         </div>
         <div class="flex flex-col">
-          <label class="block text-xs font-semibold text-slate-500 mb-1">URL de la Imagen</label>
-          <div class="flex gap-2">
-            <input type="url" id="recipe-image-input" oninput="updateRecipeImagePreview(this.value)" class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="https://..." />
-            <div id="recipe-image-preview-container" class="w-10 h-10 border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Foto de la Receta</label>
+          <div class="flex gap-3 items-center">
+            <input type="hidden" id="recipe-image-input" />
+            <label class="flex-grow flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 border-dashed rounded-lg cursor-pointer hover:border-brand hover:bg-brand-muted/20 transition-all text-xs font-semibold text-slate-600">
+              <span class="material-symbols-outlined text-sm">cloud_upload</span>
+              <span id="recipe-upload-btn-text">Subir imagen</span>
+              <input type="file" id="recipe-file-input" accept="image/*" class="hidden" onchange="handleRecipeImageUpload(this)" />
+            </label>
+            <div id="recipe-image-preview-container" class="w-10 h-10 border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center relative">
               <img id="recipe-image-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('recipe-image-preview-placeholder').classList.remove('hidden');" />
               <span id="recipe-image-preview-placeholder" class="material-symbols-outlined text-slate-400 text-lg">image</span>
+              <div id="recipe-upload-spinner" class="absolute inset-0 bg-white/80 hidden items-center justify-center">
+                <span class="material-symbols-outlined text-brand text-lg animate-spin">progress_activity</span>
+              </div>
             </div>
           </div>
         </div>
@@ -3638,16 +3646,102 @@ async function deleteSubcat(cat, sub) {
   window.updateRecipeImagePreview = function(url) {
     const img = document.getElementById('recipe-image-preview');
     const placeholder = document.getElementById('recipe-image-preview-placeholder');
+    const btnText = document.getElementById('recipe-upload-btn-text');
     if (!img || !placeholder) return;
     
     if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
       img.src = url;
       img.classList.remove('hidden');
       placeholder.classList.add('hidden');
+      if (btnText) btnText.textContent = 'Cambiar foto';
     } else {
       img.src = '';
       img.classList.add('hidden');
       placeholder.classList.remove('hidden');
+      if (btnText) btnText.textContent = 'Subir imagen';
+    }
+  }
+
+  window.handleRecipeImageUpload = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const spinner = document.getElementById('recipe-upload-spinner');
+    const btnText = document.getElementById('recipe-upload-btn-text');
+    const imageInput = document.getElementById('recipe-image-input');
+
+    if (spinner) spinner.classList.remove('hidden');
+    if (btnText) btnText.textContent = 'Procesando...';
+
+    try {
+      // 1. Process image inside browser (compress to WebP at 75% quality, max width 800px)
+      const compressedBlob = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxW = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxW) {
+              height = Math.round((height * maxW) / width);
+              width = maxW;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Canvas compression failed'));
+            }, 'image/webp', 0.75);
+          };
+          img.onerror = () => reject(new Error('Failed to load image file'));
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+      });
+
+      // 2. Upload WebP blob directly to Supabase storage public bucket 'recipe-images'
+      const recipeId = document.getElementById('recipe-id').value || 'new';
+      const fileName = `recipe_${recipeId}_${Date.now()}.webp`;
+
+      const { data, error } = await window.supabase.storage
+        .from('recipe-images')
+        .upload(fileName, compressedBlob, {
+          contentType: 'image/webp',
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // 3. Get Public URL and update DOM state
+      const { data: urlData } = window.supabase.storage
+        .from('recipe-images')
+        .getPublicUrl(fileName);
+
+      if (urlData && urlData.publicUrl) {
+        imageInput.value = urlData.publicUrl;
+        updateRecipeImagePreview(urlData.publicUrl);
+        toast('✅ Foto subida y optimizada con éxito');
+      } else {
+        throw new Error('Failed to retrieve public URL');
+      }
+
+    } catch (err) {
+      console.error('Image compression or upload error:', err);
+      toast('❌ Error al subir imagen: ' + (err.message || err));
+    } finally {
+      if (spinner) spinner.classList.add('hidden');
+      if (btnText) btnText.textContent = imageInput.value ? 'Cambiar foto' : 'Subir imagen';
+      input.value = ''; // Reset input element
     }
   }
 
