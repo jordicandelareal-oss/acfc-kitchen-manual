@@ -837,33 +837,6 @@
   </div>
 </div>
 
-<!-- ── RECIPE SELECTOR (SIDEBAR/BOTTOM SHEET) ─────────────────────────────────────── -->
-<div id="recipe-selector-overlay" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[1050] transition-opacity duration-300 opacity-0 pointer-events-none md:hidden" onclick="closeRecipeSelector()"></div>
-
-<div id="modal-recipe-selector" class="fixed z-[1100] bg-white shadow-2xl transition-transform duration-300 flex flex-col inset-x-0 bottom-0 rounded-t-2xl max-h-[85vh] translate-y-full md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-96 md:rounded-none md:translate-y-0 md:translate-x-full border-l border-slate-200">
-  
-  <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3 mb-2 md:hidden flex-shrink-0"></div>
-  
-  <div class="p-4 flex-shrink-0">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Seleccionar Receta</h3>
-      <button onclick="closeRecipeSelector()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    
-    <div class="mb-3">
-      <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-slate-50 focus:bg-white transition-colors" />
-    </div>
-    
-    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-1">
-      <!-- Categories rendered here -->
-    </div>
-  </div>
-  
-  <div class="flex-1 overflow-y-auto p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 content-start" id="recipe-selector-grid">
-    <!-- Populated via JS -->
-  </div>
-</div>
-
 <!-- ── MAIN ─────────────────────────────────────────────────────── -->
 <main class="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
 
@@ -1318,7 +1291,9 @@
   </div>
 
   <!-- ════ SCREEN: PLANIFICADOR ═════════════════════════════════ -->
-  <div id="screen-planner" class="screen">
+  <div id="screen-planner" class="screen hidden">
+    <div class="flex gap-6 h-[calc(100vh-140px)]">
+      <div class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-none pb-12">
 
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
@@ -1361,7 +1336,25 @@
     </div>
     <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
     <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
-
+      </div>
+      
+      <!-- DESKTOP CATALOG SIDEBAR (Dark UI) -->
+      <aside class="hidden xl:flex w-[340px] flex-shrink-0 bg-[#262626] rounded-2xl flex-col shadow-xl sticky top-0 h-full overflow-hidden">
+        <div class="p-5 pb-3 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-white flex items-center gap-2"><span class="material-symbols-outlined">menu_book</span> Catalog</h2>
+          <span class="material-symbols-outlined text-slate-400">search</span>
+        </div>
+        <div class="px-5 mb-4">
+          <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Search recipes..." class="w-full bg-[#3a3b3f] text-white placeholder-slate-400 border-none rounded-lg px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-brand" />
+        </div>
+        <div class="px-5 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none pb-2" id="recipe-selector-categories">
+          <!-- Populated via JS -->
+        </div>
+        <div class="flex-1 overflow-y-auto px-5 pb-5 flex flex-col gap-4 mt-2" id="recipe-selector-grid">
+          <!-- Populated via JS -->
+        </div>
+      </aside>
+    </div>
   </div>
 
   <!-- ════ SCREEN: ASISTENTE IA ═════════════════════════════════ -->
@@ -2607,8 +2600,11 @@ function renderCalendar() {
     const hasMenu = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id || menu.breakfast_recipe_id);
     
     html += `
-      <div class="cal-day ${isToday ? 'today' : ''} ${hasMenu && !isToday ? 'has-menu' : ''}"
-           onclick="openPlannerDayModal(${d})">
+      <div class="cal-day ${isToday ? 'today' : ''} flex flex-col h-full min-h-[120px] relative transition-colors" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropRecipe(event, '${d}')">
+        <!-- Overlay drop mask -->
+        <div class="absolute inset-0 bg-brand/10 border-2 border-brand border-dashed rounded-lg opacity-0 pointer-events-none transition-opacity drop-mask z-10 flex items-center justify-center font-bold text-brand">Asignar</div>
+        
+        <div class="flex-1" onclick="openPlannerDayModal(${d})">
         <div class="flex justify-between items-center mb-1">
           <span class="text-xs font-bold ${isToday ? 'text-brand bg-brand text-white rounded-full w-5 h-5 flex items-center justify-center' : 'text-slate-400'}">${d}</span>
         </div>
@@ -2619,8 +2615,9 @@ function renderCalendar() {
             ${menu.dinner_recipe_id ? `<p class="text-[10px] text-slate-500 leading-tight truncate" title="${dinnerName}">🌙 ${dinnerName}</p>` : ''}
           </div>` : `
           <div class="flex-grow flex items-end justify-center pb-1">
-            <span class="text-[9px] text-slate-200">+ Añadir</span>
-          </div>`}
+            <span class="text-[9px] text-slate-300 hover:text-brand transition-colors">+ Añadir</span>
+          </div>`
+        }</div>
       </div>`;
       
       const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -2741,18 +2738,35 @@ window.clearPlannerRecipe = function(target) {
 let _currentRecipeSelectorCat = '';
 let _currentRecipeSelectorQuery = '';
 
+
 window.renderRecipeSelectorCategories = function() {
-  const container = document.getElementById('recipe-selector-categories');
   const safeCategories = (typeof RECIPE_CATEGORIES !== 'undefined') ? RECIPE_CATEGORIES : [];
-  let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Todas</button>`;
   
-  safeCategories.forEach(c => {
-    const isSelected = _currentRecipeSelectorCat === c.id;
-    html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c.name}</button>`;
-  });
-  
-  container.innerHTML = html;
+  // Desktop
+  const container = document.getElementById('recipe-selector-categories');
+  if (container) {
+      let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-[#5e6ad2] text-white shadow-sm' : 'bg-[#3f4044] text-gray-300 hover:bg-[#4a4b4f]'}">Todas</button>`;
+      
+      safeCategories.forEach(c => {
+        const isSelected = _currentRecipeSelectorCat === c.id;
+        html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-[#5e6ad2] text-white shadow-sm' : 'bg-[#3f4044] text-gray-300 hover:bg-[#4a4b4f]'}">${c.name}</button>`;
+      });
+      container.innerHTML = html;
+  }
+
+  // Mobile
+  const mContainer = document.getElementById('mobile-recipe-selector-categories');
+  if (mContainer) {
+      let html = `<button onclick="setRecipeSelectorCategory('')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${_currentRecipeSelectorCat === '' ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Todas</button>`;
+      
+      safeCategories.forEach(c => {
+        const isSelected = _currentRecipeSelectorCat === c.id;
+        html += `<button onclick="setRecipeSelectorCategory('${c.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors flex-shrink-0 ${isSelected ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${c.name}</button>`;
+      });
+      mContainer.innerHTML = html;
+  }
 };
+
 
 window.setRecipeSelectorCategory = function(catId) {
   _currentRecipeSelectorCat = catId;
@@ -2760,21 +2774,104 @@ window.setRecipeSelectorCategory = function(catId) {
   applyRecipeSelectorFilters();
 };
 
+window.allowDrop = function(ev) {
+  ev.preventDefault();
+  ev.currentTarget.querySelector('.drop-mask').classList.remove('opacity-0');
+}
+window.leaveDrop = function(ev) {
+  ev.currentTarget.querySelector('.drop-mask').classList.add('opacity-0');
+}
+window.dragRecipe = function(ev, id) {
+  ev.dataTransfer.setData("recipe_id", id);
+}
+window.dropRecipe = async function(ev, d) {
+  ev.preventDefault();
+  ev.currentTarget.querySelector('.drop-mask').classList.add('opacity-0');
+  
+  const recipeId = ev.dataTransfer.getData("recipe_id");
+  if (!recipeId) return;
+  
+  const dateStr = `2026-07-${String(d).padStart(2, '0')}`;
+  
+  toast('Asignando...');
+  
+  // Merge existing data to not overwrite other meals
+  const existing = PLANNER_DATA[d] || {
+      breakfast_recipe_id: null,
+      lunch_recipe_id: null,
+      dinner_recipe_id: null,
+      lunch_players: 0,
+      lunch_halal: 0,
+      lunch_kosher: 0,
+      lunch_vegan: 0,
+      lunch_allergies: '',
+      dinner_players: 0,
+      dinner_halal: 0,
+      dinner_kosher: 0,
+      dinner_vegan: 0,
+      dinner_allergies: ''
+  };
+  
+  const mealType = 'lunch';
+  const payload = {
+    ...existing,
+    date: dateStr,
+    [mealType + '_recipe_id']: recipeId
+  };
+  
+  try {
+     const {error} = await supabase.from('menu_planner').upsert(payload, {onConflict: 'date'});
+     if(error) throw error;
+     await fetchPlannerData();
+     renderCalendar();
+     toast('✅ Receta asignada al Almuerzo (Doble clic en el día para moverla)');
+  } catch(e) {
+     toast('❌ Error: ' + e.message);
+  }
+}
+
+
+window.filterMobileRecipeSelector = function(q) {
+   filterRecipeSelector(q);
+}
+
 window.openRecipeSelector = function(target) {
   _currentPlannerTarget = target;
   _currentRecipeSelectorCat = '';
   _currentRecipeSelectorQuery = '';
-  document.getElementById('recipe-selector-search').value = '';
-  renderRecipeSelectorCategories();
-  applyRecipeSelectorFilters();
   
+  if (window.innerWidth >= 1280) {
+     const sidebar = document.getElementById('recipe-selector-search');
+     if (sidebar) sidebar.focus();
+     toast('Selecciona una receta del catálogo lateral');
+     closePlannerDayModal();
+  } else {
+     // Mobile: show bottom sheet
+     const searchInput = document.getElementById('mobile-recipe-selector-search');
+     if (searchInput) searchInput.value = '';
+     renderRecipeSelectorCategories();
+     applyRecipeSelectorFilters();
+     
+     const selector = document.getElementById('modal-recipe-selector');
+     const overlay = document.getElementById('recipe-selector-overlay');
+     
+     if (selector && overlay) {
+       selector.classList.remove('translate-y-full');
+       overlay.classList.remove('opacity-0', 'pointer-events-none');
+     }
+  }
+}
+
+window.closeRecipeSelector = function() {
   const selector = document.getElementById('modal-recipe-selector');
   const overlay = document.getElementById('recipe-selector-overlay');
   
-  selector.classList.remove('translate-y-full', 'md:translate-x-full');
-  overlay.classList.remove('opacity-0', 'pointer-events-none');
-  overlay.classList.add('opacity-100', 'pointer-events-auto');
-  document.body.classList.add('md:pr-96', 'transition-all', 'duration-300');
+  if (selector && overlay) {
+      selector.classList.add('translate-y-full');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+  }
+}
+
 }
 
 window.closeRecipeSelector = function() {
@@ -2792,8 +2889,8 @@ window.filterRecipeSelector = function(query) {
   applyRecipeSelectorFilters();
 }
 
+
 window.applyRecipeSelectorFilters = function() {
-  const grid = document.getElementById('recipe-selector-grid');
   const q = _currentRecipeSelectorQuery.toLowerCase();
   
   const filtered = (typeof RECIPES !== 'undefined' ? RECIPES : []).filter(r => {
@@ -2802,14 +2899,46 @@ window.applyRecipeSelectorFilters = function() {
     return matchesSearch && matchesCat;
   });
   
-  grid.innerHTML = filtered.map(r => `
-    <div class="card overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col h-full relative" onclick="selectRecipeForPlanner('${r.id}')">
-      ${r.image_url ? `<img src="${r.image_url}" class="w-full h-28 object-cover rounded-t-lg" onerror="this.style.display='none'" />` : `<div class="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-400 rounded-t-lg"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
-      <div class="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-slate-100/50">
-        <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">${r.category}</span>
+  // Render Desktop Sidebar
+  const grid = document.getElementById('recipe-selector-grid');
+  if (grid) {
+      grid.innerHTML = filtered.map(r => `
+        <div class="bg-[#1e1e1e] rounded-xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-transform duration-200 flex flex-col relative" draggable="true" ondragstart="dragRecipe(event, '${r.id}')" onclick="selectRecipeForPlanner('${r.id}')">
+          ${r.image_url ? `<img src="${r.image_url}" class="w-full h-32 object-cover" onerror="this.style.display='none'" />` : `<div class="w-full h-32 bg-[#3a3b3f] flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
+          <div class="absolute top-2 right-2 bg-[#1e1e1e]/90 text-white backdrop-blur-sm px-2 py-0.5 rounded shadow-sm border border-white/10 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full ${r.category === 'Vegetariano' ? 'bg-green-400' : 'bg-brand'}"></span>
+            <span class="text-[9px] font-bold uppercase tracking-wider">${r.category}</span>
+          </div>
+          <div class="p-3 flex flex-col justify-center">
+            <p class="text-sm font-semibold text-white leading-snug line-clamp-2">${r.name}</p>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  // Render Mobile Bottom Sheet
+  const mGrid = document.getElementById('mobile-recipe-selector-grid');
+  if (mGrid) {
+      mGrid.innerHTML = filtered.map(r => `
+        <div class="card overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col h-full relative" onclick="selectRecipeForPlanner('${r.id}')">
+          ${r.image_url ? `<img src="${r.image_url}" class="w-full h-28 object-cover rounded-t-lg" onerror="this.style.display='none'" />` : `<div class="w-full h-28 bg-slate-100 flex items-center justify-center text-slate-400 rounded-t-lg"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
+          <div class="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-slate-100/50">
+            <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">${r.category}</span>
+          </div>
+          <div class="p-2 bg-white flex-1 flex flex-col justify-center">
+            <p class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">${r.name}</p>
+          </div>
+        </div>
+      `).join('');
+  }
+}
+
+      <div class="absolute top-2 left-2 bg-[#1e1e1e]/90 text-white backdrop-blur-sm px-2 py-0.5 rounded shadow-sm border border-white/10 flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full ${r.category === 'Vegetariano' ? 'bg-green-400' : 'bg-brand'}"></span>
+        <span class="text-[9px] font-bold uppercase tracking-wider">${r.category}</span>
       </div>
-      <div class="p-2 bg-white flex-1 flex flex-col justify-center">
-        <p class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">${r.name}</p>
+      <div class="p-3 flex flex-col justify-center">
+        <p class="text-sm font-semibold text-white leading-snug line-clamp-2">${r.name}</p>
       </div>
     </div>
   `).join('');
