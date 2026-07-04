@@ -3313,14 +3313,20 @@ window.calculateShoppingList = async function() {
         const ingId = ing.id;
         const qtyPerPortion = Number(ri.quantity_per_portion) || 0;
         const totalNeeded = qtyPerPortion * meal.players;
-        const providerName = ing.provider_name || ing.proveedor_principal || 'Sin Proveedor';
+        
+        // Extract supplier information from relationship
+        const hasSupplierObj = ing.suppliers && typeof ing.suppliers === 'object';
+        const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
+        const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
         
         if (!needs[ingId]) {
           needs[ingId] = {
             name: ing.name || 'Sin nombre',
             quantity: 0,
             unit: ri.unit || 'Gr',
-            provider: providerName
+            supplierId: supplierId,
+            supplierName: supplierName,
+            supplierObj: hasSupplierObj ? ing.suppliers : null
           };
         }
         needs[ingId].quantity += totalNeeded;
@@ -3328,13 +3334,21 @@ window.calculateShoppingList = async function() {
     });
   });
 
-  // Group needs by Provider
-  let groupedByProvider = {}; // { providerName: [ingredients] }
+  // Group needs by Supplier ID
+  let groupedBySupplier = {}; // { supplierId: { name, phone, email, contactName, items: [] } }
   Object.values(needs).forEach(item => {
-    if (!groupedByProvider[item.provider]) {
-      groupedByProvider[item.provider] = [];
+    const sId = item.supplierId;
+    if (!groupedBySupplier[sId]) {
+      groupedBySupplier[sId] = {
+        id: sId,
+        name: item.supplierName,
+        phone: item.supplierObj?.phone || '',
+        email: item.supplierObj?.email || '',
+        contactName: item.supplierObj?.contact_name || '',
+        items: []
+      };
     }
-    groupedByProvider[item.provider].push(item);
+    groupedBySupplier[sId].items.push(item);
   });
 
   // Render modal content
@@ -3355,29 +3369,25 @@ window.calculateShoppingList = async function() {
 
   const contentEl = document.getElementById('shopping-list-content');
   if (contentEl) {
-    const providers = Object.keys(groupedByProvider);
-    if (providers.length === 0) {
+    const suppliersList = Object.values(groupedBySupplier);
+    if (suppliersList.length === 0) {
       contentEl.innerHTML = `<p class="text-center text-slate-500 py-10">No hay ingredientes cargados en el menú para calcular la lista.</p>`;
     } else {
-      contentEl.innerHTML = providers.map(prov => {
-        const items = groupedByProvider[prov];
-        const supplierInfo = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.name.toLowerCase() === prov.toLowerCase()) || {};
-        
-        const phone = supplierInfo.phone || '';
-        const email = supplierInfo.email || '';
+      contentEl.innerHTML = suppliersList.map(sup => {
+        const items = sup.items;
         
         // Generate preformatted text
-        const orderText = `*Pedido Semanal ACFC Kitchen*\n\nHola ${supplierInfo.contact_name || prov}, a continuación te desglosamos las necesidades de insumos para la semana:\n\n` + 
+        const orderText = `*Pedido Semanal ACFC Kitchen*\n\nHola ${sup.contactName || sup.name}, a continuación te desglosamos las necesidades de insumos para la semana:\n\n` + 
           items.map(i => `- ${i.name}: ${i.quantity.toFixed(1)} ${i.unit}`).join('\n') + `\n\n¡Gracias!`;
         
         const encodedText = encodeURIComponent(orderText);
         
         let actionButtons = '';
-        if (phone) {
-          actionButtons += `<a href="https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodedText}" target="_blank" class="flex items-center gap-1 px-3 py-1.5 bg-success text-white rounded-lg text-xs font-semibold hover:bg-success-dark transition-colors"><span class="material-symbols-outlined text-[14px]">chat</span> WhatsApp</a>`;
+        if (sup.phone) {
+          actionButtons += `<a href="https://wa.me/${sup.phone.replace(/[^0-9]/g, '')}?text=${encodedText}" target="_blank" class="flex items-center gap-1 px-3 py-1.5 bg-success text-white rounded-lg text-xs font-semibold hover:bg-success-dark transition-colors"><span class="material-symbols-outlined text-[14px]">chat</span> WhatsApp</a>`;
         }
-        if (email) {
-          actionButtons += `<a href="mailto:${email}?subject=Pedido Semanal ACFC Kitchen&body=${encodedText}" class="flex items-center gap-1 px-3 py-1.5 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors"><span class="material-symbols-outlined text-[14px]">mail</span> Email</a>`;
+        if (sup.email) {
+          actionButtons += `<a href="mailto:${sup.email}?subject=Pedido Semanal%20ACFC%20Kitchen&body=${encodedText}" class="flex items-center gap-1 px-3 py-1.5 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors"><span class="material-symbols-outlined text-[14px]">mail</span> Email</a>`;
         }
         
         // Copy option for retailers / missing contact channels
@@ -3388,9 +3398,9 @@ window.calculateShoppingList = async function() {
             <div class="flex justify-between items-start flex-wrap gap-2 mb-3">
               <div>
                 <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-[18px] text-slate-500">local_shipping</span> ${prov}
+                  <span class="material-symbols-outlined text-[18px] text-slate-500">local_shipping</span> ${sup.name}
                 </h4>
-                ${supplierInfo.contact_name ? `<p class="text-[10px] text-slate-400 mt-0.5">Contacto: ${supplierInfo.contact_name}</p>` : ''}
+                ${sup.contactName ? `<p class="text-[10px] text-slate-400 mt-0.5">Contacto: ${sup.contactName}</p>` : ''}
               </div>
               <div class="flex items-center gap-2">
                 ${actionButtons}
@@ -3827,7 +3837,15 @@ async function deleteSubcat(cat, sub) {
               precio_por_kg,
               precio_por_u,
               precio_mas_bajo,
-              waste_percentage
+              waste_percentage,
+              supplier_id,
+              suppliers (
+                id,
+                name,
+                phone,
+                email,
+                contact_name
+              )
             )
           )
         `)
