@@ -2898,7 +2898,10 @@ window.applyRecipeSelectorFilters = function() {
             <span class="text-[9px] font-bold uppercase tracking-wider">${r.category}</span>
           </div>
           <div class="p-3 flex flex-col justify-center">
-            <p class="text-sm font-semibold text-white leading-snug line-clamp-2">${r.name}</p>
+            <div class="flex justify-between items-start gap-2">
+               <p class="text-sm font-semibold text-white leading-snug line-clamp-2">${r.name}</p>
+               ${r.computed_cost > 0 ? `<span class="text-[10px] font-mono text-brand whitespace-nowrap bg-brand/10 px-1 rounded-sm">$${r.computed_cost.toFixed(2)}/p</span>` : ''}
+            </div>
           </div>
         </div>
       `).join('');
@@ -2914,7 +2917,10 @@ window.applyRecipeSelectorFilters = function() {
             <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider">${r.category}</span>
           </div>
           <div class="p-2 bg-white flex-1 flex flex-col justify-center">
-            <p class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">${r.name}</p>
+            <div class="flex justify-between items-start gap-1">
+               <p class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">${r.name}</p>
+               ${r.computed_cost > 0 ? `<span class="text-[9px] font-mono text-brand whitespace-nowrap">$${r.computed_cost.toFixed(2)}</span>` : ''}
+            </div>
           </div>
         </div>
       `).join('');
@@ -3434,6 +3440,7 @@ async function deleteSubcat(cat, sub) {
           category_id,
           portions,
           instructions,
+          image_url,
           recipe_ingredients (
             quantity_per_portion,
             unit,
@@ -3453,7 +3460,24 @@ async function deleteSubcat(cat, sub) {
         
       if (recError) throw recError;
       
-      ALL_RECIPES = recs || [];
+      // Calculate computed cost for each recipe
+      ALL_RECIPES = (recs || []).map(r => {
+        let cost = 0;
+        (r.recipe_ingredients || []).forEach(ri => {
+          const ing = ri.ingredients || {};
+          const qty = Number(ri.quantity_per_portion) || 0;
+          const unit = ri.unit || 'Gr';
+          const uLower = unit.toLowerCase();
+          if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+            cost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
+          } else {
+            cost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+          }
+        });
+        r.computed_cost = cost;
+        return r;
+      });
+      
       filterRecipes();
     } catch (err) {
       console.error('Error loading recipes:', err.message);
