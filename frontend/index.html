@@ -498,9 +498,15 @@
           <select id="recipe-category-select" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white">
           </select>
         </div>
-        <div>
+        <div class="flex flex-col">
           <label class="block text-xs font-semibold text-slate-500 mb-1">URL de la Imagen</label>
-          <input type="url" id="recipe-image-input" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="https://..." />
+          <div class="flex gap-2">
+            <input type="url" id="recipe-image-input" oninput="updateRecipeImagePreview(this.value)" class="flex-grow px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="https://..." />
+            <div id="recipe-image-preview-container" class="w-10 h-10 border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center">
+              <img id="recipe-image-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('recipe-image-preview-placeholder').classList.remove('hidden');" />
+              <span id="recipe-image-preview-placeholder" class="material-symbols-outlined text-slate-400 text-lg">image</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3597,6 +3603,7 @@ async function deleteSubcat(cat, sub) {
       nameInput.value = r.name;
       portionsInput.value = r.portions || 1;
       imageInput.value = r.image_url || '';
+      updateRecipeImagePreview(r.image_url || '');
       
       if (r.category_id) {
         catSelect.value = r.category_id;
@@ -3619,12 +3626,29 @@ async function deleteSubcat(cat, sub) {
       nameInput.value = '';
       portionsInput.value = 1;
       imageInput.value = '';
+      updateRecipeImagePreview('');
       instInput.value = '';
       _recipeIngredientsBuilder = [];
     }
     
     renderRecipeIngredientsBuilder();
     document.getElementById('modal-recipe').classList.add('open');
+  }
+
+  window.updateRecipeImagePreview = function(url) {
+    const img = document.getElementById('recipe-image-preview');
+    const placeholder = document.getElementById('recipe-image-preview-placeholder');
+    if (!img || !placeholder) return;
+    
+    if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+      img.src = url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    } else {
+      img.src = '';
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    }
   }
 
   function closeRecipeModal() {
