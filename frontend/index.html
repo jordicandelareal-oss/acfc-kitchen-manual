@@ -837,25 +837,30 @@
   </div>
 </div>
 
-<!-- ── MODAL: RECIPE SELECTOR ─────────────────────────────────────── -->
-<div id="modal-recipe-selector" class="modal-overlay z-[1100]" onclick="if(event.target===this)closeRecipeSelector()">
-  <div class="modal-box w-full max-w-3xl flex flex-col max-h-[90vh]">
-    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+<!-- ── RECIPE SELECTOR (SIDEBAR/BOTTOM SHEET) ─────────────────────────────────────── -->
+<div id="recipe-selector-overlay" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[1050] transition-opacity duration-300 opacity-0 pointer-events-none md:hidden" onclick="closeRecipeSelector()"></div>
+
+<div id="modal-recipe-selector" class="fixed z-[1100] bg-white shadow-2xl transition-transform duration-300 flex flex-col inset-x-0 bottom-0 rounded-t-2xl max-h-[85vh] translate-y-full md:top-0 md:right-0 md:bottom-0 md:left-auto md:w-96 md:rounded-none md:translate-y-0 md:translate-x-full border-l border-slate-200">
+  
+  <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mt-3 mb-2 md:hidden flex-shrink-0"></div>
+  
+  <div class="p-4 flex-shrink-0">
+    <div class="flex justify-between items-center mb-4">
       <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Seleccionar Receta</h3>
       <button onclick="closeRecipeSelector()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
     </div>
     
-    <div class="mb-4">
-      <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
+    <div class="mb-3">
+      <input type="text" id="recipe-selector-search" onkeyup="filterRecipeSelector(this.value)" placeholder="Buscar por nombre o familia..." class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-slate-50 focus:bg-white transition-colors" />
     </div>
     
-    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-2">
+    <div id="recipe-selector-categories" class="flex overflow-x-auto whitespace-nowrap scrollbar-none gap-2 pb-1">
       <!-- Categories rendered here -->
     </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto pr-2" id="recipe-selector-grid">
-      <!-- Populated via JS -->
-    </div>
+  </div>
+  
+  <div class="flex-1 overflow-y-auto p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 content-start" id="recipe-selector-grid">
+    <!-- Populated via JS -->
   </div>
 </div>
 
@@ -2762,11 +2767,24 @@ window.openRecipeSelector = function(target) {
   document.getElementById('recipe-selector-search').value = '';
   renderRecipeSelectorCategories();
   applyRecipeSelectorFilters();
-  document.getElementById('modal-recipe-selector').classList.add('open');
+  
+  const selector = document.getElementById('modal-recipe-selector');
+  const overlay = document.getElementById('recipe-selector-overlay');
+  
+  selector.classList.remove('translate-y-full', 'md:translate-x-full');
+  overlay.classList.remove('opacity-0', 'pointer-events-none');
+  overlay.classList.add('opacity-100', 'pointer-events-auto');
+  document.body.classList.add('md:pr-96', 'transition-all', 'duration-300');
 }
 
 window.closeRecipeSelector = function() {
-  document.getElementById('modal-recipe-selector').classList.remove('open');
+  const selector = document.getElementById('modal-recipe-selector');
+  const overlay = document.getElementById('recipe-selector-overlay');
+  
+  selector.classList.add('translate-y-full', 'md:translate-x-full');
+  overlay.classList.add('opacity-0', 'pointer-events-none');
+  overlay.classList.remove('opacity-100', 'pointer-events-auto');
+  document.body.classList.remove('md:pr-96');
 }
 
 window.filterRecipeSelector = function(query) {
