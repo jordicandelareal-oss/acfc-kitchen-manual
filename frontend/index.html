@@ -1535,6 +1535,15 @@ function showScreen(id) {
   document.getElementById('mnav-' + id)?.classList.add('active');
   document.getElementById('mobile-nav')?.classList.add('hidden');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // FIX: re-render the recipe sidebar whenever the planner screen is activated
+  if (id === 'planner') {
+    // Small delay to ensure DOM is visible before rendering
+    setTimeout(() => {
+      if (typeof renderRecipeSelectorCategories === 'function') renderRecipeSelectorCategories();
+      if (typeof applyRecipeSelectorFilters === 'function') applyRecipeSelectorFilters();
+    }, 50);
+  }
 }
 
 function toggleMobileNav() {
@@ -2880,62 +2889,75 @@ window.filterRecipeSelector = function(query) {
 
 
 window.applyRecipeSelectorFilters = function() {
-  const q = _currentRecipeSelectorQuery.toLowerCase();
-  
-  const filtered = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []).filter(r => {
-    const matchesSearch = (r.name && r.name.toLowerCase().includes(q)) || (r.category && r.category.toLowerCase().includes(q));
+  const q = (_currentRecipeSelectorQuery || '').toLowerCase();
+  const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
+
+  const filtered = allRecipes.filter(r => {
+    const matchesSearch = !q ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
+      (r.category && r.category.toLowerCase().includes(q));
     const matchesCat = _currentRecipeSelectorCat === '' || r.category_id === _currentRecipeSelectorCat;
     return matchesSearch && matchesCat;
   });
-  
-  // Render Desktop Sidebar
+
+  // ── Debug: show helpful message if no recipes loaded yet ─────────
+  if (allRecipes.length === 0) {
+    const dbgHtml = `<p style="font-size:11px;color:#ef4444;padding:8px 0">BBDD conectada pero 0 recetas encontradas</p>`;
+    const grid  = document.getElementById('recipe-selector-grid');
+    const mGrid = document.getElementById('mobile-recipe-selector-grid');
+    if (grid)  grid.innerHTML  = dbgHtml;
+    if (mGrid) mGrid.innerHTML = dbgHtml;
+    return;
+  }
+
+  // ── Render Desktop Sidebar ───────────────────────────────────────
   const grid = document.getElementById('recipe-selector-grid');
   if (grid) {
+    if (filtered.length === 0) {
+      grid.innerHTML = `<p style="font-size:12px;color:#94a3b8;padding:8px 0">Sin recetas para este filtro.</p>`;
+    } else {
       grid.innerHTML = filtered.map(r => {
-        const catName = RECIPE_CATEGORIES.find(c => c.id === r.category_id)?.name || 'Receta';
+        const catName = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id)?.name || r.category || 'Receta';
         return `
         <div class="rounded-xl overflow-hidden cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-transform duration-200 relative group border border-[#3a3b3f]" style="height: 120px;" draggable="true" ondragstart="dragRecipe(event, '${r.id}')" onclick="selectRecipeForPlanner('${r.id}')">
           ${r.image_url ? `<img src="${r.image_url}" style="position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : `<div style="position:absolute;top:0;left:0;right:0;bottom:0;" class="w-full h-full bg-[#3a3b3f] flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
           <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);" class="pointer-events-none"></div>
-          
           <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 ${catName.toLowerCase().includes('vegetariano') ? 'bg-green-500/30 text-green-100' : 'bg-white/20 text-white'}">
             <span class="text-[9px] font-bold uppercase tracking-wider">${catName}</span>
           </div>
-          
-          ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10">
-            <span class="text-[10px] font-bold tracking-wide font-mono">$${r.computed_cost.toFixed(2)}/p</span>
-          </div>` : ''}
-          
+          ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10"><span class="text-[10px] font-bold tracking-wide font-mono">€${r.computed_cost.toFixed(2)}/p</span></div>` : ''}
           <div class="absolute bottom-0 left-0 w-full p-2.5 pt-4">
-             <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
+            <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
           </div>
         </div>
-      `}).join('');
+        `;
+      }).join('');
+    }
   }
 
-  // Render Mobile Bottom Sheet
+  // ── Render Mobile Bottom Sheet ───────────────────────────────────
   const mGrid = document.getElementById('mobile-recipe-selector-grid');
   if (mGrid) {
+    if (filtered.length === 0) {
+      mGrid.innerHTML = `<p style="font-size:12px;color:#64748b;padding:8px 0">Sin recetas para este filtro.</p>`;
+    } else {
       mGrid.innerHTML = filtered.map(r => {
-        const catName = RECIPE_CATEGORIES.find(c => c.id === r.category_id)?.name || 'Receta';
+        const catName = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id)?.name || r.category || 'Receta';
         return `
         <div class="rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-200 relative group shadow-sm" style="height: 120px;" onclick="selectRecipeForPlanner('${r.id}')">
           ${r.image_url ? `<img src="${r.image_url}" style="position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : `<div style="position:absolute;top:0;left:0;right:0;bottom:0;" class="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><span class="material-symbols-outlined text-4xl">restaurant</span></div>`}
           <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);" class="pointer-events-none"></div>
-          
           <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full backdrop-blur-md border border-white/10 ${catName.toLowerCase().includes('vegetariano') ? 'bg-green-500/40 text-white' : 'bg-black/40 text-white'}">
             <span class="text-[9px] font-bold uppercase tracking-wider">${catName}</span>
           </div>
-          
-          ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10">
-            <span class="text-[10px] font-bold tracking-wide font-mono">$${r.computed_cost.toFixed(2)}/p</span>
-          </div>` : ''}
-          
+          ${r.computed_cost > 0 ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded-md text-white border border-white/10"><span class="text-[10px] font-bold tracking-wide font-mono">€${r.computed_cost.toFixed(2)}/p</span></div>` : ''}
           <div class="absolute bottom-0 left-0 w-full p-2.5 pt-4">
-             <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
+            <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
           </div>
         </div>
-      `}).join('');
+        `;
+      }).join('');
+    }
   }
 }
 
@@ -3417,32 +3439,41 @@ async function deleteSubcat(cat, sub) {
     }
   }
 
-  // ── RECIPES DYNAMIC LOADER ──────────────────────────────────────
+  // ── RECIPES DYNAMIC LOADER (fault-tolerant) ─────────────────────
   async function loadSupabaseRecipes() {
+    // ── STEP 1: Load categories with fallback to empty array ────────
     try {
-      // 1. Fetch categories
       const { data: cats, error: catError } = await supabase
         .from('recipe_categories')
         .select('*')
         .order('name');
-        
-      if (catError) throw catError;
-      RECIPE_CATEGORIES = cats || [];
-      
-      // Populate category filters and select options in modals
-      const filterSelect = document.getElementById('recipe-family-filter');
-      const modalSelect = document.getElementById('recipe-category-select');
-      
-      if (filterSelect) {
-        filterSelect.innerHTML = '<option value="">Todas las familias</option>' + 
-          RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      }
-      if (modalSelect) {
-        modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      }
 
-      // 2. Fetch recipes with nested relations
-      const { data: recs, error: recError } = await supabase
+      if (catError) {
+        console.warn('⚠️ recipe_categories fetch failed, continuing without categories:', catError.message);
+        RECIPE_CATEGORIES = [];
+      } else {
+        RECIPE_CATEGORIES = cats || [];
+      }
+    } catch (e) {
+      console.warn('⚠️ Unexpected error fetching categories:', e);
+      RECIPE_CATEGORIES = [];
+    }
+
+    // Populate category filters and select options in modals
+    const filterSelect = document.getElementById('recipe-family-filter');
+    const modalSelect  = document.getElementById('recipe-category-select');
+    if (filterSelect) {
+      filterSelect.innerHTML = '<option value="">Todas las familias</option>' +
+        RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    if (modalSelect) {
+      modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    // ── STEP 2: Load recipes — try relational first, flat fallback ──
+    let recs = null;
+    try {
+      const { data, error: recError } = await supabase
         .from('recipes')
         .select(`
           id,
@@ -3468,33 +3499,70 @@ async function deleteSubcat(cat, sub) {
           )
         `)
         .order('name');
-        
-      if (recError) throw recError;
-      
-      // Calculate computed cost for each recipe
-      ALL_RECIPES = (recs || []).map(r => {
-        let cost = 0;
-        (r.recipe_ingredients || []).forEach(ri => {
-          const ing = ri.ingredients || {};
-          const qty = Number(ri.quantity_per_portion) || 0;
-          const unit = ri.unit || 'Gr';
-          const uLower = unit.toLowerCase();
-          if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
-            cost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
-          } else {
-            cost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
-          }
-        });
-        r.computed_cost = cost;
-        return r;
+
+      if (recError) {
+        console.warn('⚠️ Relational fetch failed, trying flat fetch:', recError.message);
+        throw recError; // jump to flat fallback
+      }
+      recs = data;
+    } catch (_relErr) {
+      // ── FALLBACK: plain flat fetch, no joins ───────────────────────
+      try {
+        const { data: flatData, error: flatErr } = await supabase
+          .from('recipes')
+          .select('*')
+          .order('name');
+
+        if (flatErr) {
+          console.error('❌ Flat fetch also failed:', flatErr.message);
+          toast('❌ No se pudieron cargar las recetas: ' + flatErr.message);
+          _renderSidebarDebug('Error al conectar con la BBDD');
+          return;
+        }
+        recs = flatData;
+        console.log('✅ Flat fallback fetch succeeded:', recs?.length, 'recipes');
+      } catch (flatException) {
+        console.error('❌ Unexpected flat fetch exception:', flatException);
+        _renderSidebarDebug('Error inesperado al cargar recetas');
+        return;
+      }
+    }
+
+    // ── STEP 3: Compute cost and populate global state ──────────────
+    ALL_RECIPES = (recs || []).map(r => {
+      let cost = 0;
+      (r.recipe_ingredients || []).forEach(ri => {
+        const ing = ri.ingredients || {};
+        const qty = Number(ri.quantity_per_portion) || 0;
+        const unit = ri.unit || 'Gr';
+        const uLower = unit.toLowerCase();
+        if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
+          cost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
+        } else {
+          cost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
+        }
       });
-      filterRecipes();
+      r.computed_cost = cost;
+      return r;
+    });
+
+    console.log(`✅ loadSupabaseRecipes: ${ALL_RECIPES.length} recetas cargadas, ${RECIPE_CATEGORIES.length} categorías`);
+
+    filterRecipes();
+    // Use requestAnimationFrame to guarantee DOM is ready before rendering sidebar
+    requestAnimationFrame(() => {
       if (typeof renderRecipeSelectorCategories === 'function') renderRecipeSelectorCategories();
       if (typeof applyRecipeSelectorFilters === 'function') applyRecipeSelectorFilters();
-    } catch (err) {
-      console.error('Error loading recipes:', err.message);
-      toast('❌ Error al cargar recetas: ' + err.message);
-    }
+    });
+  }
+
+  // ── Debug helper: show message inside sidebar grid ──────────────
+  function _renderSidebarDebug(msg) {
+    const grid  = document.getElementById('recipe-selector-grid');
+    const mGrid = document.getElementById('mobile-recipe-selector-grid');
+    const html  = `<p style="font-size:11px;color:#ef4444;padding:8px 0">BBDD conectada pero: ${msg}</p>`;
+    if (grid)  grid.innerHTML  = html;
+    if (mGrid) mGrid.innerHTML = html;
   }
 
   function filterRecipes() {
