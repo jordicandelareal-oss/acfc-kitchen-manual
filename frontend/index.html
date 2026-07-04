@@ -3477,8 +3477,9 @@ async function deleteSubcat(cat, sub) {
         r.computed_cost = cost;
         return r;
       });
-      
       filterRecipes();
+      if (typeof renderRecipeSelectorCategories === 'function') renderRecipeSelectorCategories();
+      if (typeof applyRecipeSelectorFilters === 'function') applyRecipeSelectorFilters();
     } catch (err) {
       console.error('Error loading recipes:', err.message);
       toast('❌ Error al cargar recetas: ' + err.message);
