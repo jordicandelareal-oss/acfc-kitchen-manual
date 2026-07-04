@@ -2872,18 +2872,6 @@ window.closeRecipeSelector = function() {
   }
 }
 
-}
-
-window.closeRecipeSelector = function() {
-  const selector = document.getElementById('modal-recipe-selector');
-  const overlay = document.getElementById('recipe-selector-overlay');
-  
-  selector.classList.add('translate-y-full', 'md:translate-x-full');
-  overlay.classList.add('opacity-0', 'pointer-events-none');
-  overlay.classList.remove('opacity-100', 'pointer-events-auto');
-  document.body.classList.remove('md:pr-96');
-}
-
 window.filterRecipeSelector = function(query) {
   _currentRecipeSelectorQuery = query;
   applyRecipeSelectorFilters();
@@ -2931,17 +2919,6 @@ window.applyRecipeSelectorFilters = function() {
         </div>
       `).join('');
   }
-}
-
-      <div class="absolute top-2 left-2 bg-[#1e1e1e]/90 text-white backdrop-blur-sm px-2 py-0.5 rounded shadow-sm border border-white/10 flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full ${r.category === 'Vegetariano' ? 'bg-green-400' : 'bg-brand'}"></span>
-        <span class="text-[9px] font-bold uppercase tracking-wider">${r.category}</span>
-      </div>
-      <div class="p-3 flex flex-col justify-center">
-        <p class="text-sm font-semibold text-white leading-snug line-clamp-2">${r.name}</p>
-      </div>
-    </div>
-  `).join('');
 }
 
 window.selectRecipeForPlanner = function(recipeId) {
