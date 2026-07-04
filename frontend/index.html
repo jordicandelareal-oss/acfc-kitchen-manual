@@ -2881,7 +2881,7 @@ window.filterRecipeSelector = function(query) {
 window.applyRecipeSelectorFilters = function() {
   const q = _currentRecipeSelectorQuery.toLowerCase();
   
-  const filtered = (typeof RECIPES !== 'undefined' ? RECIPES : []).filter(r => {
+  const filtered = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []).filter(r => {
     const matchesSearch = (r.name && r.name.toLowerCase().includes(q)) || (r.category && r.category.toLowerCase().includes(q));
     const matchesCat = _currentRecipeSelectorCat === '' || r.category_id === _currentRecipeSelectorCat;
     return matchesSearch && matchesCat;
@@ -2906,7 +2906,7 @@ window.applyRecipeSelectorFilters = function() {
           </div>` : ''}
           
           <div class="absolute bottom-0 left-0 w-full p-2.5 pt-4">
-             <h3 class="text-sm font-bold text-white leading-tight" style="font-family:Outfit">${r.name}</h3>
+             <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
           </div>
         </div>
       `}).join('');
@@ -2931,7 +2931,7 @@ window.applyRecipeSelectorFilters = function() {
           </div>` : ''}
           
           <div class="absolute bottom-0 left-0 w-full p-2.5 pt-4">
-             <h3 class="text-sm font-bold text-white leading-tight" style="font-family:Outfit">${r.name}</h3>
+             <h3 class="text-sm font-bold text-white leading-tight truncate pr-4 w-full" style="font-family:Outfit">${r.name}</h3>
           </div>
         </div>
       `}).join('');
