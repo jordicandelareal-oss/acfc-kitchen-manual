@@ -1491,6 +1491,7 @@ const SCREENS = ['dashboard','inventory','recetas','proveedores','planner','reci
 let INVENTORY = [];
 
 let RECIPES = [];
+let ALL_RECIPES = [];
 let RECIPE_CATEGORIES = [];
 
 // SUPPLIERS is populated dynamically from Supabase
@@ -3366,7 +3367,6 @@ async function deleteSubcat(cat, sub) {
   init();
 
   // Cache variables for recipes screen
-  let ALL_RECIPES = [];
   let _recipeIngredientsBuilder = [];
 
   async function loadSupabaseInventory() {
