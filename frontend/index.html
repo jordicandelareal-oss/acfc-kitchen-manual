@@ -3656,6 +3656,7 @@ window.calculateShoppingList = async function() {
   
   let needs = {}; // { ingredientId: { name, quantity, unit, provider, dietAlerts } }
   let dietConflicts = []; // List of string alerts
+  let uniqueCounter = 0;
   
   days.forEach(day => {
     const menu = PLANNER_DATA[day];
@@ -3706,11 +3707,11 @@ window.calculateShoppingList = async function() {
                           checkCairo(ing.provider_name) ||
                           checkCairo(ing.proveedor_principal);
         const key = isElCairo 
-          ? `${ingId}_${recipe.name}_${ri.tipo_corte || 'Entero/a'}` 
+          ? `elcairo_${ingId}_${uniqueCounter++}` 
           : ingId;
 
         const displayName = isElCairo
-          ? `${ing.name} (${ri.tipo_corte || 'Entero/a'}) para ${recipe.name}`
+          ? `${ing.name} ${ri.tipo_corte || 'entera'}`
           : (ing.name || 'Sin nombre');
 
         if (!needs[key]) {
@@ -3720,7 +3721,10 @@ window.calculateShoppingList = async function() {
             unit: ri.unit || 'Gr',
             supplierId: supplierId,
             supplierName: supplierName,
-            supplierObj: hasSupplierObj ? ing.suppliers : null
+            supplierObj: hasSupplierObj ? ing.suppliers : null,
+            isElCairo: isElCairo,
+            ingName: ing.name,
+            tipoCorte: ri.tipo_corte || 'entera'
           };
         }
         needs[key].quantity += totalNeeded;
@@ -3771,8 +3775,24 @@ window.calculateShoppingList = async function() {
         const items = sup.items;
         
         // Generate preformatted text
+        const checkCairoName = (s) => s && s.toLowerCase().includes('cairo');
+        const isElCairoSup = sup.id === 'd257d90b-ad0b-4f84-97a0-fee73612953c' || checkCairoName(sup.name);
+
+        let itemsText = '';
+        if (isElCairoSup) {
+          itemsText = items.map(i => {
+            const ingName = i.ingName || i.name;
+            const corte = i.tipoCorte || 'entera';
+            const qty = parseFloat(i.quantity.toFixed(1));
+            const unit = (i.unit || '').toLowerCase();
+            return `${ingName} ${corte} ${qty} ${unit}`;
+          }).join('\n\n');
+        } else {
+          itemsText = items.map(i => `- ${i.name}: ${i.quantity.toFixed(1)} ${i.unit}`).join('\n');
+        }
+
         const orderText = `*Pedido Semanal ACFC Kitchen*\n\nHola ${sup.contactName || sup.name}, a continuación te desglosamos las necesidades de insumos para la semana:\n\n` + 
-          items.map(i => `- ${i.name}: ${i.quantity.toFixed(1)} ${i.unit}`).join('\n') + `\n\n¡Gracias!`;
+          itemsText + `\n\n¡Gracias!`;
         
         const encodedText = encodeURIComponent(orderText);
         
