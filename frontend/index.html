@@ -657,6 +657,22 @@
            </div>
            <button onclick="clearPlannerRecipe('lunch')" class="p-2 text-slate-400 hover:text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
         </div>
+
+        <!-- ACOMPAÑANTE / SIDE MENU -->
+        <div class="mt-3 pt-3 border-t border-slate-100/60">
+          <label class="block text-[10px] font-bold text-emerald-600 uppercase tracking-wide mb-1">🥗 Acompañante (Mediodía)</label>
+          <div class="cursor-pointer border-2 border-dashed border-slate-200 rounded-xl p-2.5 hover:border-emerald-500 hover:bg-emerald-50/25 transition-colors text-center" id="planner-lunch_side-btn" onclick="openRecipeSelector('lunch_side')">
+            <span class="text-xs font-semibold text-emerald-600">+ Asignar Acompañante</span>
+          </div>
+          <div id="planner-lunch_side-card" class="hidden mt-2 flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-200 shadow-sm mb-3">
+             <img id="planner-lunch_side-img" src="" class="w-12 h-12 object-cover rounded-lg hidden" />
+             <div class="flex-1">
+               <p id="planner-lunch_side-name" class="font-bold text-xs text-slate-800"></p>
+             </div>
+             <button onclick="clearPlannerRecipe('lunch_side')" class="p-1.5 text-slate-400 hover:text-red-500"><span class="material-symbols-outlined text-xs">delete</span></button>
+          </div>
+        </div>
+
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
           <div>
@@ -883,24 +899,55 @@
       <button onclick="closeMenuSettingsModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
     </div>
 
-    <div class="space-y-4 flex-1 overflow-y-auto pr-2 pb-4">
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Margen de Coste de Ración Objetivo (€)</label>
-        <input type="number" step="0.1" value="3.5" disabled class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-400 cursor-not-allowed" />
+    <div class="space-y-5 flex-1 overflow-y-auto pr-2 pb-4">
+      <!-- Reglas Fijas -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Fijas (Siempre activas)</h4>
+        <div class="space-y-2">
+          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">No repetir carbohidrato el mismo día (Almuerzo Pasta -> Cena Arroz/Guiso)</span>
+          </div>
+          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">No repetir platos en la misma semana</span>
+          </div>
+          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">Mínimo 1 plato vegetariano por semana</span>
+          </div>
+          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">Acompañamiento obligatorio de Ensalada al mediodía</span>
+          </div>
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Límite de Proteínas por comida (Gr)</label>
-        <input type="number" value="35" disabled class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-400 cursor-not-allowed" />
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Variedad de Pescado / Carne semanal</label>
-        <select disabled class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-400 cursor-not-allowed select-custom">
-          <option>Máximo 2 veces Carne Roja</option>
-        </select>
-      </div>
-      <div class="p-3 bg-amber-50 text-amber-700 text-xs rounded-xl flex gap-2 border border-amber-200">
-        <span class="material-symbols-outlined text-[16px] flex-shrink-0 mt-0.5">info</span>
-        <span>Las reglas de autogeneración inteligente se encuentran desactivadas en este despliegue temporal. Utiliza el botón de autogeneración directa en la cabecera.</span>
+
+      <!-- Reglas Especiales -->
+      <div class="space-y-3 pt-2">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Especiales (Configurables)</h4>
+        
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <div class="flex flex-col pr-4">
+            <span class="text-sm font-semibold text-slate-700">Incluir Desayunos</span>
+            <span class="text-xs text-slate-400">Incluir Desayunos en la generación automática</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+            <input type="checkbox" id="setting-incluir-desayuno" class="sr-only peer" onchange="saveMenuSettingsLocal()">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <div class="flex flex-col pr-4">
+            <span class="text-sm font-semibold text-slate-700">Priorizar por Stock</span>
+            <span class="text-xs text-slate-400">Optimizar menú para dar salida a insumos con alto stock</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+            <input type="checkbox" id="setting-priorizar-stock" class="sr-only peer" onchange="saveMenuSettingsLocal()">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -2686,18 +2733,21 @@ function renderCalendar() {
     
     let breakfastName = 'Añadir';
     let lunchName = 'Añadir';
+    let lunchSideName = 'Añadir';
     let dinnerName = 'Añadir';
     
     if (menu) {
        const br = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.breakfast_recipe_id);
        const lr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.lunch_recipe_id);
+       const lsr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.lunch_side_recipe_id);
        const dr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.dinner_recipe_id);
        if (br) breakfastName = br.name;
        if (lr) lunchName = lr.name;
+       if (lsr) lunchSideName = lsr.name;
        if (dr) dinnerName = dr.name;
     }
 
-    const hasMenu = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id || menu.breakfast_recipe_id);
+    const hasMenu = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id || menu.breakfast_recipe_id || menu.lunch_side_recipe_id);
     
     html += `
       <div class="cal-day ${isToday ? 'today' : ''} flex flex-col h-full min-h-[120px] relative transition-colors" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropMealInDay(event, '${d}')">
@@ -2712,6 +2762,7 @@ function renderCalendar() {
           <div class="flex-grow flex flex-col justify-end gap-1 mt-1">
             ${menu.breakfast_recipe_id ? `<p draggable="true" ondragstart="dragMeal(event, ${d}, 'breakfast', '${menu.breakfast_recipe_id}')" class="text-[10px] font-semibold text-slate-700 leading-tight truncate cursor-grab active:cursor-grabbing hover:bg-slate-100 p-0.5 rounded" title="Arrastra para mover: ${breakfastName}">☕ ${breakfastName}</p>` : ''}
             ${menu.lunch_recipe_id ? `<p draggable="true" ondragstart="dragMeal(event, ${d}, 'lunch', '${menu.lunch_recipe_id}')" class="text-[10px] font-semibold text-brand leading-tight truncate cursor-grab active:cursor-grabbing hover:bg-slate-100 p-0.5 rounded" title="Arrastra para mover: ${lunchName}">🌞 ${lunchName}</p>` : ''}
+            ${menu.lunch_side_recipe_id ? `<p draggable="true" ondragstart="dragMeal(event, ${d}, 'lunch_side', '${menu.lunch_side_recipe_id}')" class="text-[10px] font-semibold text-emerald-600 leading-tight truncate cursor-grab active:cursor-grabbing hover:bg-slate-100 p-0.5 rounded" title="Arrastra para mover: ${lunchSideName}">🥗 ${lunchSideName}</p>` : ''}
             ${menu.dinner_recipe_id ? `<p draggable="true" ondragstart="dragMeal(event, ${d}, 'dinner', '${menu.dinner_recipe_id}')" class="text-[10px] text-slate-500 leading-tight truncate cursor-grab active:cursor-grabbing hover:bg-slate-100 p-0.5 rounded" title="Arrastra para mover: ${dinnerName}">🌙 ${dinnerName}</p>` : ''}
           </div>` : `
           <div class="flex-grow flex items-end justify-center pb-1">
@@ -2738,6 +2789,11 @@ function renderCalendar() {
             <span class="text-sm">🌞</span>
             <span class="text-sm ${menu && menu.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'} truncate flex-1">${lunchName}</span>
           </div>
+          ${menu && menu.lunch_side_recipe_id ? `
+          <div class="flex items-center gap-2 pl-4">
+            <span class="text-xs">🥗</span>
+            <span class="text-xs text-emerald-600 font-semibold truncate flex-1">${lunchSideName}</span>
+          </div>` : ''}
           <div class="flex items-center gap-2">
             <span class="text-sm">🌙</span>
             <span class="text-sm ${menu && menu.dinner_recipe_id ? 'text-slate-600 font-semibold' : 'text-slate-400 italic'} truncate flex-1">${dinnerName}</span>
@@ -3198,30 +3254,97 @@ window.closeMenuSettingsModal = function() {
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
 window.generateWeeklyMenu = async function() {
-  // Use currently loaded recipes to assign random items for the week of July 6th to July 12th
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
   if (!allRecipes.length) {
     toast('⚠️ No hay recetas disponibles en la base de datos para generar menús.');
     return;
   }
 
-  toast('⚡ Generando menú semanal aleatorio...');
+  toast('⚡ Generando menú semanal inteligente...');
 
-  // Target date range: 2026-07-06 (Mon) to 2026-07-12 (Sun)
+  const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
+  const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
+
+  const getRecipeCategoryName = (r) => {
+    if (r.category_id) {
+      const cat = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id);
+      if (cat) return cat.name;
+    }
+    return r.category || '';
+  };
+
+  // Pools
+  const breakfastPool = allRecipes.filter(r => {
+    const cat = getRecipeCategoryName(r).toLowerCase();
+    return cat === 'desayunos' || cat === 'desayuno';
+  });
+
+  const pastaPool = allRecipes.filter(r => {
+    const cat = getRecipeCategoryName(r).toLowerCase();
+    return cat === 'pastas' || cat === 'pasta';
+  });
+
+  const saladPool = allRecipes.filter(r => {
+    const cat = getRecipeCategoryName(r).toLowerCase();
+    return cat === 'ensaladas' || cat === 'ensalada';
+  });
+
+  const riceStewPool = allRecipes.filter(r => {
+    const cat = getRecipeCategoryName(r).toLowerCase();
+    return cat === 'arroces' || cat === 'arroz' || cat === 'guisos' || cat === 'guiso';
+  });
+
+  const vegetarianPool = allRecipes.filter(r => {
+    const cat = getRecipeCategoryName(r).toLowerCase();
+    return r.is_vegetarian === true || cat === 'vegetariano' || cat === 'vegetarian';
+  });
+
+  // Selector helper
+  const selectRecipe = (pool, usedSet) => {
+    let available = pool.filter(r => !usedSet.has(r.id));
+    if (available.length === 0) {
+      available = pool;
+    }
+    if (available.length === 0) {
+      available = allRecipes.filter(r => !usedSet.has(r.id));
+      if (available.length === 0) {
+        available = allRecipes;
+      }
+    }
+    
+    if (priorizarStock) {
+      const getStockScore = (r) => {
+        let sum = 0;
+        if (r.recipe_ingredients) {
+          r.recipe_ingredients.forEach(ri => {
+            const ing = ri.ingredients;
+            if (ing) {
+              const stock = Number(ing.stock_actual !== null && ing.stock_actual !== undefined ? ing.stock_actual : ing.current_stock) || 0;
+              sum += stock;
+            }
+          });
+        }
+        return sum;
+      };
+      
+      available = [...available].sort((a, b) => getStockScore(b) - getStockScore(a));
+      return available[0];
+    }
+    
+    return available[Math.floor(Math.random() * available.length)];
+  };
+
   const upserts = [];
   const startDay = 6;
-  
+  const usedRecipeIds = new Set();
+  const weekData = [];
+
   for (let i = 0; i < 7; i++) {
     const dayNum = startDay + i;
     const dateStr = `2026-07-${String(dayNum).padStart(2, '0')}`;
     
-    // Choose random recipes
-    const rBreakfast = allRecipes[Math.floor(Math.random() * allRecipes.length)]?.id || null;
-    const rLunch = allRecipes[Math.floor(Math.random() * allRecipes.length)]?.id || null;
-    const rDinner = allRecipes[Math.floor(Math.random() * allRecipes.length)]?.id || null;
-
     const existing = PLANNER_DATA[dayNum] || {
-      lunch_players: 10, // default placeholder comensales
+      lunch_players: 10,
       lunch_halal: 0,
       lunch_kosher: 0,
       lunch_vegan: 0,
@@ -3233,22 +3356,92 @@ window.generateWeeklyMenu = async function() {
       dinner_allergies: ''
     };
 
-    upserts.push({
+    // PASO A: CONTROL DE DESAYUNOS
+    let rBreakfast = existing.breakfast_recipe_id || null;
+    if (incluirDesayuno) {
+      const selectedBreakfast = selectRecipe(breakfastPool, new Set());
+      rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
+    }
+
+    // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo: Pastas + Acompañante Ensaladas)
+    const selectedLunch = selectRecipe(pastaPool, usedRecipeIds);
+    if (selectedLunch) usedRecipeIds.add(selectedLunch.id);
+    const rLunch = selectedLunch ? selectedLunch.id : null;
+
+    const selectedSide = selectRecipe(saladPool, new Set());
+    const rSide = selectedSide ? selectedSide.id : null;
+
+    // PASO C & D: PLANIFICACIÓN DE NOCHE (Cena: Arroces o Guisos - Sin repetir platos en la semana)
+    const selectedDinner = selectRecipe(riceStewPool, usedRecipeIds);
+    if (selectedDinner) usedRecipeIds.add(selectedDinner.id);
+    const rDinner = selectedDinner ? selectedDinner.id : null;
+
+    weekData.push({
       ...existing,
       date: dateStr,
       breakfast_recipe_id: rBreakfast,
       lunch_recipe_id: rLunch,
-      dinner_recipe_id: rDinner
+      lunch_side_recipe_id: rSide,
+      dinner_recipe_id: rDinner,
+      dayNum
     });
   }
 
+  // PASO E: COMPROBACIÓN VEGETARIANA OBLIGATORIA
+  const isVeg = (recipeId) => {
+    if (!recipeId) return false;
+    const r = allRecipes.find(rec => rec.id === recipeId);
+    if (!r) return false;
+    const catName = getRecipeCategoryName(r).toLowerCase();
+    return r.is_vegetarian === true || catName === 'vegetariano' || catName === 'vegetarian';
+  };
+
+  let vegCount = 0;
+  weekData.forEach(day => {
+    if (isVeg(day.lunch_recipe_id)) vegCount++;
+    if (isVeg(day.dinner_recipe_id)) vegCount++;
+  });
+
+  if (vegCount === 0) {
+    console.log("No vegetarian recipe found. Replacing Sunday dinner...");
+    const vegRecipe = selectRecipe(vegetarianPool, usedRecipeIds);
+    if (vegRecipe) {
+      const lastDay = weekData[6];
+      if (lastDay.dinner_recipe_id) {
+        usedRecipeIds.delete(lastDay.dinner_recipe_id);
+      }
+      lastDay.dinner_recipe_id = vegRecipe.id;
+      usedRecipeIds.add(vegRecipe.id);
+    }
+  }
+
+  // Clean data structure to match database before upsert
+  const finalUpserts = weekData.map(day => {
+    const copy = { ...day };
+    delete copy.dayNum;
+    return copy;
+  });
+
   try {
-    const { error } = await window.supabase.from('menu_planner').upsert(upserts, { onConflict: 'date' });
-    if (error) throw error;
+    let { error } = await window.supabase.from('menu_planner').upsert(finalUpserts, { onConflict: 'date' });
+    if (error) {
+      if (error.message && error.message.includes('lunch_side_recipe_id')) {
+        console.warn('⚠️ Column lunch_side_recipe_id not found in Supabase. Retrying without it.');
+        const fallbackUpserts = finalUpserts.map(item => {
+          const copy = { ...item };
+          delete copy.lunch_side_recipe_id;
+          return copy;
+        });
+        const { error: fallbackError } = await window.supabase.from('menu_planner').upsert(fallbackUpserts, { onConflict: 'date' });
+        if (fallbackError) throw fallbackError;
+      } else {
+        throw error;
+      }
+    }
     
-    upserts.forEach(up => {
-      const day = parseInt(up.date.split('-')[2], 10);
-      PLANNER_DATA[day] = up;
+    // Write back into planner data (including side recipe locally so UI displays it)
+    weekData.forEach(up => {
+      PLANNER_DATA[up.dayNum] = up;
     });
 
     renderCalendar();
