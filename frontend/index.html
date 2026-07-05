@@ -1914,29 +1914,14 @@ function calculateNetCost() {
   const pct    = parseFloat(document.getElementById('ing-waste').value) || 0;
   const scenario = document.getElementById('ing-output-scenario').value;
   
-  // Step 1: Precio Base por KG o por UD
-  let baseCostPerKg = 0;
-  if (scenario === 'KG_LT') {
-    if (format > 0) baseCostPerKg = price / (format / 1000); // = price * 1000 / format
-  } else {
-    // UNIDADES: base per unit
-    if (format > 0) baseCostPerKg = price / format;
-  }
+  // Use centralized math utilities
+  const baseCostPerKg = window.mathUtils ? window.mathUtils.calcularCosteBase(price, format, scenario) : (scenario === 'KG_LT' ? (format > 0 ? price / (format / 1000) : 0) : (format > 0 ? price / format : 0));
+  const netCost = window.mathUtils ? window.mathUtils.calcularCosteNeto(baseCostPerKg, pct, _processType) : (_processType === 'MERMA' ? (1 - pct/100 > 0 ? baseCostPerKg / (1 - pct/100) : 0) : baseCostPerKg / (1 + pct/100));
   
-  // Step 2: Apply process formula
-  let netCost = 0;
   let formulaStr = '';
-  
   if (_processType === 'MERMA') {
-    // Merma: product lost → cost goes UP
-    // Coste_Neto_KG = Base / (1 - merma/100)
-    const divisor = 1 - (pct / 100);
-    netCost = divisor > 0 ? baseCostPerKg / divisor : 0;
     formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 - ${pct}%) = ${netCost.toFixed(4)}€`;
   } else {
-    // Hidratación: product gains weight → cost goes DOWN
-    // Coste_Neto_KG = Base / (1 + hidratacion/100)
-    netCost = baseCostPerKg / (1 + (pct / 100));
     formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 + ${pct}%) = ${netCost.toFixed(4)}€`;
   }
   
@@ -4136,9 +4121,8 @@ window.calculateShoppingList = async function() {
   const days = [6, 7, 8, 9, 10, 11, 12];
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
   
-  let needs = {}; // { ingredientId: { name, quantity, unit, provider, dietAlerts } }
   let dietConflicts = []; // List of string alerts
-  let uniqueCounter = 0;
+  const activeMeals = [];
   
   days.forEach(day => {
     const menu = PLANNER_DATA[day];
@@ -4168,51 +4152,14 @@ window.calculateShoppingList = async function() {
         dietConflicts.push(`❗ Nota el día ${day} (${meal.label}): Alergias especificadas: "${meal.allergies}". Revisa ingredientes de "${recipe.name}".`);
       }
       
-      // Calculate ingredients weight/qty
-      const riList = recipe.recipe_ingredients || [];
-      riList.forEach(ri => {
-        const ing = ri.ingredients;
-        if (!ing) return;
-        
-        const ingId = ing.id;
-        const qtyPerPortion = Number(ri.quantity_per_portion) || 0;
-        const totalNeeded = qtyPerPortion * meal.players;
-        
-        // Extract supplier information from relationship
-        const hasSupplierObj = ing.suppliers && typeof ing.suppliers === 'object';
-        const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
-        const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
-        
-        const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
-        const isElCairo = supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c' ||
-                          checkCairo(supplierName) ||
-                          checkCairo(ing.provider_name) ||
-                          checkCairo(ing.proveedor_principal);
-        const key = isElCairo 
-          ? `elcairo_${ingId}_${uniqueCounter++}` 
-          : ingId;
-
-        const displayName = isElCairo
-          ? `${ing.name} ${ri.tipo_corte || 'entera'}`
-          : (ing.name || 'Sin nombre');
-
-        if (!needs[key]) {
-          needs[key] = {
-            name: displayName,
-            quantity: 0,
-            unit: ri.unit || 'Gr',
-            supplierId: supplierId,
-            supplierName: supplierName,
-            supplierObj: hasSupplierObj ? ing.suppliers : null,
-            isElCairo: isElCairo,
-            ingName: ing.name,
-            tipoCorte: ri.tipo_corte || 'entera'
-          };
-        }
-        needs[key].quantity += totalNeeded;
+      activeMeals.push({
+        players: meal.players,
+        recipe_ingredients: recipe.recipe_ingredients || []
       });
     });
   });
+
+  const needs = window.mathUtils ? window.mathUtils.agruparInsumos(activeMeals) : {};
 
   // Group needs by Supplier ID
   let groupedBySupplier = {}; // { supplierId: { name, phone, email, contactName, items: [] } }
@@ -4591,8 +4538,10 @@ async function deleteSubcat(cat, sub) {
 <script type="module">
   import { supabase } from './src/supabaseClient.js';
   import * as api from './src/api.js';
+  import * as mathUtils from './src/utils/mathUtils.js';
 
   window.supabase = supabase;
+  window.mathUtils = mathUtils;
   window.fetchSuppliers = api.fetchSuppliers;
   window.insertSupplier = api.insertSupplier;
   window.updateSupplier = api.updateSupplier;
@@ -4753,19 +4702,7 @@ async function deleteSubcat(cat, sub) {
 
     // ── STEP 3: Compute cost and populate global state ──────────────
     ALL_RECIPES = (recs || []).map(r => {
-      let cost = 0;
-      (r.recipe_ingredients || []).forEach(ri => {
-        const ing = ri.ingredients || {};
-        const qty = Number(ri.quantity_per_portion) || 0;
-        const unit = ri.unit || 'Gr';
-        const uLower = unit.toLowerCase();
-        if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
-          cost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
-        } else {
-          cost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
-        }
-      });
-      r.computed_cost = cost;
+      r.computed_cost = window.mathUtils ? window.mathUtils.calcularCostePlato(r.recipe_ingredients) : 0;
       return r;
     });
 
