@@ -3,13 +3,14 @@ import { supabase } from './lib/supabaseClient.js';
 async function testConnection() {
   console.log('🔄 Conectando con Supabase...');
   const { data, error } = await supabase
-    .from('suppliers')
-    .select('*');
+    .from('ingredients')
+    .select('*')
+    .ilike('name', '%pollo%');
 
   if (error) {
-    console.error('❌ Error de conexión:', error.message);
+    console.error('❌ Error:', error.message);
   } else {
-    console.log('✅ Conexión exitosa. Datos de suppliers:');
+    console.log('✅ Ingredientes de pollo:');
     console.table(data);
   }
 }
