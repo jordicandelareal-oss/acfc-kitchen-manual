@@ -769,128 +769,9 @@
 </div>
 
 
-<!-- ── MODAL: WEEKLY MASS CONFIG ─────────────────────────────────── -->
-<div id="modal-weekly-config" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeWeeklyConfigModal()">
-  <div class="bg-white w-full max-w-4xl flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative overflow-y-auto">
-    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <div class="flex justify-between items-center mb-5 flex-shrink-0">
-      <div>
-        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Configuración Semanal</h3>
-        <p class="text-sm text-slate-500 font-semibold">Aplica valores predeterminados para 7 días</p>
-      </div>
-      <button onclick="closeWeeklyConfigModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
-    </div>
-
-    <div class="space-y-6 flex-1 overflow-y-auto pr-2 pb-4">
-      <div>
-        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Semana de inicio (Fecha)</label>
-        <input type="date" id="weekly-config-date" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" />
-        <p class="text-[11px] text-slate-400 mt-1">Se aplicarán los datos a los 7 días consecutivos a partir de esta fecha.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- BREAKFAST -->
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-yellow-500 text-[18px]">bakery_dining</span> Desayuno</h4>
-          <div class="space-y-3">
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Comensales Totales</label>
-              <input type="number" id="weekly-breakfast-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Halal</label>
-                <input type="number" id="weekly-breakfast-halal" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Kosher</label>
-                <input type="number" id="weekly-breakfast-kosher" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Vegano</label>
-                <input type="number" id="weekly-breakfast-vegan" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Alergias / Notas</label>
-              <input type="text" id="weekly-breakfast-allergies" placeholder="Ej: 2 Celíacos, 1 Sin lactosa" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-          </div>
-        </div>
-
-        <!-- LUNCH -->
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-orange-500 text-[18px]">light_mode</span> Almuerzo</h4>
-          <div class="space-y-3">
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Comensales Totales</label>
-              <input type="number" id="weekly-lunch-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Halal</label>
-                <input type="number" id="weekly-lunch-halal" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Kosher</label>
-                <input type="number" id="weekly-lunch-kosher" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Vegano</label>
-                <input type="number" id="weekly-lunch-vegan" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Alergias / Notas</label>
-              <input type="text" id="weekly-lunch-allergies" placeholder="Ej: 2 Celíacos, 1 Sin lactosa" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-          </div>
-        </div>
-
-        <!-- DINNER -->
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-indigo-500 text-[18px]">dark_mode</span> Cena</h4>
-          <div class="space-y-3">
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Comensales Totales</label>
-              <input type="number" id="weekly-dinner-players" value="0" min="0" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Halal</label>
-                <input type="number" id="weekly-dinner-halal" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Kosher</label>
-                <input type="number" id="weekly-dinner-kosher" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-              <div>
-                <label class="text-[10px] font-semibold text-slate-500 mb-1 block uppercase">Vegano</label>
-                <input type="number" id="weekly-dinner-vegan" value="0" min="0" class="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white text-center" />
-              </div>
-            </div>
-            <div>
-              <label class="text-xs font-semibold text-slate-500 mb-1 block">Alergias / Notas</label>
-              <input type="text" id="weekly-dinner-allergies" placeholder="Ej: 2 Celíacos, 1 Sin lactosa" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
-      <button onclick="closeWeeklyConfigModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-      <button onclick="saveWeeklyConfig()" id="weekly-save-btn" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
-        <span class="material-symbols-outlined text-[18px] hidden" id="weekly-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
-        <span id="weekly-save-text">Aplicar a 7 días</span>
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- ── MODAL: AJUSTES DE MENÚ ─────────────────────────────────────── -->
 <div id="modal-menu-settings" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeMenuSettingsModal()">
-  <div class="bg-white w-full max-w-lg flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative">
+  <div class="bg-white w-full max-w-xl flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative">
     <div class="flex justify-between items-center mb-5 flex-shrink-0">
       <div>
         <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">⚙️ Configuración Semanal de Menús</h3>
@@ -899,22 +780,138 @@
       <button onclick="closeMenuSettingsModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
     </div>
 
-    <div class="space-y-5 flex-1 overflow-y-auto pr-2 pb-4">
-      <!-- Bloque A: Reglas Nutricionales y de Control (Fijas) -->
-      <div>
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Reglas Estables Nutricionales</h4>
-        <div id="menu-rules-fijas-container" class="space-y-2">
-          <!-- Dynamically populated -->
+    <div class="space-y-4 flex-1 overflow-y-auto pr-2 pb-4">
+      
+      <!-- SECCIÓN 1 (Colapsable): Reglas Nutricionales del Sistema -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <div onclick="toggleAccordion('nutritional')" class="bg-slate-50 font-semibold p-3 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-all select-none">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-2">🥗 Reglas Nutricionales del Sistema</span>
+          <span id="chevron-nutritional" class="material-symbols-outlined transition-transform duration-200 transform rotate-180 text-[18px]">expand_more</span>
+        </div>
+        <div id="content-nutritional" class="p-3.5 space-y-2">
+          <div id="menu-rules-fijas-container" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </div>
 
-      <!-- Bloque B: Filtros Especiales Activos (Toggles) -->
-      <div class="pt-2">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Filtros Especiales Activos</h4>
-        <div id="menu-rules-especiales-container" class="space-y-3">
-          <!-- Dynamically populated -->
+      <!-- SECCIÓN 2 (Colapsable): Reglas Especiales Activables -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <div onclick="toggleAccordion('special')" class="bg-slate-50 font-semibold p-3 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-all select-none">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-2">⚙️ Reglas Especiales Activables</span>
+          <span id="chevron-special" class="material-symbols-outlined transition-transform duration-200 transform text-[18px]">expand_more</span>
+        </div>
+        <div id="content-special" class="p-3.5 space-y-3 hidden">
+          <div id="menu-rules-especiales-container" class="space-y-3">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </div>
+
+      <!-- SECCIÓN 3 (Colapsable): Configuración Semanal de Menú -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <div onclick="toggleAccordion('weekly')" class="bg-slate-50 font-semibold p-3 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-all select-none">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-2">📅 Configuración Semanal de Menú</span>
+          <span id="chevron-weekly" class="material-symbols-outlined transition-transform duration-200 transform text-[18px]">expand_more</span>
+        </div>
+        <div id="content-weekly" class="p-3.5 space-y-4 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Semana de inicio (Fecha)</label>
+            <input type="date" id="weekly-config-date" value="2026-07-06" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+            <p class="text-[10px] text-slate-400 mt-1">Se generará el menú para los 7 días consecutivos a partir de esta fecha.</p>
+          </div>
+
+          <div class="space-y-3.5 pt-1">
+            <!-- BREAKFAST -->
+            <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+              <h5 class="font-bold text-slate-800 text-[11px] mb-2.5 flex items-center gap-1.5"><span class="material-symbols-outlined text-yellow-500 text-[14px]">bakery_dining</span> Desayuno</h5>
+              <div class="space-y-2">
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Comensales Totales</label>
+                  <input type="number" id="weekly-breakfast-players" value="10" min="0" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Halal</label>
+                    <input type="number" id="weekly-breakfast-halal" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Kosher</label>
+                    <input type="number" id="weekly-breakfast-kosher" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Vegano</label>
+                    <input type="number" id="weekly-breakfast-vegan" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                </div>
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Alergias / Notas</label>
+                  <input type="text" id="weekly-breakfast-allergies" placeholder="Ej: 2 Celíacos" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- LUNCH -->
+            <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+              <h5 class="font-bold text-slate-800 text-[11px] mb-2.5 flex items-center gap-1.5"><span class="material-symbols-outlined text-orange-500 text-[14px]">light_mode</span> Almuerzo</h5>
+              <div class="space-y-2">
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Comensales Totales</label>
+                  <input type="number" id="weekly-lunch-players" value="10" min="0" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Halal</label>
+                    <input type="number" id="weekly-lunch-halal" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Kosher</label>
+                    <input type="number" id="weekly-lunch-kosher" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Vegano</label>
+                    <input type="number" id="weekly-lunch-vegan" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                </div>
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Alergias / Notas</label>
+                  <input type="text" id="weekly-lunch-allergies" placeholder="Ej: 1 Sin lactosa" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+              </div>
+            </div>
+
+            <!-- DINNER -->
+            <div class="bg-slate-50/50 rounded-xl p-3 border border-slate-100">
+              <h5 class="font-bold text-slate-800 text-[11px] mb-2.5 flex items-center gap-1.5"><span class="material-symbols-outlined text-indigo-500 text-[14px]">dark_mode</span> Cena</h5>
+              <div class="space-y-2">
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Comensales Totales</label>
+                  <input type="number" id="weekly-dinner-players" value="10" min="0" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Halal</label>
+                    <input type="number" id="weekly-dinner-halal" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Kosher</label>
+                    <input type="number" id="weekly-dinner-kosher" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                  <div>
+                    <label class="text-[8px] font-semibold text-slate-400 mb-0.5 block uppercase text-center">Vegano</label>
+                    <input type="number" id="weekly-dinner-vegan" value="0" min="0" class="w-full px-1 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white text-center" />
+                  </div>
+                </div>
+                <div>
+                  <label class="text-[9px] font-semibold text-slate-500 mb-0.5 block">Alergias / Notas</label>
+                  <input type="text" id="weekly-dinner-allergies" placeholder="Ej: Ninguna" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
@@ -924,8 +921,6 @@
         <span>Guardar Ajustes y Generar Menú Semanal</span>
       </button>
     </div>
-  </div>
-</div>
   </div>
 </div>
 
@@ -1420,9 +1415,6 @@
       <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
         <button onclick="openMenuSettingsModal()" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl text-xs font-semibold hover:border-brand hover:text-brand hover:shadow-sm transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">settings</span> Ajustes de Menú
-        </button>
-        <button onclick="openWeeklyConfigModal()" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl text-xs font-semibold hover:border-brand hover:text-brand hover:shadow-sm transition-all whitespace-nowrap">
-          <span class="material-symbols-outlined text-[16px]">calendar_view_week</span> Config. Semanal
         </button>
         <button onclick="generateWeeklyMenu()" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">bolt</span> Generar Menú Semanal
@@ -3327,6 +3319,27 @@ window.renderMenuRules = function() {
   }
 };
 
+window.toggleAccordion = function(section) {
+  const sections = ['nutritional', 'special', 'weekly'];
+  sections.forEach(s => {
+    const content = document.getElementById(`content-${s}`);
+    const chevron = document.getElementById(`chevron-${s}`);
+    if (s === section) {
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+      } else {
+        content.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+      }
+    } else {
+      content.classList.add('hidden');
+      chevron.classList.remove('rotate-180');
+    }
+  });
+};
+
 window.openMenuSettingsModal = function() {
   const modal = document.getElementById('modal-menu-settings');
   if (modal) {
@@ -3355,6 +3368,7 @@ window.saveAndGenerateWeeklyMenu = async function() {
   closeMenuSettingsModal();
   await generateWeeklyMenu();
 }
+
 
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
@@ -3454,27 +3468,42 @@ window.generateWeeklyMenu = async function() {
     return available[Math.floor(Math.random() * available.length)];
   };
 
-  const upserts = [];
-  const startDay = 6;
+  const baseDateStr = document.getElementById('weekly-config-date').value || '2026-07-06';
+  const baseParts = baseDateStr.split('-');
+  const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
+
+  const config = {
+    breakfast_players: Number(document.getElementById('weekly-breakfast-players')?.value) || 10,
+    breakfast_halal: Number(document.getElementById('weekly-breakfast-halal')?.value) || 0,
+    breakfast_kosher: Number(document.getElementById('weekly-breakfast-kosher')?.value) || 0,
+    breakfast_vegan: Number(document.getElementById('weekly-breakfast-vegan')?.value) || 0,
+    breakfast_allergies: document.getElementById('weekly-breakfast-allergies')?.value || '',
+    lunch_players: Number(document.getElementById('weekly-lunch-players')?.value) || 10,
+    lunch_halal: Number(document.getElementById('weekly-lunch-halal')?.value) || 0,
+    lunch_kosher: Number(document.getElementById('weekly-lunch-kosher')?.value) || 0,
+    lunch_vegan: Number(document.getElementById('weekly-lunch-vegan')?.value) || 0,
+    lunch_allergies: document.getElementById('weekly-lunch-allergies')?.value || '',
+    dinner_players: Number(document.getElementById('weekly-dinner-players')?.value) || 10,
+    dinner_halal: Number(document.getElementById('weekly-dinner-halal')?.value) || 0,
+    dinner_kosher: Number(document.getElementById('weekly-dinner-kosher')?.value) || 0,
+    dinner_vegan: Number(document.getElementById('weekly-dinner-vegan')?.value) || 0,
+    dinner_allergies: document.getElementById('weekly-dinner-allergies')?.value || ''
+  };
+
   const usedRecipeIds = new Set();
   const weekData = [];
 
   for (let i = 0; i < 7; i++) {
-    const dayNum = startDay + i;
-    const dateStr = `2026-07-${String(dayNum).padStart(2, '0')}`;
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
     
-    const existing = PLANNER_DATA[dayNum] || {
-      lunch_players: 10,
-      lunch_halal: 0,
-      lunch_kosher: 0,
-      lunch_vegan: 0,
-      lunch_allergies: '',
-      dinner_players: 10,
-      dinner_halal: 0,
-      dinner_kosher: 0,
-      dinner_vegan: 0,
-      dinner_allergies: ''
-    };
+    let dayNum = null;
+    if (dateStr.startsWith('2026-07-')) {
+      dayNum = d.getDate();
+    }
+
+    const existing = (dayNum ? PLANNER_DATA[dayNum] : null) || {};
 
     // PASO A: CONTROL DE DESAYUNOS
     let rBreakfast = existing.breakfast_recipe_id || null;
@@ -3513,6 +3542,7 @@ window.generateWeeklyMenu = async function() {
 
     weekData.push({
       ...existing,
+      ...config,
       date: dateStr,
       breakfast_recipe_id: rBreakfast,
       lunch_recipe_id: rLunch,
@@ -3578,7 +3608,9 @@ window.generateWeeklyMenu = async function() {
     
     // Write back into planner data (including side recipe locally so UI displays it)
     weekData.forEach(up => {
-      PLANNER_DATA[up.dayNum] = up;
+      if (up.dayNum) {
+        PLANNER_DATA[up.dayNum] = up;
+      }
     });
 
     renderCalendar();
