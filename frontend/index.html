@@ -901,56 +901,18 @@
 
     <div class="space-y-5 flex-1 overflow-y-auto pr-2 pb-4">
       <!-- Bloque A: Reglas Nutricionales y de Control (Fijas) -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Nutricionales y de Control (Siempre activas)</h4>
-        <div class="space-y-2">
-          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Control Diario de Carbohidratos: No se repite carbohidrato el mismo día (Almuerzo Pasta ➡️ Cena Arroz/Guiso).</span>
-          </div>
-          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Distribución Horaria: Mediodía reservado para pastas; noche para guisos y arroces.</span>
-          </div>
-          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.</span>
-          </div>
-          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.</span>
-          </div>
-          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Guarnición Automática: Creación e inserción automática de la categoría 'Ensaladas' como acompañamiento en todos los almuerzos.</span>
-          </div>
+      <div>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Reglas Estables Nutricionales</h4>
+        <div id="menu-rules-fijas-container" class="space-y-2">
+          <!-- Dynamically populated -->
         </div>
       </div>
 
       <!-- Bloque B: Filtros Especiales Activos (Toggles) -->
-      <div class="space-y-3 pt-2">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtros Especiales Activos (Bajo demanda)</h4>
-        
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-          <div class="flex flex-col pr-4">
-            <span class="text-sm font-semibold text-slate-700">Incluir Desayuno</span>
-            <span class="text-xs text-slate-400">Incluir Desayuno en la cuadrícula de menús</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-            <input type="checkbox" id="setting-incluir-desayuno" class="sr-only peer" onchange="saveMenuSettingsLocal()">
-            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-          </label>
-        </div>
-
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-          <div class="flex flex-col pr-4">
-            <span class="text-sm font-semibold text-slate-700">Priorizar por Stock</span>
-            <span class="text-xs text-slate-400">Optimizar según Stock rotativo</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-            <input type="checkbox" id="setting-priorizar-stock" class="sr-only peer" onchange="saveMenuSettingsLocal()">
-            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-          </label>
+      <div class="pt-2">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Filtros Especiales Activos</h4>
+        <div id="menu-rules-especiales-container" class="space-y-3">
+          <!-- Dynamically populated -->
         </div>
       </div>
     </div>
@@ -3247,15 +3209,128 @@ window.saveWeeklyConfig = async function() {
 }
 
 // ── AJUSTES DE REGELAS NUTRICIONALES MODAL ────────────────────────
+const DEFAULT_MENU_RULES = [
+  { id: 'rule-carbs', text: 'Control de Carbohidratos: No repetir carbohidrato el mismo día (Almuerzo Pasta ➡️ Cena Arroz/Guiso).', type: 'fija', active: true, deleted: false },
+  { id: 'rule-hours', text: 'Distribución Horaria: Almuerzo reservado para pastas, noches para Guisos y Arroces.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-rotation', text: 'Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-veg', text: 'Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-salad', text: 'Guarnición Automática: Insertar automáticamente la categoría \'Ensaladas\' como acompañamiento en todos los almuerzos.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-breakfast', text: 'Incluir Desayuno en la cuadrícula de menús.', type: 'especial', active: false, deleted: false },
+  { id: 'rule-stock', text: 'Optimizar según Stock rotativo: dar salida prioritaria a insumos con excedente en almacén.', type: 'especial', active: false, deleted: false }
+];
+
+let MENU_RULES = [];
+
+window.loadMenuRules = function() {
+  const stored = localStorage.getItem('menu_settings_rules');
+  if (stored) {
+    try {
+      MENU_RULES = JSON.parse(stored);
+      // Migration check
+      DEFAULT_MENU_RULES.forEach(def => {
+        if (!MENU_RULES.some(r => r.id === def.id)) {
+          MENU_RULES.push(def);
+        }
+      });
+    } catch(e) {
+      MENU_RULES = JSON.parse(JSON.stringify(DEFAULT_MENU_RULES));
+    }
+  } else {
+    MENU_RULES = JSON.parse(JSON.stringify(DEFAULT_MENU_RULES));
+  }
+  
+  // Sync the specials from localStorage to our rule state just in case
+  const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
+  const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
+  
+  const ruleBreakfast = MENU_RULES.find(r => r.id === 'rule-breakfast');
+  if (ruleBreakfast) ruleBreakfast.active = incluirDesayuno;
+  
+  const ruleStock = MENU_RULES.find(r => r.id === 'rule-stock');
+  if (ruleStock) ruleStock.active = priorizarStock;
+};
+
+window.saveMenuRules = function() {
+  localStorage.setItem('menu_settings_rules', JSON.stringify(MENU_RULES));
+};
+
+window.handleDeleteRule = function(id) {
+  const rule = MENU_RULES.find(r => r.id === id);
+  if (rule) {
+    rule.deleted = true;
+    window.saveMenuRules();
+    window.renderMenuRules();
+    toast('🗑️ Regla eliminada correctamente');
+  }
+};
+
+window.handleToggleRule = function(id, checked) {
+  const rule = MENU_RULES.find(r => r.id === id);
+  if (rule) {
+    rule.active = checked;
+    window.saveMenuRules();
+    if (id === 'rule-breakfast') {
+      localStorage.setItem('menu_setting_incluir_desayuno', checked);
+    } else if (id === 'rule-stock') {
+      localStorage.setItem('menu_setting_priorizar_stock', checked);
+    }
+  }
+};
+
+window.renderMenuRules = function() {
+  window.loadMenuRules();
+  
+  const fijasContainer = document.getElementById('menu-rules-fijas-container');
+  const especialesContainer = document.getElementById('menu-rules-especiales-container');
+  
+  if (fijasContainer) {
+    const activeFijas = MENU_RULES.filter(r => r.type === 'fija' && !r.deleted);
+    if (activeFijas.length === 0) {
+      fijasContainer.innerHTML = `<p class="text-xs text-slate-400 italic p-3 text-center">No hay reglas nutricionales activas.</p>`;
+    } else {
+      fijasContainer.innerHTML = activeFijas.map(r => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 gap-3">
+          <div class="flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">${r.text}</span>
+          </div>
+          <button onclick="handleDeleteRule('${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0" title="Eliminar regla">
+            <span class="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+      `).join('');
+    }
+  }
+  
+  if (especialesContainer) {
+    const activeEspeciales = MENU_RULES.filter(r => r.type === 'especial' && !r.deleted);
+    if (activeEspeciales.length === 0) {
+      especialesContainer.innerHTML = `<p class="text-xs text-slate-400 italic p-3 text-center">No hay filtros especiales activos.</p>`;
+    } else {
+      especialesContainer.innerHTML = activeEspeciales.map(r => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 gap-3">
+          <div class="flex flex-col pr-2">
+            <span class="text-xs font-semibold text-slate-700">${r.text}</span>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" class="sr-only peer" ${r.active ? 'checked' : ''} onchange="handleToggleRule('${r.id}', this.checked)">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+            </label>
+            <button onclick="handleDeleteRule('${r.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar regla">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+};
+
 window.openMenuSettingsModal = function() {
   const modal = document.getElementById('modal-menu-settings');
   if (modal) {
-    const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
-    const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
-    
-    document.getElementById('setting-incluir-desayuno').checked = incluirDesayuno;
-    document.getElementById('setting-priorizar-stock').checked = priorizarStock;
-
+    window.renderMenuRules();
     modal.classList.remove('hidden');
     modal.classList.add('flex');
   }
@@ -3268,11 +3343,12 @@ window.closeMenuSettingsModal = function() {
   }
 }
 window.saveMenuSettingsLocal = function() {
-  const incluirDesayuno = document.getElementById('setting-incluir-desayuno').checked;
-  const priorizarStock = document.getElementById('setting-priorizar-stock').checked;
+  // Legacy compatibility: rules are autosaved on toggling or deleting, but we sync them
+  const ruleBreakfast = MENU_RULES.find(r => r.id === 'rule-breakfast');
+  const ruleStock = MENU_RULES.find(r => r.id === 'rule-stock');
   
-  localStorage.setItem('menu_setting_incluir_desayuno', incluirDesayuno);
-  localStorage.setItem('menu_setting_priorizar_stock', priorizarStock);
+  localStorage.setItem('menu_setting_incluir_desayuno', ruleBreakfast ? ruleBreakfast.active : false);
+  localStorage.setItem('menu_setting_priorizar_stock', ruleStock ? ruleStock.active : false);
 }
 window.saveAndGenerateWeeklyMenu = async function() {
   saveMenuSettingsLocal();
@@ -3291,8 +3367,23 @@ window.generateWeeklyMenu = async function() {
 
   toast('⚡ Generando menú semanal inteligente...');
 
-  const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
-  const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
+  window.loadMenuRules();
+  const getRuleActive = (id) => {
+    const r = MENU_RULES.find(rule => rule.id === id);
+    return r ? (r.active && !r.deleted) : false;
+  };
+  const getRuleExists = (id) => {
+    const r = MENU_RULES.find(rule => rule.id === id);
+    return r ? !r.deleted : false;
+  };
+
+  const ruleCarbsActive = getRuleExists('rule-carbs');
+  const ruleHoursActive = getRuleExists('rule-hours');
+  const ruleRotationActive = getRuleExists('rule-rotation');
+  const ruleVegActive = getRuleExists('rule-veg');
+  const ruleSaladActive = getRuleExists('rule-salad');
+  const incluirDesayuno = getRuleActive('rule-breakfast');
+  const priorizarStock = getRuleActive('rule-stock');
 
   const getRecipeCategoryName = (r) => {
     if (r.category_id) {
@@ -3392,17 +3483,32 @@ window.generateWeeklyMenu = async function() {
       rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
     }
 
-    // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo: Pastas + Acompañante Ensaladas)
-    const selectedLunch = selectRecipe(pastaPool, usedRecipeIds);
-    if (selectedLunch) usedRecipeIds.add(selectedLunch.id);
+    // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
+    const lunchPool = ruleHoursActive ? pastaPool : allRecipes;
+    const selectedLunch = selectRecipe(lunchPool, ruleRotationActive ? usedRecipeIds : new Set());
+    if (selectedLunch && ruleRotationActive) usedRecipeIds.add(selectedLunch.id);
     const rLunch = selectedLunch ? selectedLunch.id : null;
 
-    const selectedSide = selectRecipe(saladPool, new Set());
-    const rSide = selectedSide ? selectedSide.id : null;
+    let rSide = null;
+    if (ruleSaladActive) {
+      const selectedSide = selectRecipe(saladPool, new Set());
+      rSide = selectedSide ? selectedSide.id : null;
+    }
 
-    // PASO C & D: PLANIFICACIÓN DE NOCHE (Cena: Arroces o Guisos - Sin repetir platos en la semana)
-    const selectedDinner = selectRecipe(riceStewPool, usedRecipeIds);
-    if (selectedDinner) usedRecipeIds.add(selectedDinner.id);
+    // PASO C & D: PLANIFICACIÓN DE NOCHE
+    let dinnerPool = ruleHoursActive ? riceStewPool : allRecipes;
+    if (ruleCarbsActive && selectedLunch) {
+      const lunchCat = getRecipeCategoryName(selectedLunch).toLowerCase();
+      if (lunchCat === 'pastas' || lunchCat === 'pasta') {
+        dinnerPool = dinnerPool.filter(r => {
+          const c = getRecipeCategoryName(r).toLowerCase();
+          return c !== 'pastas' && c !== 'pasta';
+        });
+      }
+    }
+
+    const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
+    if (selectedDinner && ruleRotationActive) usedRecipeIds.add(selectedDinner.id);
     const rDinner = selectedDinner ? selectedDinner.id : null;
 
     weekData.push({
@@ -3417,30 +3523,32 @@ window.generateWeeklyMenu = async function() {
   }
 
   // PASO E: COMPROBACIÓN VEGETARIANA OBLIGATORIA
-  const isVeg = (recipeId) => {
-    if (!recipeId) return false;
-    const r = allRecipes.find(rec => rec.id === recipeId);
-    if (!r) return false;
-    const catName = getRecipeCategoryName(r).toLowerCase();
-    return r.is_vegetarian === true || catName === 'vegetariano' || catName === 'vegetarian';
-  };
+  if (ruleVegActive) {
+    const isVeg = (recipeId) => {
+      if (!recipeId) return false;
+      const r = allRecipes.find(rec => rec.id === recipeId);
+      if (!r) return false;
+      const catName = getRecipeCategoryName(r).toLowerCase();
+      return r.is_vegetarian === true || catName === 'vegetariano' || catName === 'vegetarian';
+    };
 
-  let vegCount = 0;
-  weekData.forEach(day => {
-    if (isVeg(day.lunch_recipe_id)) vegCount++;
-    if (isVeg(day.dinner_recipe_id)) vegCount++;
-  });
+    let vegCount = 0;
+    weekData.forEach(day => {
+      if (isVeg(day.lunch_recipe_id)) vegCount++;
+      if (isVeg(day.dinner_recipe_id)) vegCount++;
+    });
 
-  if (vegCount === 0) {
-    console.log("No vegetarian recipe found. Replacing Sunday dinner...");
-    const vegRecipe = selectRecipe(vegetarianPool, usedRecipeIds);
-    if (vegRecipe) {
-      const lastDay = weekData[6];
-      if (lastDay.dinner_recipe_id) {
-        usedRecipeIds.delete(lastDay.dinner_recipe_id);
+    if (vegCount === 0) {
+      console.log("No vegetarian recipe found. Replacing Sunday dinner...");
+      const vegRecipe = selectRecipe(vegetarianPool, ruleRotationActive ? usedRecipeIds : new Set());
+      if (vegRecipe) {
+        const lastDay = weekData[6];
+        if (lastDay.dinner_recipe_id && ruleRotationActive) {
+          usedRecipeIds.delete(lastDay.dinner_recipe_id);
+        }
+        lastDay.dinner_recipe_id = vegRecipe.id;
+        if (ruleRotationActive) usedRecipeIds.add(vegRecipe.id);
       }
-      lastDay.dinner_recipe_id = vegRecipe.id;
-      usedRecipeIds.add(vegRecipe.id);
     }
   }
 
