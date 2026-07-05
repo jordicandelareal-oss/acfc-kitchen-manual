@@ -893,44 +893,48 @@
   <div class="bg-white w-full max-w-lg flex flex-col max-h-[90vh] rounded-t-3xl md:rounded-2xl p-5 md:p-8 shadow-2xl transition-transform transform translate-y-0 relative">
     <div class="flex justify-between items-center mb-5 flex-shrink-0">
       <div>
-        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">⚙️ Ajustes de Reglas Nutricionales</h3>
-        <p class="text-xs text-slate-400 mt-0.5">Establece límites para la generación automática</p>
+        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">⚙️ Configuración Semanal de Menús</h3>
+        <p class="text-xs text-slate-400 mt-0.5">Establece límites y reglas para la generación automática</p>
       </div>
       <button onclick="closeMenuSettingsModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
     </div>
 
     <div class="space-y-5 flex-1 overflow-y-auto pr-2 pb-4">
-      <!-- Reglas Fijas -->
+      <!-- Bloque A: Reglas Nutricionales y de Control (Fijas) -->
       <div class="space-y-2">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Fijas (Siempre activas)</h4>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Nutricionales y de Control (Siempre activas)</h4>
         <div class="space-y-2">
           <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
             <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">No repetir carbohidrato el mismo día (Almuerzo Pasta -> Cena Arroz/Guiso)</span>
+            <span class="text-xs text-slate-600 font-medium">Control Diario de Carbohidratos: No se repite carbohidrato el mismo día (Almuerzo Pasta ➡️ Cena Arroz/Guiso).</span>
           </div>
           <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
             <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">No repetir platos en la misma semana</span>
+            <span class="text-xs text-slate-600 font-medium">Distribución Horaria: Mediodía reservado para pastas; noche para guisos y arroces.</span>
           </div>
           <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
             <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Mínimo 1 plato vegetariano por semana</span>
+            <span class="text-xs text-slate-600 font-medium">Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.</span>
           </div>
           <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
             <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
-            <span class="text-xs text-slate-600 font-medium">Acompañamiento obligatorio de Ensalada al mediodía</span>
+            <span class="text-xs text-slate-600 font-medium">Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.</span>
+          </div>
+          <div class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="material-symbols-outlined text-emerald-500 text-[18px] mt-0.5">check_circle</span>
+            <span class="text-xs text-slate-600 font-medium">Guarnición Automática: Creación e inserción automática de la categoría 'Ensaladas' como acompañamiento en todos los almuerzos.</span>
           </div>
         </div>
       </div>
 
-      <!-- Reglas Especiales -->
+      <!-- Bloque B: Filtros Especiales Activos (Toggles) -->
       <div class="space-y-3 pt-2">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reglas Especiales (Configurables)</h4>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtros Especiales Activos (Bajo demanda)</h4>
         
         <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
           <div class="flex flex-col pr-4">
-            <span class="text-sm font-semibold text-slate-700">Incluir Desayunos</span>
-            <span class="text-xs text-slate-400">Incluir Desayunos en la generación automática</span>
+            <span class="text-sm font-semibold text-slate-700">Incluir Desayuno</span>
+            <span class="text-xs text-slate-400">Incluir Desayuno en la cuadrícula de menús</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
             <input type="checkbox" id="setting-incluir-desayuno" class="sr-only peer" onchange="saveMenuSettingsLocal()">
@@ -941,7 +945,7 @@
         <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
           <div class="flex flex-col pr-4">
             <span class="text-sm font-semibold text-slate-700">Priorizar por Stock</span>
-            <span class="text-xs text-slate-400">Optimizar menú para dar salida a insumos con alto stock</span>
+            <span class="text-xs text-slate-400">Optimizar según Stock rotativo</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
             <input type="checkbox" id="setting-priorizar-stock" class="sr-only peer" onchange="saveMenuSettingsLocal()">
@@ -951,9 +955,15 @@
       </div>
     </div>
 
-    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
-      <button onclick="closeMenuSettingsModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors w-full">Cerrar Ajustes</button>
+    <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
+      <button onclick="closeMenuSettingsModal()" class="flex-1 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors">Cancelar</button>
+      <button onclick="saveAndGenerateWeeklyMenu()" class="flex-[2] px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">bolt</span>
+        <span>Guardar Ajustes y Generar Menú Semanal</span>
+      </button>
     </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -3240,6 +3250,12 @@ window.saveWeeklyConfig = async function() {
 window.openMenuSettingsModal = function() {
   const modal = document.getElementById('modal-menu-settings');
   if (modal) {
+    const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
+    const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
+    
+    document.getElementById('setting-incluir-desayuno').checked = incluirDesayuno;
+    document.getElementById('setting-priorizar-stock').checked = priorizarStock;
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
   }
@@ -3251,6 +3267,19 @@ window.closeMenuSettingsModal = function() {
     modal.classList.remove('flex');
   }
 }
+window.saveMenuSettingsLocal = function() {
+  const incluirDesayuno = document.getElementById('setting-incluir-desayuno').checked;
+  const priorizarStock = document.getElementById('setting-priorizar-stock').checked;
+  
+  localStorage.setItem('menu_setting_incluir_desayuno', incluirDesayuno);
+  localStorage.setItem('menu_setting_priorizar_stock', priorizarStock);
+}
+window.saveAndGenerateWeeklyMenu = async function() {
+  saveMenuSettingsLocal();
+  closeMenuSettingsModal();
+  await generateWeeklyMenu();
+}
+
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
 window.generateWeeklyMenu = async function() {
