@@ -187,14 +187,14 @@
         <span class="material-symbols-outlined" style="font-size:18px">add</span>
         <span class="hidden sm:inline">Nuevo</span>
       </button>
-      <button class="relative p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Notificaciones">
+      <button onclick="openNotificationsModal()" class="relative p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Notificaciones">
         <span class="material-symbols-outlined" style="font-size:22px">notifications</span>
         <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full pulse-red"></span>
       </button>
-      <button class="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors hidden sm:flex" aria-label="Ajustes">
+      <button onclick="openMenuSettingsModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors hidden sm:flex" aria-label="Ajustes">
         <span class="material-symbols-outlined" style="font-size:22px">settings</span>
       </button>
-      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-sm cursor-pointer" title="Chef Jefe">CJ</div>
+      <div onclick="openProfileCjModal()" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-sm cursor-pointer" title="Chef Jefe">CJ</div>
     </div>
   </div>
 
@@ -1001,6 +1001,56 @@
         <span class="material-symbols-outlined text-[18px]">bolt</span>
         <span>Guardar Ajustes y Generar Menú Semanal</span>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: NOTIFICACIONES ──────────────────────────────────────── -->
+<div id="modal-notifications" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeNotificationsModal()">
+  <div class="bg-white w-full max-w-md flex flex-col max-h-[80vh] rounded-t-3xl md:rounded-2xl p-5 md:p-6 shadow-2xl relative">
+    <div class="flex justify-between items-center mb-4 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-brand">notifications</span>
+        <h3 class="text-base font-bold text-slate-900" style="font-family:Outfit">Centro de Notificaciones</h3>
+      </div>
+      <button onclick="closeNotificationsModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto pr-1 space-y-3" id="notifications-list">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: PERFIL CHEF JEFE (CJ) ─────────────────────────────────── -->
+<div id="modal-profile-cj" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000] hidden items-end md:items-center justify-center p-0 md:p-4" onclick="if(event.target===this)closeProfileCjModal()">
+  <div class="bg-white w-full max-w-sm flex flex-col max-h-[85vh] rounded-t-3xl md:rounded-2xl p-5 md:p-6 shadow-2xl relative">
+    <div class="flex justify-between items-center mb-5 flex-shrink-0">
+      <h3 class="text-base font-bold text-slate-900" style="font-family:Outfit">Perfil del Usuario</h3>
+      <button onclick="closeProfileCjModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto space-y-4">
+      <div class="flex flex-col items-center text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-2xl shadow-md mb-3">CJ</div>
+        <h4 class="font-bold text-slate-800 text-sm">Chef Jefe (Samir)</h4>
+        <span class="px-2.5 py-0.5 bg-brand-muted text-brand text-[10px] font-bold rounded-full mt-1">Administrador</span>
+      </div>
+      
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between p-2.5 border-b border-slate-100">
+          <span class="text-slate-400 font-medium">Email</span>
+          <span class="text-slate-700 font-semibold">samir.cairo@acfc.com</span>
+        </div>
+        <div class="flex justify-between p-2.5 border-b border-slate-100">
+          <span class="text-slate-400 font-medium">Establecimiento</span>
+          <span class="text-slate-700 font-semibold">ACFC Kitchen Principal</span>
+        </div>
+        <div class="flex justify-between p-2.5 border-b border-slate-100">
+          <span class="text-slate-400 font-medium">Valoración del Inventario</span>
+          <span class="text-slate-700 font-mono font-bold" id="profile-valuation-val">—</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -3879,6 +3929,84 @@ window.generateWeeklyMenu = async function() {
     toast('❌ Error: ' + err.message);
   }
 }
+
+window.openNotificationsModal = function() {
+  const modal = document.getElementById('modal-notifications');
+  if (!modal) return;
+  
+  const listEl = document.getElementById('notifications-list');
+  
+  const lowStockItems = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).filter(i => {
+    const stock = Number(i.stock_actual) || 0;
+    const min = Number(i.stock_minimo || i.min_stock || 0);
+    return stock < min;
+  });
+  
+  let html = '';
+  if (lowStockItems.length === 0) {
+    html = `
+      <div class="text-center py-10 text-slate-400">
+        <span class="material-symbols-outlined text-[40px] text-slate-300 mb-2">check_circle</span>
+        <p class="text-xs font-semibold">¡Todo al día!</p>
+        <p class="text-[10px] text-slate-400">No hay alertas de stock bajo ni conflictos pendientes.</p>
+      </div>
+    `;
+  } else {
+    html = lowStockItems.map(i => {
+      const stock = Number(i.stock_actual) || 0;
+      const min = Number(i.stock_minimo || i.min_stock || 0);
+      return `
+        <div class="flex items-start gap-3 p-3 bg-red-50/50 hover:bg-red-50 border border-red-100 rounded-xl transition-all">
+          <span class="material-symbols-outlined text-red-500 text-[18px] mt-0.5">warning</span>
+          <div class="flex-1">
+            <h5 class="text-xs font-bold text-slate-800">${i.name}</h5>
+            <p class="text-[10px] text-slate-500 mt-0.5">El stock actual es de <strong class="text-red-600">${stock} ${i.unit || 'ud'}</strong> (Mínimo: ${min} ${i.unit || 'ud'}).</p>
+            <span class="inline-block mt-2 px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded-md">Stock Bajo</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  listEl.innerHTML = html;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.closeNotificationsModal = function() {
+  const modal = document.getElementById('modal-notifications');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+};
+
+window.openProfileCjModal = function() {
+  const modal = document.getElementById('modal-profile-cj');
+  if (!modal) return;
+  
+  const value = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).reduce((sum, i) => {
+    const cost = Number(i.precio_por_u || i.precio_mas_bajo || i.precio_por_kg || i.cost || 0);
+    const stock = Number(i.stock_actual) || 0;
+    return sum + (cost * stock);
+  }, 0);
+  
+  const valuationEl = document.getElementById('profile-valuation-val');
+  if (valuationEl) {
+    valuationEl.textContent = `€${value.toFixed(2)}`;
+  }
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.closeProfileCjModal = function() {
+  const modal = document.getElementById('modal-profile-cj');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+};
 
 // ── CÁLCULO DE LISTA DE COMPRAS Y LOGÍSTICA DE PROVEEDORES ────────
 window.closeShoppingListModal = function() {
