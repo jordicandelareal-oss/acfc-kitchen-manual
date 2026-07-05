@@ -1819,7 +1819,7 @@ function openNewIngredientModal() {
   document.getElementById('ing-brand').value = '';
   document.getElementById('ing-category').value = '';
   document.getElementById('ing-subcategory').value = '';
-  document.getElementById('ing-provider').value = 'Sin proveedor';
+  document.getElementById('ing-provider').value = '';
   document.getElementById('ing-provider-ref').value = '';
   document.getElementById('ing-format-gr').value = '';
   document.getElementById('ing-purchase-price').value = '';
@@ -1847,7 +1847,7 @@ function openIngredientModal(id) {
   document.getElementById('ing-brand').value = item.brand || '';
   document.getElementById('ing-category').value = item.cat || '';
   document.getElementById('ing-subcategory').value = item.subcategory || '';
-  document.getElementById('ing-provider').value = item.provider_name || 'Sin proveedor';
+  document.getElementById('ing-provider').value = item.supplier_id || '';
   document.getElementById('ing-provider-ref').value = item.provider_ref || '';
   document.getElementById('ing-format-gr').value = item.purchase_format_gr || '';
   document.getElementById('ing-purchase-price').value = item.purchase_price || '';
@@ -1975,12 +1975,14 @@ async function saveIngredient() {
 
   const netCost = calculateNetCost();
 
+  const supplierIdVal = document.getElementById('ing-provider').value || null;
+
   const payload = {
     name: nameVal,
     brand: document.getElementById('ing-brand').value.trim(),
     category: document.getElementById('ing-category').value.trim(),
     subcategory: document.getElementById('ing-subcategory').value.trim(),
-    provider_name: document.getElementById('ing-provider').value,
+    supplier_id: supplierIdVal,
     provider_ref: document.getElementById('ing-provider-ref').value.trim(),
     purchase_format_gr: parseFloat(document.getElementById('ing-format-gr').value) || null,
     purchase_price: parseFloat(document.getElementById('ing-purchase-price').value) || null,
@@ -2004,6 +2006,9 @@ async function saveIngredient() {
         .single();
       if (error) throw error;
 
+      const suppObj = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.id === data.supplier_id);
+      const resolvedSupplierName = suppObj ? suppObj.name : 'Sin proveedor asignado';
+
       // Add to local INVENTORY
       const newItem = {
         id: data.id,
@@ -2012,7 +2017,7 @@ async function saveIngredient() {
         subcategory: data.subcategory || '',
         brand: data.brand || '',
         provider_ref: data.provider_ref || '',
-        provider_name: data.provider_name || 'Sin proveedor',
+        provider_name: resolvedSupplierName,
         purchase_format_gr: data.purchase_format_gr,
         purchase_price: data.purchase_price,
         output_scenario: data.output_scenario || 'KG_LT',
@@ -2027,7 +2032,8 @@ async function saveIngredient() {
         min: data.stock_minimo || 0,
         max: data.stock_maximo || 0,
         cost: netCost,
-        supplier: data.provider_name || 'Sin proveedor',
+        supplier: resolvedSupplierName,
+        supplier_id: data.supplier_id || null,
         critical: (data.stock_actual || 0) <= (data.stock_minimo || 0)
       };
       INVENTORY.push(newItem);
@@ -2047,12 +2053,16 @@ async function saveIngredient() {
       // Update local INVENTORY
       const index = INVENTORY.findIndex(i => i.id === id);
       if (index > -1) {
+        const suppObj = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.id === payload.supplier_id);
+        const resolvedSupplierName = suppObj ? suppObj.name : 'Sin proveedor asignado';
+
         INVENTORY[index] = {
           ...INVENTORY[index],
           ...payload,
           cat: payload.category || 'Sin categoría',
           cost: netCost,
-          supplier: payload.provider_name,
+          provider_name: resolvedSupplierName,
+          supplier: resolvedSupplierName,
           stock_actual: payload.stock_actual,
           stock_minimo: payload.stock_minimo,
           stock_maximo: payload.stock_maximo,
@@ -2680,6 +2690,7 @@ async function fetchAndRenderSuppliers() {
     SUPPLIERS = data || [];
     renderSuppliers(SUPPLIERS);
     await populateProviderDropdown();
+    filterInventory();
   } catch (err) {
     console.error('Error fetching suppliers:', err.message || err);
     if (el) el.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">
@@ -2701,12 +2712,12 @@ async function populateProviderDropdown() {
       const { data } = await window.supabase.from('suppliers').select('id, name').order('name');
       suppList = data || [];
     }
-    sel.innerHTML = '<option value="Sin proveedor">Sin proveedor</option>' +
-      suppList.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    sel.innerHTML = '<option value="">Sin proveedor asignado</option>' +
+      suppList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
     if (currentVal) sel.value = currentVal;
   } catch (err) {
     console.error('Error populating supplier dropdown:', err);
-    sel.innerHTML = '<option value="Sin proveedor">Sin proveedor</option>';
+    sel.innerHTML = '<option value="">Sin proveedor asignado</option>';
   }
 }
 
@@ -4655,6 +4666,9 @@ async function deleteSubcat(cat, sub) {
         const currentStock = Number(item.stock_actual !== null && item.stock_actual !== undefined ? item.stock_actual : item.current_stock) || 0;
         const minStock = Number(item.stock_minimo !== null && item.stock_minimo !== undefined ? item.stock_minimo : item.min_stock) || 0;
         
+        const suppObj = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.id === item.supplier_id);
+        const resolvedSupplierName = suppObj ? suppObj.name : (item.supplier_id ? 'Cargando...' : 'Sin proveedor asignado');
+
         return {
           id: item.id,
           name: item.name || 'Sin nombre',
@@ -4662,7 +4676,7 @@ async function deleteSubcat(cat, sub) {
           subcategory: item.subcategory || '',
           brand: item.brand || '',
           provider_ref: item.provider_ref || '',
-          provider_name: item.provider_name || item.proveedor_principal || 'Sin proveedor',
+          provider_name: resolvedSupplierName,
           purchase_format_gr: Number(item.purchase_format_gr) || null,
           purchase_price: Number(item.purchase_price) || null,
           output_scenario: item.output_scenario || 'KG_LT',
@@ -4673,7 +4687,7 @@ async function deleteSubcat(cat, sub) {
           unit: item.unit || 'ud',
           min: minStock,
           cost: Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
-          supplier: item.provider_name || item.proveedor_principal || 'Sin proveedor',
+          supplier: resolvedSupplierName,
           supplier_id: item.supplier_id || null,
           proveedor_principal: item.proveedor_principal || null,
           critical: currentStock <= minStock,
