@@ -543,6 +543,17 @@
             </div>
           </div>
 
+          <div class="w-full sm:w-40 hidden" id="recipe-ing-corte-wrapper">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Tipo de Corte</label>
+            <select id="recipe-ing-corte" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white">
+              <option value="Entero/a">Entero/a</option>
+              <option value="Tacos">Tacos</option>
+              <option value="Guiso">Guiso</option>
+              <option value="Picada">Picada</option>
+              <option value="Paella">Paella</option>
+            </select>
+          </div>
+
           <div class="flex items-end">
              <button onclick="addRecipeIngredientFromForm()" id="recipe-ing-add-btn" class="w-full sm:w-auto px-4 py-2 bg-brand text-white font-semibold rounded-lg text-sm hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:bg-slate-300" disabled>Añadir</button>
           </div>
@@ -3689,9 +3700,18 @@ window.calculateShoppingList = async function() {
         const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
         const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
         
-        if (!needs[ingId]) {
-          needs[ingId] = {
-            name: ing.name || 'Sin nombre',
+        const isElCairo = (supplierName === 'Carnicería El Cairo' || ing.provider_name === 'Carnicería El Cairo' || ing.proveedor_principal === 'Carnicería El Cairo');
+        const key = isElCairo 
+          ? `${ingId}_${recipe.name}_${ri.tipo_corte || 'Entero/a'}` 
+          : ingId;
+
+        const displayName = isElCairo
+          ? `${ing.name} (${ri.tipo_corte || 'Entero/a'}) para ${recipe.name}`
+          : (ing.name || 'Sin nombre');
+
+        if (!needs[key]) {
+          needs[key] = {
+            name: displayName,
             quantity: 0,
             unit: ri.unit || 'Gr',
             supplierId: supplierId,
@@ -3699,7 +3719,7 @@ window.calculateShoppingList = async function() {
             supplierObj: hasSupplierObj ? ing.suppliers : null
           };
         }
-        needs[ingId].quantity += totalNeeded;
+        needs[key].quantity += totalNeeded;
       });
     });
   });
@@ -4199,6 +4219,7 @@ async function deleteSubcat(cat, sub) {
           recipe_ingredients (
             quantity_per_portion,
             unit,
+            tipo_corte,
             ingredients (
               id,
               name,
@@ -4376,7 +4397,8 @@ async function deleteSubcat(cat, sub) {
         id: ri.ingredients?.id,
         name: ri.ingredients?.name || 'Sin nombre',
         qty: Number(ri.quantity) || Number(ri.quantity_per_portion) || 0,
-        unit: ri.unit || 'Gr'
+        unit: ri.unit || 'Gr',
+        tipo_corte: ri.tipo_corte || null
       }));
     } else {
       titleEl.textContent = 'Nueva Receta';
@@ -4531,6 +4553,14 @@ async function deleteSubcat(cat, sub) {
     document.getElementById('recipe-ing-unit').textContent = unit || 'ud';
     document.getElementById('recipe-ing-autocomplete-list').classList.add('hidden');
     
+    const ingObj = INVENTORY.find(i => i.id === id);
+    const wrapper = document.getElementById('recipe-ing-corte-wrapper');
+    if (ingObj && (ingObj.supplier === 'Carnicería El Cairo' || ingObj.provider_name === 'Carnicería El Cairo' || ingObj.proveedor_principal === 'Carnicería El Cairo')) {
+      wrapper.classList.remove('hidden');
+    } else {
+      wrapper.classList.add('hidden');
+    }
+    
     const qtyInput = document.getElementById('recipe-ing-qty');
     qtyInput.disabled = false;
     qtyInput.focus();
@@ -4553,18 +4583,25 @@ async function deleteSubcat(cat, sub) {
       return;
     }
     
-    if (_recipeIngredientsBuilder.some(item => item.id === id)) {
-      toast('⚠️ Este ingrediente ya ha sido añadido. Puedes editar su cantidad en la tabla.');
+    const wrapper = document.getElementById('recipe-ing-corte-wrapper');
+    const hasCorte = wrapper && !wrapper.classList.contains('hidden');
+    const tipo_corte = hasCorte ? document.getElementById('recipe-ing-corte').value : null;
+
+    if (_recipeIngredientsBuilder.some(item => item.id === id && item.tipo_corte === tipo_corte)) {
+      toast('⚠️ Este ingrediente con el mismo tipo de corte ya ha sido añadido.');
       return;
     }
     
-    _recipeIngredientsBuilder.push({ id, name, qty, unit });
+    _recipeIngredientsBuilder.push({ id, name, qty, unit, tipo_corte });
     renderRecipeIngredientsBuilder();
     clearRecipeIngSearch();
   }
 
   function clearRecipeIngSearch() {
     document.getElementById('recipe-ing-search').value = '';
+    
+    const wrapper = document.getElementById('recipe-ing-corte-wrapper');
+    if (wrapper) wrapper.classList.add('hidden');
     
     const idInput = document.getElementById('recipe-ing-id');
     if (idInput) idInput.value = '';
@@ -4601,7 +4638,7 @@ async function deleteSubcat(cat, sub) {
     
     tbody.innerHTML = _recipeIngredientsBuilder.map((item, idx) => `
       <tr class="align-middle">
-        <td class="py-2.5 font-medium text-slate-700">${item.name}</td>
+        <td class="py-2.5 font-medium text-slate-700">${item.name}${item.tipo_corte ? ` <span class="px-1.5 py-0.5 text-[10px] bg-amber-50 text-amber-700 rounded font-semibold border border-amber-100">${item.tipo_corte}</span>` : ''}</td>
         <td class="py-2.5">
           <input type="number" step="0.01" value="${item.qty}" 
             onchange="updateRecipeBuilderQty(${idx}, this.value)"
@@ -4679,16 +4716,18 @@ async function deleteSubcat(cat, sub) {
       // Group duplicates before insert just in case
       const grouped = {};
       _recipeIngredientsBuilder.forEach(item => {
-        if (grouped[item.id]) {
-          grouped[item.id].quantity += Number(item.qty);
-          grouped[item.id].quantity_per_portion += Number(item.qty);
+        const key = item.id + '_' + (item.tipo_corte || '');
+        if (grouped[key]) {
+          grouped[key].quantity += Number(item.qty);
+          grouped[key].quantity_per_portion += Number(item.qty);
         } else {
-          grouped[item.id] = {
+          grouped[key] = {
             recipe_id: recipeId,
             ingredient_id: item.id,
             quantity: Number(item.qty),
             quantity_per_portion: Number(item.qty),
-            unit: item.unit
+            unit: item.unit,
+            tipo_corte: item.tipo_corte || null
           };
         }
       });
