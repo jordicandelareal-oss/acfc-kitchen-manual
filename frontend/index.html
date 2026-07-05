@@ -3206,7 +3206,7 @@ const DEFAULT_MENU_RULES = [
   { id: 'rule-hours', text: 'Distribución Horaria: Almuerzo reservado para pastas, noches para Guisos y Arroces.', type: 'fija', active: true, deleted: false },
   { id: 'rule-rotation', text: 'Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.', type: 'fija', active: true, deleted: false },
   { id: 'rule-veg', text: 'Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.', type: 'fija', active: true, deleted: false },
-  { id: 'rule-salad', text: 'Guarnición Automática: Insertar automáticamente la categoría \'Ensaladas\' como acompañamiento en todos los almuerzos.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-salad', text: 'Guarnición Automática: Insertar automáticamente la categoría \'Ensaladas\' como acompañamiento al mediodía.', type: 'especial', active: false, deleted: false },
   { id: 'rule-breakfast', text: 'Incluir Desayuno en la cuadrícula de menús.', type: 'especial', active: false, deleted: false },
   { id: 'rule-stock', text: 'Optimizar según Stock rotativo: dar salida prioritaria a insumos con excedente en almacén.', type: 'especial', active: false, deleted: false }
 ];
@@ -3234,12 +3234,16 @@ window.loadMenuRules = function() {
   // Sync the specials from localStorage to our rule state just in case
   const incluirDesayuno = localStorage.getItem('menu_setting_incluir_desayuno') === 'true';
   const priorizarStock = localStorage.getItem('menu_setting_priorizar_stock') === 'true';
+  const incluirEnsaladas = localStorage.getItem('menu_setting_incluir_ensaladas') === 'true';
   
   const ruleBreakfast = MENU_RULES.find(r => r.id === 'rule-breakfast');
   if (ruleBreakfast) ruleBreakfast.active = incluirDesayuno;
   
   const ruleStock = MENU_RULES.find(r => r.id === 'rule-stock');
   if (ruleStock) ruleStock.active = priorizarStock;
+
+  const ruleSalad = MENU_RULES.find(r => r.id === 'rule-salad');
+  if (ruleSalad) ruleSalad.active = incluirEnsaladas;
 };
 
 window.saveMenuRules = function() {
@@ -3265,6 +3269,8 @@ window.handleToggleRule = function(id, checked) {
       localStorage.setItem('menu_setting_incluir_desayuno', checked);
     } else if (id === 'rule-stock') {
       localStorage.setItem('menu_setting_priorizar_stock', checked);
+    } else if (id === 'rule-salad') {
+      localStorage.setItem('menu_setting_incluir_ensaladas', checked);
     }
   }
 };
@@ -3359,9 +3365,11 @@ window.saveMenuSettingsLocal = function() {
   // Legacy compatibility: rules are autosaved on toggling or deleting, but we sync them
   const ruleBreakfast = MENU_RULES.find(r => r.id === 'rule-breakfast');
   const ruleStock = MENU_RULES.find(r => r.id === 'rule-stock');
+  const ruleSalad = MENU_RULES.find(r => r.id === 'rule-salad');
   
   localStorage.setItem('menu_setting_incluir_desayuno', ruleBreakfast ? ruleBreakfast.active : false);
   localStorage.setItem('menu_setting_priorizar_stock', ruleStock ? ruleStock.active : false);
+  localStorage.setItem('menu_setting_incluir_ensaladas', ruleSalad ? ruleSalad.active : false);
 }
 window.saveAndGenerateWeeklyMenu = async function() {
   saveMenuSettingsLocal();
@@ -3395,7 +3403,7 @@ window.generateWeeklyMenu = async function() {
   const ruleHoursActive = getRuleExists('rule-hours');
   const ruleRotationActive = getRuleExists('rule-rotation');
   const ruleVegActive = getRuleExists('rule-veg');
-  const ruleSaladActive = getRuleExists('rule-salad');
+  const ruleSaladActive = getRuleActive('rule-salad');
   const incluirDesayuno = getRuleActive('rule-breakfast');
   const priorizarStock = getRuleActive('rule-stock');
 
