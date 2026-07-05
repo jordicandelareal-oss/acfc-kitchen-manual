@@ -953,46 +953,6 @@
         </div>
       </div>
 
-      <!-- NUEVA SECCIÓN DE CONTROL: Zona de Reseteo -->
-      <div class="border border-red-200 rounded-xl overflow-hidden bg-red-50/20 shadow-sm p-4 space-y-3 mt-4">
-        <h4 class="text-xs font-bold text-red-700 flex items-center gap-1.5 uppercase tracking-wider">
-          <span class="material-symbols-outlined text-[16px]">dangerous</span> Zona de Reseteo
-        </h4>
-        <p class="text-[10px] text-slate-500">Permite vaciar las recetas planificadas del mes de forma controlada.</p>
-        
-        <div class="flex flex-col gap-2 bg-white p-3 rounded-xl border border-red-100">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="reset-total-checkbox" onchange="toggleResetCheckboxes(this.checked)" class="rounded border-slate-300 text-red-600 focus:ring-red-500">
-            <span class="text-xs font-bold text-slate-700">⚠️ Reset Total (Todo el mes)</span>
-          </label>
-          
-          <div class="border-t border-slate-100 my-1"></div>
-          
-          <div class="grid grid-cols-2 gap-2 pl-1" id="reset-partial-container">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="reset-week" value="2026-07-06" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
-              <span class="text-xs font-semibold text-slate-600">Semana 1 (06/07)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="reset-week" value="2026-07-13" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
-              <span class="text-xs font-semibold text-slate-600">Semana 2 (13/07)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="reset-week" value="2026-07-20" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
-              <span class="text-xs font-semibold text-slate-600">Semana 3 (20/07)</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="reset-week" value="2026-07-27" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
-              <span class="text-xs font-semibold text-slate-600">Semana 4 (27/07)</span>
-            </label>
-          </div>
-        </div>
-
-        <button onclick="handleResetPlanner()" class="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm">
-          <span class="material-symbols-outlined text-[16px]">delete_sweep</span> Resetear Planificador
-        </button>
-      </div>
-
     </div>
 
     <div class="mt-6 pt-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
@@ -1000,6 +960,62 @@
       <button onclick="saveAndGenerateWeeklyMenu()" class="flex-[2] px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
         <span class="material-symbols-outlined text-[18px]">bolt</span>
         <span>Guardar Ajustes y Generar Menú Semanal</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: CONFIRMACIÓN RESET DE MENÚS (DOBLE VERIFICACIÓN) ────── -->
+<div id="modal-reset-planner" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1100] hidden items-center justify-center p-4" onclick="if(event.target===this)closeResetPlannerModal()">
+  <div class="bg-white w-full max-w-md flex flex-col rounded-2xl p-6 shadow-2xl relative animate-fade-in">
+    <div class="flex items-center gap-2.5 mb-3 text-red-600">
+      <span class="material-symbols-outlined text-[24px]">warning</span>
+      <h3 class="text-base font-bold text-slate-900" style="font-family:Outfit">¿Estás seguro de que deseas resetear el menú?</h3>
+    </div>
+    
+    <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+      Esta acción es irreversible y vaciará las recetas de la cuadrícula seleccionada. Por favor, confirma el alcance del reseteo:
+    </p>
+
+    <div class="flex flex-col gap-2.5 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5">
+      <label class="flex items-center gap-2 cursor-pointer select-none">
+        <input type="checkbox" id="modal-reset-total-checkbox" onchange="toggleModalResetCheckboxes(this.checked)" class="rounded border-slate-300 text-red-600 focus:ring-red-500">
+        <span class="text-xs font-bold text-slate-700">⚠️ Reset Total (Vaciar todo el mes completo)</span>
+      </label>
+      
+      <div class="border-t border-slate-200 my-1.5"></div>
+      
+      <div class="grid grid-cols-2 gap-2 pl-1" id="modal-reset-partial-container">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="modal-reset-week" value="2026-07-06" class="modal-reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+          <span class="text-xs font-semibold text-slate-600">Semana 1 (06/07)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="modal-reset-week" value="2026-07-13" class="modal-reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+          <span class="text-xs font-semibold text-slate-600">Semana 2 (13/07)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="modal-reset-week" value="2026-07-20" class="modal-reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+          <span class="text-xs font-semibold text-slate-600">Semana 3 (20/07)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="modal-reset-week" value="2026-07-27" class="modal-reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+          <span class="text-xs font-semibold text-slate-600">Semana 4 (27/07)</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer col-span-2">
+          <input type="checkbox" name="modal-reset-week" value="2026-08-03" class="modal-reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+          <span class="text-xs font-semibold text-slate-600">Semana 5 (03/08)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex gap-3 justify-end">
+      <button onclick="closeResetPlannerModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">
+        Cancelar
+      </button>
+      <button onclick="executePlannerReset()" id="modal-reset-confirm-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px] hidden" id="modal-reset-confirm-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+        <span id="modal-reset-confirm-text">Sí, borrar permanentemente</span>
       </button>
     </div>
   </div>
@@ -1546,6 +1562,9 @@
       <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
         <button onclick="openMenuSettingsModal()" class="flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white rounded-xl text-xs font-semibold hover:border-brand hover:text-brand hover:shadow-sm transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">settings</span> Ajustes de Menú
+        </button>
+        <button onclick="openResetPlannerModal()" class="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-xs whitespace-nowrap">
+          <span class="material-symbols-outlined text-[16px]">delete_sweep</span> Resetear Cuadrícula
         </button>
         <button onclick="generateWeeklyMenu()" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">bolt</span> Generar Menú Semanal
@@ -3494,22 +3513,44 @@ window.closeMenuSettingsModal = function() {
     modal.classList.remove('flex');
   }
 }
-window.toggleResetCheckboxes = function(isTotalChecked) {
-  const checkboxes = document.querySelectorAll('.reset-week-cb');
+window.openResetPlannerModal = function() {
+  const modal = document.getElementById('modal-reset-planner');
+  if (modal) {
+    document.getElementById('modal-reset-total-checkbox').checked = false;
+    const cbs = document.querySelectorAll('.modal-reset-week-cb');
+    cbs.forEach(cb => {
+      cb.checked = false;
+      cb.disabled = false;
+    });
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+};
+
+window.closeResetPlannerModal = function() {
+  const modal = document.getElementById('modal-reset-planner');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+};
+
+window.toggleModalResetCheckboxes = function(isTotalChecked) {
+  const checkboxes = document.querySelectorAll('.modal-reset-week-cb');
   checkboxes.forEach(cb => {
     cb.checked = isTotalChecked;
     cb.disabled = isTotalChecked;
   });
 };
 
-window.handleResetPlanner = async function() {
-  const isTotal = document.getElementById('reset-total-checkbox').checked;
+window.executePlannerReset = async function() {
+  const isTotal = document.getElementById('modal-reset-total-checkbox').checked;
   let weeksToReset = [];
   
   if (isTotal) {
-    weeksToReset = ['2026-07-06', '2026-07-13', '2026-07-20', '2026-07-27'];
+    weeksToReset = ['2026-07-06', '2026-07-13', '2026-07-20', '2026-07-27', '2026-08-03'];
   } else {
-    const checkedWeeks = document.querySelectorAll('input[name="reset-week"]:checked');
+    const checkedWeeks = document.querySelectorAll('input[name="modal-reset-week"]:checked');
     checkedWeeks.forEach(cb => weeksToReset.push(cb.value));
   }
   
@@ -3518,11 +3559,13 @@ window.handleResetPlanner = async function() {
     return;
   }
   
-  if (!confirm('⚠️ ¿Estás seguro de que deseas vaciar las recetas de las semanas seleccionadas? Esta acción no se puede deshacer.')) {
-    return;
-  }
+  const btn = document.getElementById('modal-reset-confirm-btn');
+  const spinner = document.getElementById('modal-reset-confirm-spinner');
+  const text = document.getElementById('modal-reset-confirm-text');
   
-  toast('⏳ Reseteando planificador...');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  text.textContent = 'Borrando...';
   
   try {
     let allDates = [];
@@ -3552,20 +3595,26 @@ window.handleResetPlanner = async function() {
     allDates.forEach(dateStr => {
       const parts = dateStr.split('-');
       const day = parseInt(parts[2]);
-      if (PLANNER_DATA[day] && PLANNER_DATA[day].date === dateStr) {
-        PLANNER_DATA[day].breakfast_recipe_id = null;
-        PLANNER_DATA[day].lunch_recipe_id = null;
-        PLANNER_DATA[day].lunch_side_recipe_id = null;
-        PLANNER_DATA[day].dinner_recipe_id = null;
+      if (dateStr.startsWith('2026-07-')) {
+        if (PLANNER_DATA[day]) {
+          PLANNER_DATA[day].breakfast_recipe_id = null;
+          PLANNER_DATA[day].lunch_recipe_id = null;
+          PLANNER_DATA[day].lunch_side_recipe_id = null;
+          PLANNER_DATA[day].dinner_recipe_id = null;
+        }
       }
     });
     
     renderCalendar();
-    closeMenuSettingsModal();
-    toast('✅ Planificador reseteado con éxito');
+    closeResetPlannerModal();
+    toast('🗑️ Planificador reseteado con éxito');
   } catch (err) {
     console.error('Error al resetear planificador:', err);
     toast('❌ Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    text.textContent = 'Sí, borrar permanentemente';
   }
 };
 
