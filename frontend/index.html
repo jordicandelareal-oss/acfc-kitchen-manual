@@ -1999,11 +1999,7 @@ async function saveIngredient() {
   try {
     if (isCreateMode) {
       // ── INSERT ──
-      const { data, error } = await window.supabase
-        .from('ingredients')
-        .insert([payload])
-        .select()
-        .single();
+      const { data, error } = await window.insertIngredient(payload);
       if (error) throw error;
 
       const suppObj = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.id === data.supplier_id);
@@ -2044,10 +2040,7 @@ async function saveIngredient() {
 
     } else {
       // ── UPDATE ──
-      const { error } = await window.supabase
-        .from('ingredients')
-        .update(payload)
-        .eq('id', id);
+      const { error } = await window.updateIngredient(id, payload);
       if (error) throw error;
 
       // Update local INVENTORY
@@ -2665,10 +2658,7 @@ async function fetchAndRenderSuppliers() {
   const el = document.getElementById('supplier-grid');
   if (el) el.innerHTML = '<p class="col-span-3 text-center text-slate-400 py-10">Cargando proveedores...</p>';
   try {
-    const { data, error } = await window.supabase
-      .from('suppliers')
-      .select('*')
-      .order('name', { ascending: true });
+    const { data, error } = await window.fetchSuppliers();
 
     // Handle table-not-found or RLS errors gracefully
     if (error) {
@@ -2709,7 +2699,7 @@ async function populateProviderDropdown() {
   try {
     let suppList = SUPPLIERS;
     if (suppList.length === 0) {
-      const { data } = await window.supabase.from('suppliers').select('id, name').order('name');
+      const { data } = await window.fetchSuppliers();
       suppList = data || [];
     }
     sel.innerHTML = '<option value="">Sin proveedor asignado</option>' +
@@ -2775,10 +2765,7 @@ async function saveEditSupplier() {
   };
 
   try {
-    const { error } = await window.supabase
-      .from('suppliers')
-      .update(payload)
-      .eq('id', id);
+    const { error } = await window.updateSupplier(id, payload);
     if (error) throw error;
     toast('✅ Proveedor actualizado correctamente');
     closeEditSupplierModal();
@@ -2808,7 +2795,7 @@ async function saveNewSupplier() {
     notes: document.getElementById('new-supplier-notes').value.trim() || null,
   };
   try {
-    const { error } = await window.supabase.from('suppliers').insert(payload);
+    const { error } = await window.insertSupplier(payload);
     if (error) throw error;
     toast('✅ Proveedor creado correctamente');
     closeAddSupplierModal();
@@ -2828,7 +2815,7 @@ let _currentPlannerState = {};
 
 async function fetchPlannerData() {
   try {
-    const { data, error } = await window.supabase.from('menu_planner').select('*');
+    const { data, error } = await window.fetchPlannerDataDb();
     if (error) throw error;
     PLANNER_DATA = {};
     if (data) {
@@ -3087,8 +3074,7 @@ window.dropMealInDay = async function(ev, targetDay) {
         [sourceMealType + '_recipe_id']: null
       };
       
-      // Update DB to clear source
-      const { error: clearErr } = await supabase.from('menu_planner').upsert(sourcePayload, {onConflict: 'date'});
+      const { error: clearErr } = await window.upsertPlannerDays([sourcePayload]);
       if (clearErr) throw clearErr;
       PLANNER_DATA[sourceDayNum] = sourcePayload;
     }
@@ -3118,7 +3104,7 @@ window.dropMealInDay = async function(ev, targetDay) {
       [finalMealType + '_recipe_id']: recipeId
     };
     
-    const { error: saveErr } = await supabase.from('menu_planner').upsert(targetPayload, {onConflict: 'date'});
+    const { error: saveErr } = await window.upsertPlannerDays([targetPayload]);
     if (saveErr) throw saveErr;
 
     PLANNER_DATA[targetDayNum] = targetPayload;
@@ -3259,7 +3245,7 @@ window.savePlannerDay = async function() {
   };
   
   try {
-    const { error } = await window.supabase.from('menu_planner').upsert(payload, { onConflict: 'date' });
+    const { error } = await window.upsertPlannerDays([payload]);
     if (error) throw error;
     
     PLANNER_DATA[d] = payload;
@@ -3339,7 +3325,7 @@ window.saveWeeklyConfig = async function() {
       });
     }
     
-    const { error } = await window.supabase.from('menu_planner').upsert(upserts, { onConflict: 'date' });
+    const { error } = await window.upsertPlannerDays(upserts);
     if (error) throw error;
     
     upserts.forEach(up => {
@@ -3600,20 +3586,14 @@ window.executePlannerReset = async function() {
       dinner_recipe_id: null
     };
 
-    let { error } = await window.supabase
-      .from('menu_planner')
-      .update({
-        ...baseUpdateObj,
-        lunch_side_recipe_id: null
-      })
-      .in('date', allDates);
+    let { error } = await window.resetPlannerDates(allDates, {
+      ...baseUpdateObj,
+      lunch_side_recipe_id: null
+    });
       
     if (error) {
       if (error.message && error.message.includes('lunch_side_recipe_id')) {
-        const { error: fallbackError } = await window.supabase
-          .from('menu_planner')
-          .update(baseUpdateObj)
-          .in('date', allDates);
+        const { error: fallbackError } = await window.resetPlannerDates(allDates, baseUpdateObj);
         if (fallbackError) throw fallbackError;
       } else {
         throw error;
@@ -4024,7 +4004,7 @@ window.generateWeeklyMenu = async function() {
       return copy;
     });
 
-    let { error } = await window.supabase.from('menu_planner').upsert(finalUpserts, { onConflict: 'date' });
+    let { error } = await window.upsertPlannerDays(finalUpserts);
     if (error) {
       if (error.message && error.message.includes('lunch_side_recipe_id')) {
         console.warn('⚠️ Column lunch_side_recipe_id not found in Supabase. Retrying without it.');
@@ -4033,7 +4013,7 @@ window.generateWeeklyMenu = async function() {
           delete copy.lunch_side_recipe_id;
           return copy;
         });
-        const { error: fallbackError } = await window.supabase.from('menu_planner').upsert(fallbackUpserts, { onConflict: 'date' });
+        const { error: fallbackError } = await window.upsertPlannerDays(fallbackUpserts);
         if (fallbackError) throw fallbackError;
       } else {
         throw error;
@@ -4537,11 +4517,7 @@ async function saveNewCategory() {
 async function renameCat(oldName) {
   const newName = prompt(`Renombrar categoría "${oldName}" a:`, oldName);
   if (!newName || newName.trim() === oldName) return;
-  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
-  const { error } = await window.supabase
-    .from('ingredients')
-    .update({ category: newName.trim() })
-    .eq('category', oldName);
+  const { error } = await window.updateCategoryName(oldName, newName.trim());
   if (error) { toast('❌ Error al renombrar: ' + error.message); return; }
   // Update local INVENTORY
   INVENTORY.forEach(i => { if (i.cat === oldName) { i.cat = newName.trim(); } });
@@ -4556,11 +4532,7 @@ async function renameCat(oldName) {
 async function deleteCat(cat) {
   const count = INVENTORY.filter(i => i.cat === cat).length;
   if (!confirm(`¿Eliminar la categoría "${cat}"?\nEsto quitará la categoría de ${count} ingrediente(s) (no los borra).`)) return;
-  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
-  const { error } = await window.supabase
-    .from('ingredients')
-    .update({ category: null })
-    .eq('category', cat);
+  const { error } = await window.nullifyCategory(cat);
   if (error) { toast('❌ Error al eliminar: ' + error.message); return; }
   INVENTORY.forEach(i => { if (i.cat === cat) i.cat = 'Sin categoría'; });
   if (_catMgrSelectedCat === cat) {
@@ -4595,12 +4567,7 @@ async function saveNewSubcategory() {
 async function renameSubcat(cat, oldSub) {
   const newSub = prompt(`Renombrar subcategoría "${oldSub}" a:`, oldSub);
   if (!newSub || newSub.trim() === oldSub) return;
-  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
-  const { error } = await window.supabase
-    .from('ingredients')
-    .update({ subcategory: newSub.trim() })
-    .eq('category', cat)
-    .eq('subcategory', oldSub);
+  const { error } = await window.updateSubcategory(cat, oldSub, newSub.trim());
   if (error) { toast('❌ Error: ' + error.message); return; }
   INVENTORY.forEach(i => { if (i.cat === cat && i.subcategory === oldSub) i.subcategory = newSub.trim(); });
   toast(`✅ Subcategoría renombrada a "${newSub.trim()}"`);
@@ -4612,12 +4579,7 @@ async function renameSubcat(cat, oldSub) {
 async function deleteSubcat(cat, sub) {
   const count = INVENTORY.filter(i => i.cat === cat && i.subcategory === sub).length;
   if (!confirm(`¿Eliminar subcategoría "${sub}"?\nAfecta a ${count} ingrediente(s) (no los borra).`)) return;
-  if (!window.supabase) { toast('Error: Supabase no inicializado'); return; }
-  const { error } = await window.supabase
-    .from('ingredients')
-    .update({ subcategory: null })
-    .eq('category', cat)
-    .eq('subcategory', sub);
+  const { error } = await window.deleteSubcategory(cat, sub);
   if (error) { toast('❌ Error: ' + error.message); return; }
   INVENTORY.forEach(i => { if (i.cat === cat && i.subcategory === sub) i.subcategory = ''; });
   toast(`✅ Subcategoría "${sub}" eliminada`);
@@ -4628,7 +4590,38 @@ async function deleteSubcat(cat, sub) {
 
 <script type="module">
   import { supabase } from './src/supabaseClient.js';
+  import * as api from './src/api.js';
+
   window.supabase = supabase;
+  window.fetchSuppliers = api.fetchSuppliers;
+  window.insertSupplier = api.insertSupplier;
+  window.updateSupplier = api.updateSupplier;
+  window.deleteSupplier = api.deleteSupplier;
+  window.fetchIngredients = api.fetchIngredients;
+  window.insertIngredient = api.insertIngredient;
+  window.updateIngredient = api.updateIngredient;
+  window.deleteIngredient = api.deleteIngredient;
+  window.updateCategoryName = api.updateCategoryName;
+  window.nullifyCategory = api.nullifyCategory;
+  window.updateSubcategory = api.updateSubcategory;
+  window.deleteSubcategory = api.deleteSubcategory;
+  window.fetchRecipeCategories = api.fetchRecipeCategories;
+  window.insertRecipeCategory = api.insertRecipeCategory;
+  window.updateRecipeCategory = api.updateRecipeCategory;
+  window.deleteRecipeCategory = api.deleteRecipeCategory;
+  window.fetchRecipes = api.fetchRecipes;
+  window.fetchRecipesWithIngredients = api.fetchRecipesWithIngredients;
+  window.insertRecipe = api.insertRecipe;
+  window.updateRecipe = api.updateRecipe;
+  window.deleteRecipe = api.deleteRecipe;
+  window.deleteRecipeIngredients = api.deleteRecipeIngredients;
+  window.insertRecipeIngredients = api.insertRecipeIngredients;
+  window.fetchPlannerDataDb = api.fetchPlannerDataDb;
+  window.upsertPlannerDays = api.upsertPlannerDays;
+  window.updatePlannerDay = api.updatePlannerDay;
+  window.resetPlannerDates = api.resetPlannerDates;
+  window.uploadRecipeImageFile = api.uploadRecipeImageFile;
+  window.getRecipePublicUrl = api.getRecipePublicUrl;
 
   // ── INIT ──────────────────────────────────────────────────────────
   async function init() {
@@ -4652,10 +4645,7 @@ async function deleteSubcat(cat, sub) {
 
   async function loadSupabaseInventory() {
     try {
-      const { data, error } = await supabase
-        .from('ingredients')
-        .select('*')
-        .order('name');
+      const { data, error } = await api.fetchIngredients();
         
       if (error) {
         console.error('Error fetching inventory:', error);
@@ -4707,10 +4697,7 @@ async function deleteSubcat(cat, sub) {
   async function loadSupabaseRecipes() {
     // ── STEP 1: Load categories with fallback to empty array ────────
     try {
-      const { data: cats, error: catError } = await supabase
-        .from('recipe_categories')
-        .select('*')
-        .order('name');
+      const { data: cats, error: catError } = await api.fetchRecipeCategories();
 
       if (catError) {
         console.warn('⚠️ recipe_categories fetch failed, continuing without categories:', catError.message);
@@ -4737,41 +4724,7 @@ async function deleteSubcat(cat, sub) {
     // ── STEP 2: Load recipes — try relational first, flat fallback ──
     let recs = null;
     try {
-      const { data, error: recError } = await supabase
-        .from('recipes')
-        .select(`
-          id,
-          name,
-          category,
-          category_id,
-          portions,
-          instructions,
-          image_url,
-          recipe_ingredients (
-            quantity_per_portion,
-            unit,
-            tipo_corte,
-            ingredients (
-              id,
-              name,
-              calculated_net_cost_kg,
-              nutritional_category,
-              precio_por_kg,
-              precio_por_u,
-              precio_mas_bajo,
-              waste_percentage,
-              supplier_id,
-              suppliers (
-                id,
-                name,
-                phone,
-                email,
-                contact_name
-              )
-            )
-          )
-        `)
-        .order('name');
+      const { data, error: recError } = await api.fetchRecipesWithIngredients();
 
       if (recError) {
         console.warn('⚠️ Relational fetch failed, trying flat fetch:', recError.message);
@@ -4781,10 +4734,7 @@ async function deleteSubcat(cat, sub) {
     } catch (_relErr) {
       // ── FALLBACK: plain flat fetch, no joins ───────────────────────
       try {
-        const { data: flatData, error: flatErr } = await supabase
-          .from('recipes')
-          .select('*')
-          .order('name');
+        const { data: flatData, error: flatErr } = await api.fetchRecipes();
 
         if (flatErr) {
           console.error('❌ Flat fetch also failed:', flatErr.message);
@@ -5015,20 +4965,16 @@ async function deleteSubcat(cat, sub) {
       const recipeId = document.getElementById('recipe-id').value || 'new';
       const fileName = `recipe_${recipeId}_${Date.now()}.webp`;
 
-      const { data, error } = await window.supabase.storage
-        .from('recipe-images')
-        .upload(fileName, compressedBlob, {
-          contentType: 'image/webp',
-          cacheControl: '3600',
-          upsert: false
-        });
+      const { data, error } = await window.uploadRecipeImageFile(fileName, compressedBlob, {
+        contentType: 'image/webp',
+        cacheControl: '3600',
+        upsert: false
+      });
 
       if (error) throw error;
 
       // 3. Get Public URL and update DOM state
-      const { data: urlData } = window.supabase.storage
-        .from('recipe-images')
-        .getPublicUrl(fileName);
+      const { data: urlData } = window.getRecipePublicUrl(fileName);
 
       if (urlData && urlData.publicUrl) {
         imageInput.value = urlData.publicUrl;
@@ -5243,16 +5189,15 @@ async function deleteSubcat(cat, sub) {
       
       let recipeId = id;
       if (id) {
-        const { error } = await supabase.from('recipes').update(payload).eq('id', id);
+        const { error } = await updateRecipe(id, payload);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from('recipes').insert(payload).select('id').single();
+        const { data, error } = await insertRecipe(payload);
         if (error) throw error;
         recipeId = data.id;
       }
       
-      // Save ingredients relations: clear first
-      const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+      const { error: delErr } = await deleteRecipeIngredients(recipeId);
       if (delErr) throw delErr;
       
       // Group duplicates before insert just in case
@@ -5274,7 +5219,7 @@ async function deleteSubcat(cat, sub) {
         }
       });
       
-      const { error: insErr } = await supabase.from('recipe_ingredients').insert(Object.values(grouped));
+      const { error: insErr } = await insertRecipeIngredients(Object.values(grouped));
       if (insErr) throw insErr;
       
       toast(`✅ Receta "${name}" guardada con éxito.`);
@@ -5293,7 +5238,7 @@ async function deleteSubcat(cat, sub) {
   async function deleteRecipe(recipeId) {
     if (!confirm('¿Seguro que deseas eliminar esta receta permanentemente?')) return;
     try {
-      const { error } = await supabase.from('recipes').delete().eq('id', recipeId);
+      const { error } = await deleteRecipe(recipeId);
       if (error) throw error;
       toast('✅ Receta eliminada correctamente');
       loadSupabaseRecipes();
@@ -5351,7 +5296,7 @@ async function deleteSubcat(cat, sub) {
     if (!name) return;
     
     try {
-      const { error } = await supabase.from('recipe_categories').insert({ name });
+      const { error } = await insertRecipeCategory(name);
       if (error) throw error;
       toast(`✅ Familia "${name}" creada.`);
       cancelAddRecipeCategory();
@@ -5367,7 +5312,7 @@ async function deleteSubcat(cat, sub) {
     if (!newName || newName.trim() === oldName) return;
     
     try {
-      const { error } = await supabase.from('recipe_categories').update({ name: newName.trim() }).eq('id', id);
+      const { error } = await updateRecipeCategory(id, newName.trim());
       if (error) throw error;
       toast('✅ Familia renombrada.');
       loadSupabaseRecipes();
@@ -5380,7 +5325,7 @@ async function deleteSubcat(cat, sub) {
   async function deleteRecipeCategory(id, name) {
     if (!confirm(`¿Estás seguro de que deseas eliminar la familia "${name}"?`)) return;
     try {
-      const { error } = await supabase.from('recipe_categories').delete().eq('id', id);
+      const { error } = await deleteRecipeCategory(id);
       if (error) throw error;
       toast('✅ Familia eliminada.');
       loadSupabaseRecipes();

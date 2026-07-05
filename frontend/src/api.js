@@ -122,3 +122,162 @@ export const saveData = async (entity, id, fields) => {
   if (entity === 'insumos') return updateIngredientPrice(id, fields);
   return { success: false, error: 'Operación no soportada' };
 };
+
+// ── CENTRALIZED SUPABASE DATABASE WRAPPERS ──
+
+// ── Suppliers ──
+export const fetchSuppliers = async () => {
+  return supabase.from('suppliers').select('*').order('name', { ascending: true });
+};
+
+export const insertSupplier = async (payload) => {
+  return supabase.from('suppliers').insert(payload);
+};
+
+export const updateSupplier = async (id, payload) => {
+  return supabase.from('suppliers').update(payload).eq('id', id);
+};
+
+export const deleteSupplier = async (id) => {
+  return supabase.from('suppliers').delete().eq('id', id);
+};
+
+// ── Ingredients ──
+export const fetchIngredients = async () => {
+  return supabase.from('ingredients').select('*').order('name');
+};
+
+export const insertIngredient = async (payload) => {
+  return supabase.from('ingredients').insert([payload]).select().single();
+};
+
+export const updateIngredient = async (id, payload) => {
+  return supabase.from('ingredients').update(payload).eq('id', id);
+};
+
+export const deleteIngredient = async (id) => {
+  return supabase.from('ingredients').delete().eq('id', id);
+};
+
+export const updateCategoryName = async (oldName, newName) => {
+  return supabase.from('ingredients').update({ category: newName }).eq('category', oldName);
+};
+
+export const nullifyCategory = async (catName) => {
+  return supabase.from('ingredients').update({ category: null }).eq('category', catName);
+};
+
+export const updateSubcategory = async (cat, sub, newSubVal) => {
+  return supabase.from('ingredients').update({ subcategory: newSubVal }).eq('category', cat).eq('subcategory', sub);
+};
+
+export const deleteSubcategory = async (cat, sub) => {
+  return supabase.from('ingredients').update({ subcategory: '' }).eq('category', cat).eq('subcategory', sub);
+};
+
+// ── Recipe Categories ──
+export const fetchRecipeCategories = async () => {
+  return supabase.from('recipe_categories').select('*').order('name');
+};
+
+export const insertRecipeCategory = async (name) => {
+  return supabase.from('recipe_categories').insert({ name });
+};
+
+export const updateRecipeCategory = async (id, name) => {
+  return supabase.from('recipe_categories').update({ name }).eq('id', id);
+};
+
+export const deleteRecipeCategory = async (id) => {
+  return supabase.from('recipe_categories').delete().eq('id', id);
+};
+
+// ── Recipes ──
+export const fetchRecipes = async () => {
+  return supabase.from('recipes').select('*').order('name');
+};
+
+export const fetchRecipesWithIngredients = async () => {
+  return supabase
+    .from('recipes')
+    .select(`
+      id,
+      name,
+      category,
+      category_id,
+      portions,
+      instructions,
+      image_url,
+      recipe_ingredients (
+        quantity_per_portion,
+        unit,
+        tipo_corte,
+        ingredients (
+          id,
+          name,
+          calculated_net_cost_kg,
+          nutritional_category,
+          precio_por_kg,
+          precio_por_u,
+          precio_mas_bajo,
+          waste_percentage,
+          supplier_id,
+          suppliers (
+            id,
+            name,
+            phone,
+            email,
+            contact_name
+          )
+        )
+      )
+    `)
+    .order('name');
+};
+
+export const insertRecipe = async (payload) => {
+  return supabase.from('recipes').insert(payload).select('id').single();
+};
+
+export const updateRecipe = async (id, payload) => {
+  return supabase.from('recipes').update(payload).eq('id', id);
+};
+
+export const deleteRecipe = async (id) => {
+  return supabase.from('recipes').delete().eq('id', id);
+};
+
+// ── Recipe Ingredients ──
+export const deleteRecipeIngredients = async (recipeId) => {
+  return supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+};
+
+export const insertRecipeIngredients = async (ingredientsArray) => {
+  return supabase.from('recipe_ingredients').insert(ingredientsArray);
+};
+
+// ── Planner ──
+export const fetchPlannerDataDb = async () => {
+  return supabase.from('menu_planner').select('*');
+};
+
+export const upsertPlannerDays = async (upsertsArray) => {
+  return supabase.from('menu_planner').upsert(upsertsArray, { onConflict: 'date' });
+};
+
+export const updatePlannerDay = async (id, payload) => {
+  return supabase.from('menu_planner').update(payload).eq('id', id);
+};
+
+export const resetPlannerDates = async (allDates, fields) => {
+  return supabase.from('menu_planner').update(fields).in('date', allDates);
+};
+
+// ── Storage / Images ──
+export const uploadRecipeImageFile = async (filePath, file, options = {}) => {
+  return supabase.storage.from('recipe-images').upload(filePath, file, options);
+};
+
+export const getRecipePublicUrl = (filePath) => {
+  return supabase.storage.from('recipe-images').getPublicUrl(filePath);
+};

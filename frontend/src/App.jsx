@@ -57,9 +57,25 @@ const InsumoRow = ({ item }) => {
   const mainPrice = fmtKg(item.precio_por_kg) || fmtU(item.precio_por_u);
   const pricePerGr = item.precio_por_gramo ? fmt(item.precio_por_gramo, 4) + '/gr' : null;
 
-  // Proveedores comparison
-  const proveedores = item.precios_por_proveedor
-    ? Object.entries(item.precios_por_proveedor).sort((a, b) => a[1] - b[1])
+  // Proveedores comparison safely
+  let preciosObj = {};
+  if (item.precios_por_proveedor) {
+    if (typeof item.precios_por_proveedor === 'string') {
+      try {
+        preciosObj = JSON.parse(item.precios_por_proveedor);
+      } catch (e) {
+        console.warn('Error parsing precios_por_proveedor string:', e);
+      }
+    } else if (typeof item.precios_por_proveedor === 'object') {
+      preciosObj = item.precios_por_proveedor;
+    }
+  }
+  const proveedores = preciosObj
+    ? Object.entries(preciosObj).sort((a, b) => {
+        const valA = Number(a[1]) || 0;
+        const valB = Number(b[1]) || 0;
+        return valA - valB;
+      })
     : [];
 
   return (
