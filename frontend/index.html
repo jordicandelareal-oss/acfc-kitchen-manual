@@ -816,6 +816,19 @@
           <div id="menu-rules-especiales-container" class="space-y-3">
             <!-- Dynamically populated -->
           </div>
+          
+          <!-- Nuevo Toggle de Especiales -->
+          <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 gap-3 mt-3">
+            <div class="flex flex-col pr-2">
+              <span class="text-xs font-semibold text-slate-700">Incluir platos de la categoría 'Especiales' en la generación automática.</span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-incluir-especiales" class="sr-only peer" onchange="localStorage.setItem('menu_setting_incluir_especiales', this.checked)">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -827,9 +840,26 @@
         </div>
         <div id="content-weekly" class="p-3.5 space-y-4 hidden">
           <div>
-            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Semana de inicio (Fecha)</label>
-            <input type="date" id="weekly-config-date" value="2026-07-06" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" />
-            <p class="text-[10px] text-slate-400 mt-1">Se generará el menú para los 7 días consecutivos a partir de esta fecha.</p>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Semanas del Mes a Generar</label>
+            <div class="grid grid-cols-2 gap-2" id="week-selector-container">
+              <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <input type="checkbox" name="generate-week" value="2026-07-06" class="rounded border-slate-300 text-brand focus:ring-brand" checked>
+                <span class="text-xs font-semibold text-slate-700">Semana 1 (06/07)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <input type="checkbox" name="generate-week" value="2026-07-13" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <span class="text-xs font-semibold text-slate-700">Semana 2 (13/07)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <input type="checkbox" name="generate-week" value="2026-07-20" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <span class="text-xs font-semibold text-slate-700">Semana 3 (20/07)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                <input type="checkbox" name="generate-week" value="2026-07-27" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <span class="text-xs font-semibold text-slate-700">Semana 4 (27/07)</span>
+              </label>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1.5">Se generará el menú para las semanas seleccionadas de forma automática.</p>
           </div>
 
           <div class="space-y-3.5 pt-1">
@@ -921,6 +951,46 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- NUEVA SECCIÓN DE CONTROL: Zona de Reseteo -->
+      <div class="border border-red-200 rounded-xl overflow-hidden bg-red-50/20 shadow-sm p-4 space-y-3 mt-4">
+        <h4 class="text-xs font-bold text-red-700 flex items-center gap-1.5 uppercase tracking-wider">
+          <span class="material-symbols-outlined text-[16px]">dangerous</span> Zona de Reseteo
+        </h4>
+        <p class="text-[10px] text-slate-500">Permite vaciar las recetas planificadas del mes de forma controlada.</p>
+        
+        <div class="flex flex-col gap-2 bg-white p-3 rounded-xl border border-red-100">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="reset-total-checkbox" onchange="toggleResetCheckboxes(this.checked)" class="rounded border-slate-300 text-red-600 focus:ring-red-500">
+            <span class="text-xs font-bold text-slate-700">⚠️ Reset Total (Todo el mes)</span>
+          </label>
+          
+          <div class="border-t border-slate-100 my-1"></div>
+          
+          <div class="grid grid-cols-2 gap-2 pl-1" id="reset-partial-container">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="reset-week" value="2026-07-06" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+              <span class="text-xs font-semibold text-slate-600">Semana 1 (06/07)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="reset-week" value="2026-07-13" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+              <span class="text-xs font-semibold text-slate-600">Semana 2 (13/07)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="reset-week" value="2026-07-20" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+              <span class="text-xs font-semibold text-slate-600">Semana 3 (20/07)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="reset-week" value="2026-07-27" class="reset-week-cb rounded border-slate-300 text-red-600 focus:ring-red-500">
+              <span class="text-xs font-semibold text-slate-600">Semana 4 (27/07)</span>
+            </label>
+          </div>
+        </div>
+
+        <button onclick="handleResetPlanner()" class="w-full py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">delete_sweep</span> Resetear Planificador
+        </button>
       </div>
 
     </div>
@@ -3217,6 +3287,8 @@ const DEFAULT_MENU_RULES = [
   { id: 'rule-hours', text: 'Distribución Horaria: Almuerzo reservado para pastas, noches para Guisos y Arroces.', type: 'fija', active: true, deleted: false },
   { id: 'rule-rotation', text: 'Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.', type: 'fija', active: true, deleted: false },
   { id: 'rule-veg', text: 'Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-paellas-lunch', text: 'Restricción de Almuerzo: Las recetas de la categoría \'Paellas\' solo se permiten en el turno del mediodía.', type: 'fija', active: true, deleted: false },
+  { id: 'rule-inter-weekly', text: 'Control Inter-semanal: Máximo 2 platos repetidos entre la semana anterior y la actual, distanciados por al menos 4 días de margen.', type: 'fija', active: true, deleted: false },
   { id: 'rule-salad', text: 'Guarnición Automática: Insertar automáticamente la categoría \'Ensaladas\' como acompañamiento al mediodía.', type: 'especial', active: false, deleted: false },
   { id: 'rule-breakfast', text: 'Incluir Desayuno en la cuadrícula de menús.', type: 'especial', active: false, deleted: false },
   { id: 'rule-stock', text: 'Optimizar según Stock rotativo: dar salida prioritaria a insumos con excedente en almacén.', type: 'especial', active: false, deleted: false }
@@ -3372,8 +3444,82 @@ window.closeMenuSettingsModal = function() {
     modal.classList.remove('flex');
   }
 }
+window.toggleResetCheckboxes = function(isTotalChecked) {
+  const checkboxes = document.querySelectorAll('.reset-week-cb');
+  checkboxes.forEach(cb => {
+    cb.checked = isTotalChecked;
+    cb.disabled = isTotalChecked;
+  });
+};
+
+window.handleResetPlanner = async function() {
+  const isTotal = document.getElementById('reset-total-checkbox').checked;
+  let weeksToReset = [];
+  
+  if (isTotal) {
+    weeksToReset = ['2026-07-06', '2026-07-13', '2026-07-20', '2026-07-27'];
+  } else {
+    const checkedWeeks = document.querySelectorAll('input[name="reset-week"]:checked');
+    checkedWeeks.forEach(cb => weeksToReset.push(cb.value));
+  }
+  
+  if (weeksToReset.length === 0) {
+    toast('⚠️ Selecciona al menos una semana o Reset Total para limpiar.');
+    return;
+  }
+  
+  if (!confirm('⚠️ ¿Estás seguro de que deseas vaciar las recetas de las semanas seleccionadas? Esta acción no se puede deshacer.')) {
+    return;
+  }
+  
+  toast('⏳ Reseteando planificador...');
+  
+  try {
+    let allDates = [];
+    weeksToReset.forEach(mondayStr => {
+      const parts = mondayStr.split('-');
+      const mondayDate = new Date(parts[0], parts[1] - 1, parts[2]);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(mondayDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+        allDates.push(dateStr);
+      }
+    });
+    
+    const { error } = await window.supabase
+      .from('menu_planner')
+      .update({
+        breakfast_recipe_id: null,
+        lunch_recipe_id: null,
+        lunch_side_recipe_id: null,
+        dinner_recipe_id: null
+      })
+      .in('date', allDates);
+      
+    if (error) throw error;
+    
+    allDates.forEach(dateStr => {
+      const parts = dateStr.split('-');
+      const day = parseInt(parts[2]);
+      if (PLANNER_DATA[day] && PLANNER_DATA[day].date === dateStr) {
+        PLANNER_DATA[day].breakfast_recipe_id = null;
+        PLANNER_DATA[day].lunch_recipe_id = null;
+        PLANNER_DATA[day].lunch_side_recipe_id = null;
+        PLANNER_DATA[day].dinner_recipe_id = null;
+      }
+    });
+    
+    renderCalendar();
+    closeMenuSettingsModal();
+    toast('✅ Planificador reseteado con éxito');
+  } catch (err) {
+    console.error('Error al resetear planificador:', err);
+    toast('❌ Error: ' + err.message);
+  }
+};
+
 window.saveMenuSettingsLocal = function() {
-  // Legacy compatibility: rules are autosaved on toggling or deleting, but we sync them
   const ruleBreakfast = MENU_RULES.find(r => r.id === 'rule-breakfast');
   const ruleStock = MENU_RULES.find(r => r.id === 'rule-stock');
   const ruleSalad = MENU_RULES.find(r => r.id === 'rule-salad');
@@ -3398,6 +3544,16 @@ window.generateWeeklyMenu = async function() {
     return;
   }
 
+  // Get selected weeks to generate
+  const checkedWeeks = document.querySelectorAll('input[name="generate-week"]:checked');
+  let weeksToGenerate = [];
+  checkedWeeks.forEach(cb => weeksToGenerate.push(cb.value));
+
+  if (weeksToGenerate.length === 0) {
+    toast('⚠️ Selecciona al menos una semana para generar.');
+    return;
+  }
+
   toast('⚡ Generando menú semanal inteligente...');
 
   window.loadMenuRules();
@@ -3418,6 +3574,11 @@ window.generateWeeklyMenu = async function() {
   const incluirDesayuno = getRuleActive('rule-breakfast');
   const priorizarStock = getRuleActive('rule-stock');
 
+  // New rules checks
+  const rulePaellasLunchActive = getRuleExists('rule-paellas-lunch');
+  const ruleInterWeeklyActive = getRuleExists('rule-inter-weekly');
+  const incluirEspeciales = localStorage.getItem('menu_setting_incluir_especiales') === 'true';
+
   const getRecipeCategoryName = (r) => {
     if (r.category_id) {
       const cat = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id);
@@ -3426,31 +3587,41 @@ window.generateWeeklyMenu = async function() {
     return r.category || '';
   };
 
-  // Pools
-  const breakfastPool = allRecipes.filter(r => {
-    const cat = getRecipeCategoryName(r).toLowerCase();
-    return cat === 'desayunos' || cat === 'desayuno';
-  });
+  // Pools builder based on specials filter
+  const getPools = () => {
+    const baseRecipes = incluirEspeciales 
+      ? allRecipes 
+      : allRecipes.filter(r => getRecipeCategoryName(r).toLowerCase() !== 'especiales' && getRecipeCategoryName(r).toLowerCase() !== 'especial');
 
-  const pastaPool = allRecipes.filter(r => {
-    const cat = getRecipeCategoryName(r).toLowerCase();
-    return cat === 'pastas' || cat === 'pasta';
-  });
+    const breakfast = baseRecipes.filter(r => {
+      const cat = getRecipeCategoryName(r).toLowerCase();
+      return cat === 'desayunos' || cat === 'desayuno';
+    });
 
-  const saladPool = allRecipes.filter(r => {
-    const cat = getRecipeCategoryName(r).toLowerCase();
-    return cat === 'ensaladas' || cat === 'ensalada';
-  });
+    const pasta = baseRecipes.filter(r => {
+      const cat = getRecipeCategoryName(r).toLowerCase();
+      return cat === 'pastas' || cat === 'pasta';
+    });
 
-  const riceStewPool = allRecipes.filter(r => {
-    const cat = getRecipeCategoryName(r).toLowerCase();
-    return cat === 'arroces' || cat === 'arroz' || cat === 'guisos' || cat === 'guiso';
-  });
+    const salad = baseRecipes.filter(r => {
+      const cat = getRecipeCategoryName(r).toLowerCase();
+      return cat === 'ensaladas' || cat === 'ensalada';
+    });
 
-  const vegetarianPool = allRecipes.filter(r => {
-    const cat = getRecipeCategoryName(r).toLowerCase();
-    return r.is_vegetarian === true || cat === 'vegetariano' || cat === 'vegetarian';
-  });
+    const riceStew = baseRecipes.filter(r => {
+      const cat = getRecipeCategoryName(r).toLowerCase();
+      return cat === 'arroces' || cat === 'arroz' || cat === 'guisos' || cat === 'guiso';
+    });
+
+    const vegetarian = baseRecipes.filter(r => {
+      const cat = getRecipeCategoryName(r).toLowerCase();
+      return r.is_vegetarian === true || cat === 'vegetariano' || cat === 'vegetarian';
+    });
+
+    return { baseRecipes, breakfast, pasta, salad, riceStew, vegetarian };
+  };
+
+  const pools = getPools();
 
   // Selector helper
   const selectRecipe = (pool, usedSet) => {
@@ -3459,9 +3630,9 @@ window.generateWeeklyMenu = async function() {
       available = pool;
     }
     if (available.length === 0) {
-      available = allRecipes.filter(r => !usedSet.has(r.id));
+      available = pools.baseRecipes.filter(r => !usedSet.has(r.id));
       if (available.length === 0) {
-        available = allRecipes;
+        available = pools.baseRecipes;
       }
     }
     
@@ -3487,122 +3658,192 @@ window.generateWeeklyMenu = async function() {
     return available[Math.floor(Math.random() * available.length)];
   };
 
-  const baseDateStr = document.getElementById('weekly-config-date').value || '2026-07-06';
-  const baseParts = baseDateStr.split('-');
-  const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
+  let allWeeklyData = [];
 
-  const config = {
-    breakfast_players: Number(document.getElementById('weekly-breakfast-players')?.value) || 10,
-    breakfast_halal: Number(document.getElementById('weekly-breakfast-halal')?.value) || 0,
-    breakfast_kosher: Number(document.getElementById('weekly-breakfast-kosher')?.value) || 0,
-    breakfast_vegan: Number(document.getElementById('weekly-breakfast-vegan')?.value) || 0,
-    breakfast_allergies: document.getElementById('weekly-breakfast-allergies')?.value || '',
-    lunch_players: Number(document.getElementById('weekly-lunch-players')?.value) || 10,
-    lunch_halal: Number(document.getElementById('weekly-lunch-halal')?.value) || 0,
-    lunch_kosher: Number(document.getElementById('weekly-lunch-kosher')?.value) || 0,
-    lunch_vegan: Number(document.getElementById('weekly-lunch-vegan')?.value) || 0,
-    lunch_allergies: document.getElementById('weekly-lunch-allergies')?.value || '',
-    dinner_players: Number(document.getElementById('weekly-dinner-players')?.value) || 10,
-    dinner_halal: Number(document.getElementById('weekly-dinner-halal')?.value) || 0,
-    dinner_kosher: Number(document.getElementById('weekly-dinner-kosher')?.value) || 0,
-    dinner_vegan: Number(document.getElementById('weekly-dinner-vegan')?.value) || 0,
-    dinner_allergies: document.getElementById('weekly-dinner-allergies')?.value || ''
-  };
+  for (const baseDateStr of weeksToGenerate) {
+    const baseParts = baseDateStr.split('-');
+    const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
 
-  const usedRecipeIds = new Set();
-  const weekData = [];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(baseDate);
-    d.setDate(d.getDate() + i);
-    const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
-    
-    let dayNum = null;
-    if (dateStr.startsWith('2026-07-')) {
-      dayNum = d.getDate();
-    }
-
-    const existing = (dayNum ? PLANNER_DATA[dayNum] : null) || {};
-
-    // PASO A: CONTROL DE DESAYUNOS
-    let rBreakfast = existing.breakfast_recipe_id || null;
-    if (incluirDesayuno) {
-      const selectedBreakfast = selectRecipe(breakfastPool, new Set());
-      rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
-    }
-
-    // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
-    const lunchPool = ruleHoursActive ? pastaPool : allRecipes;
-    const selectedLunch = selectRecipe(lunchPool, ruleRotationActive ? usedRecipeIds : new Set());
-    if (selectedLunch && ruleRotationActive) usedRecipeIds.add(selectedLunch.id);
-    const rLunch = selectedLunch ? selectedLunch.id : null;
-
-    let rSide = null;
-    if (ruleSaladActive) {
-      const selectedSide = selectRecipe(saladPool, new Set());
-      rSide = selectedSide ? selectedSide.id : null;
-    }
-
-    // PASO C & D: PLANIFICACIÓN DE NOCHE
-    let dinnerPool = ruleHoursActive ? riceStewPool : allRecipes;
-    if (ruleCarbsActive && selectedLunch) {
-      const lunchCat = getRecipeCategoryName(selectedLunch).toLowerCase();
-      if (lunchCat === 'pastas' || lunchCat === 'pasta') {
-        dinnerPool = dinnerPool.filter(r => {
-          const c = getRecipeCategoryName(r).toLowerCase();
-          return c !== 'pastas' && c !== 'pasta';
-        });
-      }
-    }
-
-    const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
-    if (selectedDinner && ruleRotationActive) usedRecipeIds.add(selectedDinner.id);
-    const rDinner = selectedDinner ? selectedDinner.id : null;
-
-    weekData.push({
-      ...existing,
-      ...config,
-      date: dateStr,
-      breakfast_recipe_id: rBreakfast,
-      lunch_recipe_id: rLunch,
-      lunch_side_recipe_id: rSide,
-      dinner_recipe_id: rDinner,
-      dayNum
-    });
-  }
-
-  // PASO E: COMPROBACIÓN VEGETARIANA OBLIGATORIA
-  if (ruleVegActive) {
-    const isVeg = (recipeId) => {
-      if (!recipeId) return false;
-      const r = allRecipes.find(rec => rec.id === recipeId);
-      if (!r) return false;
-      const catName = getRecipeCategoryName(r).toLowerCase();
-      return r.is_vegetarian === true || catName === 'vegetariano' || catName === 'vegetarian';
+    const config = {
+      breakfast_players: Number(document.getElementById('weekly-breakfast-players')?.value) || 10,
+      breakfast_halal: Number(document.getElementById('weekly-breakfast-halal')?.value) || 0,
+      breakfast_kosher: Number(document.getElementById('weekly-breakfast-kosher')?.value) || 0,
+      breakfast_vegan: Number(document.getElementById('weekly-breakfast-vegan')?.value) || 0,
+      breakfast_allergies: document.getElementById('weekly-breakfast-allergies')?.value || '',
+      lunch_players: Number(document.getElementById('weekly-lunch-players')?.value) || 10,
+      lunch_halal: Number(document.getElementById('weekly-lunch-halal')?.value) || 0,
+      lunch_kosher: Number(document.getElementById('weekly-lunch-kosher')?.value) || 0,
+      lunch_vegan: Number(document.getElementById('weekly-lunch-vegan')?.value) || 0,
+      lunch_allergies: document.getElementById('weekly-lunch-allergies')?.value || '',
+      dinner_players: Number(document.getElementById('weekly-dinner-players')?.value) || 10,
+      dinner_halal: Number(document.getElementById('weekly-dinner-halal')?.value) || 0,
+      dinner_kosher: Number(document.getElementById('weekly-dinner-kosher')?.value) || 0,
+      dinner_vegan: Number(document.getElementById('weekly-dinner-vegan')?.value) || 0,
+      dinner_allergies: document.getElementById('weekly-dinner-allergies')?.value || ''
     };
 
-    let vegCount = 0;
-    weekData.forEach(day => {
-      if (isVeg(day.lunch_recipe_id)) vegCount++;
-      if (isVeg(day.dinner_recipe_id)) vegCount++;
-    });
+    const usedRecipeIds = new Set();
+    const weekData = [];
 
-    if (vegCount === 0) {
-      console.log("No vegetarian recipe found. Replacing Sunday dinner...");
-      const vegRecipe = selectRecipe(vegetarianPool, ruleRotationActive ? usedRecipeIds : new Set());
-      if (vegRecipe) {
-        const lastDay = weekData[6];
-        if (lastDay.dinner_recipe_id && ruleRotationActive) {
-          usedRecipeIds.delete(lastDay.dinner_recipe_id);
+    // Inter-weekly rotation lookup
+    const prevWeekRecipes = [];
+    if (ruleInterWeeklyActive) {
+      const prevStartDate = new Date(baseDate);
+      prevStartDate.setDate(prevStartDate.getDate() - 7);
+      
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(prevStartDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+        const plannedDay = Object.values(PLANNER_DATA).find(p => p.date === dateStr);
+        if (plannedDay) {
+          if (plannedDay.lunch_recipe_id) {
+            prevWeekRecipes.push({ id: plannedDay.lunch_recipe_id, date: dateStr, dayIdx: i });
+          }
+          if (plannedDay.dinner_recipe_id) {
+            prevWeekRecipes.push({ id: plannedDay.dinner_recipe_id, date: dateStr, dayIdx: i });
+          }
         }
-        lastDay.dinner_recipe_id = vegRecipe.id;
-        if (ruleRotationActive) usedRecipeIds.add(vegRecipe.id);
       }
     }
+
+    let repeatedDishesCount = 0;
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+      
+      let dayNum = null;
+      if (dateStr.startsWith('2026-07-')) {
+        dayNum = d.getDate();
+      }
+
+      const existing = (dayNum ? PLANNER_DATA[dayNum] : null) || {};
+
+      // PASO A: CONTROL DE DESAYUNOS
+      let rBreakfast = existing.breakfast_recipe_id || null;
+      if (incluirDesayuno) {
+        const selectedBreakfast = selectRecipe(pools.breakfast, new Set());
+        rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
+      }
+
+      // Filter candidates wrapper
+      const filterCandidates = (pool, isDinner) => {
+        return pool.filter(recipe => {
+          if (isDinner && rulePaellasLunchActive) {
+            const cat = getRecipeCategoryName(recipe).toLowerCase();
+            if (cat === 'paellas' || cat === 'paella') {
+              return false;
+            }
+          }
+
+          if (ruleInterWeeklyActive) {
+            const matches = prevWeekRecipes.filter(prev => prev.id === recipe.id);
+            if (matches.length > 0) {
+              if (repeatedDishesCount >= 2) {
+                return false;
+              }
+              const hasCloseMatch = matches.some(prev => {
+                const dist = (i + 7) - prev.dayIdx;
+                return dist < 4;
+              });
+              if (hasCloseMatch) {
+                return false;
+              }
+            }
+          }
+          return true;
+        });
+      };
+
+      // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
+      let lunchPool = ruleHoursActive ? pools.pasta : pools.baseRecipes;
+      lunchPool = filterCandidates(lunchPool, false);
+
+      const selectedLunch = selectRecipe(lunchPool, ruleRotationActive ? usedRecipeIds : new Set());
+      if (selectedLunch) {
+        if (ruleRotationActive) usedRecipeIds.add(selectedLunch.id);
+        if (ruleInterWeeklyActive && prevWeekRecipes.some(prev => prev.id === selectedLunch.id)) {
+          repeatedDishesCount++;
+        }
+      }
+      const rLunch = selectedLunch ? selectedLunch.id : null;
+
+      let rSide = null;
+      if (ruleSaladActive) {
+        const selectedSide = selectRecipe(pools.salad, new Set());
+        rSide = selectedSide ? selectedSide.id : null;
+      }
+
+      // PASO C & D: PLANIFICACIÓN DE NOCHE
+      let dinnerPool = ruleHoursActive ? pools.riceStew : pools.baseRecipes;
+      if (ruleCarbsActive && selectedLunch) {
+        const lunchCat = getRecipeCategoryName(selectedLunch).toLowerCase();
+        if (lunchCat === 'pastas' || lunchCat === 'pasta') {
+          dinnerPool = dinnerPool.filter(r => {
+            const c = getRecipeCategoryName(r).toLowerCase();
+            return c !== 'pastas' && c !== 'pasta';
+          });
+        }
+      }
+      dinnerPool = filterCandidates(dinnerPool, true);
+
+      const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
+      if (selectedDinner) {
+        if (ruleRotationActive) usedRecipeIds.add(selectedDinner.id);
+        if (ruleInterWeeklyActive && prevWeekRecipes.some(prev => prev.id === selectedDinner.id)) {
+          repeatedDishesCount++;
+        }
+      }
+      const rDinner = selectedDinner ? selectedDinner.id : null;
+
+      weekData.push({
+        ...existing,
+        ...config,
+        date: dateStr,
+        breakfast_recipe_id: rBreakfast,
+        lunch_recipe_id: rLunch,
+        lunch_side_recipe_id: rSide,
+        dinner_recipe_id: rDinner,
+        dayNum
+      });
+    }
+
+    // PASO E: COMPROBACIÓN VEGETARIANA OBLIGATORIA
+    if (ruleVegActive) {
+      const isVeg = (recipeId) => {
+        if (!recipeId) return false;
+        const r = allRecipes.find(rec => rec.id === recipeId);
+        if (!r) return false;
+        const catName = getRecipeCategoryName(r).toLowerCase();
+        return r.is_vegetarian === true || catName === 'vegetariano' || catName === 'vegetarian';
+      };
+
+      let vegCount = 0;
+      weekData.forEach(day => {
+        if (isVeg(day.lunch_recipe_id)) vegCount++;
+        if (isVeg(day.dinner_recipe_id)) vegCount++;
+      });
+
+      if (vegCount === 0) {
+        const vegetarianPool = filterCandidates(pools.vegetarian, true);
+        const vegRecipe = selectRecipe(vegetarianPool, ruleRotationActive ? usedRecipeIds : new Set());
+        if (vegRecipe) {
+          const lastDay = weekData[6];
+          if (lastDay.dinner_recipe_id && ruleRotationActive) {
+            usedRecipeIds.delete(lastDay.dinner_recipe_id);
+          }
+          lastDay.dinner_recipe_id = vegRecipe.id;
+          if (ruleRotationActive) usedRecipeIds.add(vegRecipe.id);
+        }
+      }
+    }
+
+    allWeeklyData = allWeeklyData.concat(weekData);
   }
 
-  // Clean data structure to match database before upsert
-  const finalUpserts = weekData.map(day => {
+  const finalUpserts = allWeeklyData.map(day => {
     const copy = { ...day };
     delete copy.dayNum;
     return copy;
@@ -3625,8 +3866,7 @@ window.generateWeeklyMenu = async function() {
       }
     }
     
-    // Write back into planner data (including side recipe locally so UI displays it)
-    weekData.forEach(up => {
+    allWeeklyData.forEach(up => {
       if (up.dayNum) {
         PLANNER_DATA[up.dayNum] = up;
       }
