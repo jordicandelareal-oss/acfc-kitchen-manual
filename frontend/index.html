@@ -3700,7 +3700,11 @@ window.calculateShoppingList = async function() {
         const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
         const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
         
-        const isElCairo = supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+        const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
+        const isElCairo = supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c' ||
+                          checkCairo(supplierName) ||
+                          checkCairo(ing.provider_name) ||
+                          checkCairo(ing.proveedor_principal);
         const key = isElCairo 
           ? `${ingId}_${recipe.name}_${ri.tipo_corte || 'Entero/a'}` 
           : ingId;
@@ -4556,7 +4560,12 @@ async function deleteSubcat(cat, sub) {
     
     const ingObj = INVENTORY.find(i => i.id === id);
     const wrapper = document.getElementById('recipe-ing-corte-wrapper');
-    const isCairo = ingObj && ingObj.supplier_id === 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+    const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
+    const isCairo = ingObj && (
+      ingObj.supplier_id === 'd257d90b-ad0b-4f84-97a0-fee73612953c' ||
+      checkCairo(ingObj.supplier) ||
+      checkCairo(ingObj.provider_name)
+    );
     if (isCairo) {
       wrapper.classList.remove('hidden');
     } else {
