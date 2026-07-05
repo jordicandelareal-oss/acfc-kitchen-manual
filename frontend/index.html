@@ -3700,7 +3700,8 @@ window.calculateShoppingList = async function() {
         const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
         const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
         
-        const isElCairo = (supplierName === 'Carnicería El Cairo' || ing.provider_name === 'Carnicería El Cairo' || ing.proveedor_principal === 'Carnicería El Cairo');
+        const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
+        const isElCairo = checkCairo(supplierName) || checkCairo(ing.provider_name) || checkCairo(ing.proveedor_principal);
         const key = isElCairo 
           ? `${ingId}_${recipe.name}_${ri.tipo_corte || 'Entero/a'}` 
           : ingId;
@@ -4555,7 +4556,9 @@ async function deleteSubcat(cat, sub) {
     
     const ingObj = INVENTORY.find(i => i.id === id);
     const wrapper = document.getElementById('recipe-ing-corte-wrapper');
-    if (ingObj && (ingObj.supplier === 'Carnicería El Cairo' || ingObj.provider_name === 'Carnicería El Cairo' || ingObj.proveedor_principal === 'Carnicería El Cairo')) {
+    const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
+    const isCairo = ingObj && (checkCairo(ingObj.supplier) || checkCairo(ingObj.provider_name) || checkCairo(ingObj.proveedor_principal));
+    if (isCairo) {
       wrapper.classList.remove('hidden');
     } else {
       wrapper.classList.add('hidden');
