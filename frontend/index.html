@@ -3580,17 +3580,32 @@ window.executePlannerReset = async function() {
       }
     });
     
-    const { error } = await window.supabase
+    const baseUpdateObj = {
+      breakfast_recipe_id: null,
+      lunch_recipe_id: null,
+      side_menu_id: null,
+      dinner_recipe_id: null
+    };
+
+    let { error } = await window.supabase
       .from('menu_planner')
       .update({
-        breakfast_recipe_id: null,
-        lunch_recipe_id: null,
-        lunch_side_recipe_id: null,
-        dinner_recipe_id: null
+        ...baseUpdateObj,
+        lunch_side_recipe_id: null
       })
       .in('date', allDates);
       
-    if (error) throw error;
+    if (error) {
+      if (error.message && error.message.includes('lunch_side_recipe_id')) {
+        const { error: fallbackError } = await window.supabase
+          .from('menu_planner')
+          .update(baseUpdateObj)
+          .in('date', allDates);
+        if (fallbackError) throw fallbackError;
+      } else {
+        throw error;
+      }
+    }
     
     allDates.forEach(dateStr => {
       const parts = dateStr.split('-');
