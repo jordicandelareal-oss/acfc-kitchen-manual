@@ -154,21 +154,38 @@
 <body>
 
 <!-- ── SPLASH SCREEN INTRO ── -->
-<div id="splash-screen" class="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-700 ease-out cursor-pointer">
+<div id="splash-screen" class="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center p-4 transition-opacity duration-700 ease-out">
+  <!-- FASE 1: Lanzamiento -->
+  <div id="splash-launch" class="flex flex-col items-center gap-8 select-none max-w-sm text-center">
+    <img
+      src="/icons/icon-512.png"
+      class="w-40 h-40 object-contain animate-pulse drop-shadow-[0_0_20px_rgba(79,70,229,0.2)]"
+      alt="ACFC Logo"
+    />
+    <button
+      id="splash-enter-btn"
+      class="px-8 py-3.5 bg-gradient-to-r from-brand to-indigo-600 hover:from-indigo-600 hover:to-brand text-white font-bold rounded-xl shadow-[0_4px_20px_rgba(79,70,229,0.3)] transition-all transform hover:scale-105 active:scale-95 text-sm tracking-wider"
+    >
+      ENTRAR A LA COCINA
+    </button>
+  </div>
+
+  <!-- FASE 2: Video (hidden initially) -->
+  <div id="splash-video-container" class="hidden w-full h-full flex items-center justify-center">
+    <video
+      id="splash-video"
+      src="/acfc-intro.mp4"
+      playsinline
+      webkit-playsinline="true"
+      preload="auto"
+      class="w-full h-auto max-h-[80vh] object-contain md:max-w-3xl lg:max-w-4xl md:w-full md:h-auto shadow-2xl rounded-2xl border border-white/5"
+    ></video>
+  </div>
+
+  <!-- FALLBACK (hidden initially) -->
   <div id="splash-fallback" class="hidden flex flex-col items-center gap-6 select-none animate-pulse">
     <img src="/icons/icon-512.png" class="w-32 h-32 object-contain" alt="ACFC Logo" />
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-  </div>
-  <video
-    id="splash-video"
-    src="/acfc-intro.mp4"
-    playsinline
-    webkit-playsinline="true"
-    preload="auto"
-    class="w-full h-full object-cover"
-  ></video>
-  <div id="splash-unmute-indicator" class="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 select-none animate-bounce shadow-lg pointer-events-none border border-white/10">
-    <span>🔊</span> Toca para activar sonido
   </div>
 </div>
 <script>
@@ -179,9 +196,12 @@
     }
     document.addEventListener('DOMContentLoaded', () => {
       const splash = document.getElementById('splash-screen');
+      const launch = document.getElementById('splash-launch');
+      const videoContainer = document.getElementById('splash-video-container');
       const video = document.getElementById('splash-video');
+      const enterBtn = document.getElementById('splash-enter-btn');
       const fallback = document.getElementById('splash-fallback');
-      const indicator = document.getElementById('splash-unmute-indicator');
+
       if (!splash) return;
 
       let closed = false;
@@ -193,35 +213,39 @@
         setTimeout(() => { splash.remove(); }, 700);
       };
 
-      const handleInteraction = () => {
+      const startVideo = () => {
+        // Switch phases
+        launch.classList.add('hidden');
+        videoContainer.classList.remove('hidden');
+
         if (video) {
+          video.addEventListener('error', () => {
+            videoContainer.classList.add('hidden');
+            fallback.classList.remove('hidden');
+          });
+          video.addEventListener('ended', closeSplash);
+
+          // Play unmuted with maximum volume as a response to user gesture
           video.muted = false;
+          video.volume = 1.0;
+          video.play().catch((playErr) => {
+            console.error('Vanilla video playback failed:', playErr);
+            videoContainer.classList.add('hidden');
+            fallback.classList.remove('hidden');
+          });
         }
-        if (indicator) {
-          indicator.classList.add('hidden');
-        }
+
+        // Safety fallback timeout of 12 seconds starting *after* entering video phase
+        setTimeout(closeSplash, 12000);
       };
-      splash.addEventListener('click', handleInteraction);
-      splash.addEventListener('touchstart', handleInteraction);
 
-      if (video) {
-        video.addEventListener('error', () => {
-          video.classList.add('hidden');
-          fallback.classList.remove('hidden');
-        });
-        video.addEventListener('ended', closeSplash);
-
-        // Start muted to guarantee autoplay works on all mobile platforms
-        video.muted = true;
-        video.play().catch((playErr) => {
-          console.error('Vanilla muted autoplay failed:', playErr);
-          video.classList.add('hidden');
-          fallback.classList.remove('hidden');
+      if (enterBtn) {
+        enterBtn.addEventListener('click', startVideo);
+        enterBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          startVideo();
         });
       }
-
-      // Safety fallback timeout raised to 12 seconds
-      setTimeout(closeSplash, 12000);
     });
   })();
 </script>
