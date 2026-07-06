@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 const SplashScreen = ({ onFinished }) => {
   const [fadeOut, setFadeOut] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    // Safety timeout of 4.5 seconds
+    // Exact 4 seconds timeout for the fade-out, regardless of whether video ends
     const timer = setTimeout(() => {
       handleClose();
-    }, 4500);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -22,18 +23,27 @@ const SplashScreen = ({ onFinished }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-slate-900 flex items-center justify-center transition-opacity duration-700 ease-out ${
+      className={`fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-700 ease-out ${
         fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
-      <video
-        src="/acfc-intro.mp4"
-        autoPlay
-        muted
-        playsInline
-        onEnded={handleClose}
-        className="max-w-full max-h-full object-contain"
-      />
+      {hasError ? (
+        <div className="flex flex-col items-center gap-6 select-none animate-pulse">
+          <img src="/icons/icon-512.png" className="w-32 h-32 object-contain" alt="ACFC Logo" />
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        </div>
+      ) : (
+        <video
+          src="/intro.mp4"
+          autoPlay
+          muted
+          playsInline
+          webkit-playsinline="true"
+          preload="auto"
+          onError={() => setHasError(true)}
+          className="w-full h-full object-cover"
+        />
+      )}
     </div>
   );
 };
