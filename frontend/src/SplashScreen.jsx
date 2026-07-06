@@ -3,30 +3,22 @@ import React, { useState, useEffect, useRef } from 'react';
 const SplashScreen = ({ onFinished }) => {
   const [fadeOut, setFadeOut] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
 
   useEffect(() => {
-    // Safety fallback timeout set to 8 seconds
+    // Safety fallback timeout set to 12 seconds
     const safetyTimer = setTimeout(() => {
       handleClose();
-    }, 8000);
+    }, 12000);
 
     const video = videoRef.current;
     if (video) {
-      // Try to play with audio enabled first
-      video.muted = false;
-      const playPromise = video.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('Playback with audio blocked, falling back to muted:', err);
-          video.muted = true;
-          video.play().catch((playErr) => {
-            console.error('Muted playback also failed:', playErr);
-            setHasError(true);
-          });
-        });
-      }
+      video.muted = true;
+      video.play().catch((playErr) => {
+        console.error('Muted autoplay failed:', playErr);
+        setHasError(true);
+      });
     }
 
     return () => clearTimeout(safetyTimer);
@@ -43,6 +35,7 @@ const SplashScreen = ({ onFinished }) => {
   const handleInteraction = () => {
     if (videoRef.current) {
       videoRef.current.muted = false;
+      setIsMuted(false);
     }
   };
 
@@ -60,16 +53,25 @@ const SplashScreen = ({ onFinished }) => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
         </div>
       ) : (
-        <video
-          ref={videoRef}
-          src="/acfc-intro.mp4"
-          playsInline
-          webkit-playsinline="true"
-          preload="auto"
-          onEnded={handleClose}
-          onError={() => setHasError(true)}
-          className="w-full h-full object-cover"
-        />
+        <>
+          <video
+            ref={videoRef}
+            src="/acfc-intro.mp4"
+            muted={isMuted}
+            autoPlay
+            playsInline
+            webkit-playsinline="true"
+            preload="auto"
+            onEnded={handleClose}
+            onError={() => setHasError(true)}
+            className="w-full h-full object-cover"
+          />
+          {isMuted && (
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 select-none animate-bounce shadow-lg pointer-events-none border border-white/10">
+              <span>🔊</span> Toca para activar sonido
+            </div>
+          )}
+        </>
       )}
     </div>
   );

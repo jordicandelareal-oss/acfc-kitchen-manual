@@ -167,6 +167,9 @@
     preload="auto"
     class="w-full h-full object-cover"
   ></video>
+  <div id="splash-unmute-indicator" class="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 select-none animate-bounce shadow-lg pointer-events-none border border-white/10">
+    <span>🔊</span> Toca para activar sonido
+  </div>
 </div>
 <script>
   (function() {
@@ -178,6 +181,7 @@
       const splash = document.getElementById('splash-screen');
       const video = document.getElementById('splash-video');
       const fallback = document.getElementById('splash-fallback');
+      const indicator = document.getElementById('splash-unmute-indicator');
       if (!splash) return;
 
       let closed = false;
@@ -190,7 +194,12 @@
       };
 
       const handleInteraction = () => {
-        if (video) video.muted = false;
+        if (video) {
+          video.muted = false;
+        }
+        if (indicator) {
+          indicator.classList.add('hidden');
+        }
       };
       splash.addEventListener('click', handleInteraction);
       splash.addEventListener('touchstart', handleInteraction);
@@ -202,24 +211,17 @@
         });
         video.addEventListener('ended', closeSplash);
 
-        // Try to play with audio enabled first
-        video.muted = false;
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            console.warn('Vanilla autoplay with audio blocked, trying muted:', err);
-            video.muted = true;
-            video.play().catch((playErr) => {
-              console.error('Vanilla muted autoplay failed:', playErr);
-              video.classList.add('hidden');
-              fallback.classList.remove('hidden');
-            });
-          });
-        }
+        // Start muted to guarantee autoplay works on all mobile platforms
+        video.muted = true;
+        video.play().catch((playErr) => {
+          console.error('Vanilla muted autoplay failed:', playErr);
+          video.classList.add('hidden');
+          fallback.classList.remove('hidden');
+        });
       }
 
-      // Safety fallback timeout raised to 8 seconds
-      setTimeout(closeSplash, 8000);
+      // Safety fallback timeout raised to 12 seconds
+      setTimeout(closeSplash, 12000);
     });
   })();
 </script>
