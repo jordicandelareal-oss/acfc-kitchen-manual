@@ -208,6 +208,9 @@ export const fetchRecipesWithIngredients = async () => {
       portions,
       instructions,
       image_url,
+      tiempo_elaboracion,
+      dificultad,
+      valoracion,
       recipe_ingredients (
         quantity_per_portion,
         unit,
