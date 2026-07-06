@@ -34,7 +34,7 @@ const SplashScreen = ({ onFinished }) => {
         </div>
       ) : (
         <video
-          src="/intro.mp4"
+          src="/acfc-intro.mp4"
           autoPlay
           muted
           playsInline
