@@ -843,19 +843,19 @@
             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Semanas del Mes a Generar</label>
             <div class="grid grid-cols-2 gap-2" id="week-selector-container">
               <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                <input type="checkbox" name="generate-week" value="2026-07-06" class="rounded border-slate-300 text-brand focus:ring-brand" checked>
+                <input type="checkbox" name="generate-week" value="1" class="rounded border-slate-300 text-brand focus:ring-brand" checked onchange="updateSelectedWeeks()">
                 <span class="text-xs font-semibold text-slate-700">Semana 1 (06/07)</span>
               </label>
               <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                <input type="checkbox" name="generate-week" value="2026-07-13" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <input type="checkbox" name="generate-week" value="2" class="rounded border-slate-300 text-brand focus:ring-brand" onchange="updateSelectedWeeks()">
                 <span class="text-xs font-semibold text-slate-700">Semana 2 (13/07)</span>
               </label>
               <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                <input type="checkbox" name="generate-week" value="2026-07-20" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <input type="checkbox" name="generate-week" value="3" class="rounded border-slate-300 text-brand focus:ring-brand" onchange="updateSelectedWeeks()">
                 <span class="text-xs font-semibold text-slate-700">Semana 3 (20/07)</span>
               </label>
               <label class="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                <input type="checkbox" name="generate-week" value="2026-07-27" class="rounded border-slate-300 text-brand focus:ring-brand">
+                <input type="checkbox" name="generate-week" value="4" class="rounded border-slate-300 text-brand focus:ring-brand" onchange="updateSelectedWeeks()">
                 <span class="text-xs font-semibold text-slate-700">Semana 4 (27/07)</span>
               </label>
             </div>
@@ -3629,6 +3629,34 @@ window.saveAndGenerateWeeklyMenu = async function() {
 
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
+window.selectedWeeks = [1];
+window.setSelectedWeeks = function(newWeeks) {
+  window.selectedWeeks = newWeeks;
+};
+window.updateSelectedWeeks = function() {
+  const checked = document.querySelectorAll('input[name="generate-week"]:checked');
+  window.setSelectedWeeks(Array.from(checked).map(cb => parseInt(cb.value)));
+};
+
+function setIsGenerating(val) {
+  const btn = document.getElementById('planner-generate-btn');
+  const spinner = document.getElementById('planner-generate-spinner');
+  const icon = document.getElementById('planner-generate-icon');
+  const text = document.getElementById('planner-generate-text');
+  if (val) {
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+    if (icon) icon.classList.add('hidden');
+    if (text) text.textContent = 'Generando...';
+  } else {
+    if (btn) btn.disabled = false;
+    if (spinner) spinner.classList.add('hidden');
+    if (icon) icon.classList.remove('hidden');
+    if (text) text.textContent = 'Generar Menú Semanal';
+  }
+}
+
+// ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
 window.generateWeeklyMenu = async function() {
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
   if (!allRecipes.length) {
@@ -3636,26 +3664,13 @@ window.generateWeeklyMenu = async function() {
     return;
   }
 
-  // Get selected weeks to generate
-  const checkedWeeks = document.querySelectorAll('input[name="generate-week"]:checked');
-  let weeksToGenerate = [];
-  checkedWeeks.forEach(cb => weeksToGenerate.push(cb.value));
-
-  if (weeksToGenerate.length === 0) {
-    toast('⚠️ Selecciona al menos una semana para generar.');
+  // 1. COMPROBACIÓN DEL ESTADO MULTI-SEMANA
+  if (!window.selectedWeeks || window.selectedWeeks.length === 0) {
+    toast('⚠️ Por favor, selecciona al menos una semana en los ajustes antes de generar.');
     return;
   }
 
-  const btn = document.getElementById('planner-generate-btn');
-  const spinner = document.getElementById('planner-generate-spinner');
-  const icon = document.getElementById('planner-generate-icon');
-  const text = document.getElementById('planner-generate-text');
-
-  if (btn) btn.disabled = true;
-  if (spinner) spinner.classList.remove('hidden');
-  if (icon) icon.classList.add('hidden');
-  if (text) text.textContent = 'Generando...';
-
+  setIsGenerating(true);
   toast('⚡ Generando menú semanal inteligente...');
 
   try {
@@ -3837,8 +3852,17 @@ window.generateWeeklyMenu = async function() {
     };
 
     let allWeeklyData = [];
+    const weekToDateMap = {
+      1: '2026-07-06',
+      2: '2026-07-13',
+      3: '2026-07-20',
+      4: '2026-07-27'
+    };
 
-    for (const baseDateStr of weeksToGenerate) {
+    // 2. REPROGRAMACIÓN DEL ALGORITMO (Bucle Dinámico)
+    for (const weekNumber of window.selectedWeeks) {
+      const baseDateStr = weekToDateMap[weekNumber];
+      if (!baseDateStr) continue;
       const baseParts = baseDateStr.split('-');
       const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
 
@@ -3863,7 +3887,7 @@ window.generateWeeklyMenu = async function() {
       const usedRecipeIds = new Set();
       const weekData = [];
 
-      // Inter-weekly rotation lookup
+      // Inter-weekly rotation lookup: compares weekNumber vs weekNumber - 1 dynamically
       const prevWeekRecipes = [];
       if (ruleInterWeeklyActive) {
         const prevStartDate = new Date(baseDate);
@@ -3892,12 +3916,9 @@ window.generateWeeklyMenu = async function() {
         d.setDate(d.getDate() + i);
         const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
         
-        let dayNum = null;
-        if (dateStr.startsWith('2026-07-')) {
-          dayNum = d.getDate();
-        }
+        let dayNum = d.getDate();
 
-        const existing = (dayNum ? PLANNER_DATA[dayNum] : null) || {};
+        const existing = Object.values(PLANNER_DATA).find(p => p.date === dateStr) || {};
 
         // PASO A: CONTROL DE DESAYUNOS
         let rBreakfast = existing.breakfast_recipe_id || null;
@@ -3980,6 +4001,13 @@ window.generateWeeklyMenu = async function() {
         }
       }
 
+      // Update PLANNER_DATA locally in-memory so next loop iteration (rotation check) can use these choices
+      weekData.forEach(day => {
+        if (day.dayNum) {
+          PLANNER_DATA[day.dayNum] = day;
+        }
+      });
+
       allWeeklyData = allWeeklyData.concat(weekData);
     }
 
@@ -4005,27 +4033,17 @@ window.generateWeeklyMenu = async function() {
       }
     }
     
-    allWeeklyData.forEach(up => {
-      if (up.dayNum) {
-        PLANNER_DATA[up.dayNum] = up;
-      }
-    });
-
+    // Refetch planner data from Supabase so all generated weeks are reflected
+    await fetchPlannerData();
     renderCalendar();
     toast('✅ Menú semanal autogenerado y guardado con éxito');
   } catch (err) {
     console.error('Error al autogenerar menú semanal:', err);
     toast('❌ Error: ' + err.message);
   } finally {
-    const btn = document.getElementById('planner-generate-btn');
-    const spinner = document.getElementById('planner-generate-spinner');
-    const icon = document.getElementById('planner-generate-icon');
-    const text = document.getElementById('planner-generate-text');
-
-    if (btn) btn.disabled = false;
-    if (spinner) spinner.classList.add('hidden');
-    if (icon) icon.classList.remove('hidden');
-    if (text) text.textContent = 'Generar Menú Semanal';
+    // 3. LIMPIEZA DE INTERFAZ
+    setIsGenerating(false);
+    closeMenuSettingsModal();
   }
 }
 
@@ -4585,6 +4603,11 @@ async function deleteSubcat(cat, sub) {
     });
     // Suppliers: load asynchronously — never blocks the app
     fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
+    
+    // Initialize selectedWeeks
+    if (window.updateSelectedWeeks) {
+      window.updateSelectedWeeks();
+    }
   }
   
   init();
