@@ -1566,7 +1566,7 @@
         <button onclick="openResetPlannerModal()" class="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-xs whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">delete_sweep</span> Resetear Cuadrícula
         </button>
-        <button id="planner-generate-btn" onclick="generateWeeklyMenu()" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
+        <button id="planner-generate-btn" onclick="generateWeeklyMenu(window.selectedWeeks)" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px] hidden" id="planner-generate-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
           <span class="material-symbols-outlined text-[16px]" id="planner-generate-icon">bolt</span> 
           <span id="planner-generate-text">Generar Menú Semanal</span>
@@ -3623,7 +3623,7 @@ window.saveMenuSettingsLocal = function() {
 window.saveAndGenerateWeeklyMenu = async function() {
   saveMenuSettingsLocal();
   closeMenuSettingsModal();
-  await generateWeeklyMenu();
+  await generateWeeklyMenu(window.selectedWeeks);
 }
 
 
@@ -3657,17 +3657,21 @@ function setIsGenerating(val) {
 }
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
-window.generateWeeklyMenu = async function() {
+window.fetchMenuPlannerData = fetchPlannerData;
+
+// ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
+window.generateWeeklyMenu = async function(weeksToGenerate) {
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
   if (!allRecipes.length) {
     toast('⚠️ No hay recetas disponibles en la base de datos para generar menús.');
     return;
   }
 
-  // 1. COMPROBACIÓN DEL ESTADO MULTI-SEMANA
-  if (!window.selectedWeeks || window.selectedWeeks.length === 0) {
-    toast('⚠️ Por favor, selecciona al menos una semana en los ajustes antes de generar.');
-    return;
+  // 1 & 2. COMPROBACIÓN Y VALIDACIÓN DE PARÁMETROS
+  if (!weeksToGenerate || weeksToGenerate.length === 0) {
+      alert("⚠️ Por favor, abre 'Ajustes de Menú' y selecciona al menos una semana antes de generar.");
+      setIsGenerating(false);
+      return;
   }
 
   setIsGenerating(true);
@@ -3851,7 +3855,6 @@ window.generateWeeklyMenu = async function() {
       return available[Math.floor(Math.random() * available.length)];
     };
 
-    let allWeeklyData = [];
     const weekToDateMap = {
       1: '2026-07-06',
       2: '2026-07-13',
@@ -3859,9 +3862,9 @@ window.generateWeeklyMenu = async function() {
       4: '2026-07-27'
     };
 
-    // 2. REPROGRAMACIÓN DEL ALGORITMO (Bucle Dinámico)
-    for (const weekNumber of window.selectedWeeks) {
-      const baseDateStr = weekToDateMap[weekNumber];
+    // 3. BUCLE DE GENERACIÓN E INYECCIÓN EN SUPABASE POR SEMANA SELECCIONADA
+    for (const weekNum of weeksToGenerate) {
+      const baseDateStr = weekToDateMap[weekNum];
       if (!baseDateStr) continue;
       const baseParts = baseDateStr.split('-');
       const baseDate = new Date(baseParts[0], baseParts[1] - 1, baseParts[2]);
@@ -4008,33 +4011,32 @@ window.generateWeeklyMenu = async function() {
         }
       });
 
-      allWeeklyData = allWeeklyData.concat(weekData);
-    }
+      const finalUpserts = weekData.map(day => {
+        const copy = { ...day };
+        delete copy.dayNum;
+        return copy;
+      });
 
-    const finalUpserts = allWeeklyData.map(day => {
-      const copy = { ...day };
-      delete copy.dayNum;
-      return copy;
-    });
-
-    let { error } = await window.upsertPlannerDays(finalUpserts);
-    if (error) {
-      if (error.message && error.message.includes('lunch_side_recipe_id')) {
-        console.warn('⚠️ Column lunch_side_recipe_id not found in Supabase. Retrying without it.');
-        const fallbackUpserts = finalUpserts.map(item => {
-          const copy = { ...item };
-          delete copy.lunch_side_recipe_id;
-          return copy;
-        });
-        const { error: fallbackError } = await window.upsertPlannerDays(fallbackUpserts);
-        if (fallbackError) throw fallbackError;
-      } else {
-        throw error;
+      // El identificador único del esquema de base de datos para la fila es la columna 'date'
+      let { error } = await window.upsertPlannerDays(finalUpserts);
+      if (error) {
+        if (error.message && error.message.includes('lunch_side_recipe_id')) {
+          console.warn('⚠️ Column lunch_side_recipe_id not found in Supabase. Retrying without it.');
+          const fallbackUpserts = finalUpserts.map(item => {
+            const copy = { ...item };
+            delete copy.lunch_side_recipe_id;
+            return copy;
+          });
+          const { error: fallbackError } = await window.upsertPlannerDays(fallbackUpserts);
+          if (fallbackError) throw fallbackError;
+        } else {
+          throw error;
+        }
       }
     }
     
     // Refetch planner data from Supabase so all generated weeks are reflected
-    await fetchPlannerData();
+    await window.fetchMenuPlannerData();
     renderCalendar();
     toast('✅ Menú semanal autogenerado y guardado con éxito');
   } catch (err) {
