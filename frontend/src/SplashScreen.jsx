@@ -73,7 +73,7 @@ const SplashScreen = ({ onFinished }) => {
           preload="auto"
           onEnded={handleClose}
           onError={() => setHasError(true)}
-          className="w-full h-auto max-h-[80vh] object-contain md:max-w-3xl lg:max-w-4xl md:w-full md:h-auto shadow-2xl rounded-2xl border border-white/5"
+          className="w-full h-full object-fill"
         />
       )}
     </div>
