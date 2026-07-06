@@ -201,16 +201,7 @@ export const fetchRecipesWithIngredients = async () => {
   return supabase
     .from('recipes')
     .select(`
-      id,
-      name,
-      category,
-      category_id,
-      portions,
-      instructions,
-      image_url,
-      tiempo_elaboracion,
-      dificultad,
-      valoracion,
+      *,
       recipe_ingredients (
         quantity_per_portion,
         unit,
