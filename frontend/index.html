@@ -153,6 +153,54 @@
 </head>
 <body>
 
+<!-- ── SPLASH SCREEN INTRO ── -->
+<div id="splash-screen" class="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-700 ease-out">
+  <div id="splash-fallback" class="hidden flex flex-col items-center gap-6 select-none animate-pulse">
+    <img src="/icons/icon-512.png" class="w-32 h-32 object-contain" alt="ACFC Logo" />
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+  </div>
+  <video
+    id="splash-video"
+    src="/acfc-intro.mp4"
+    autoplay
+    muted
+    playsinline
+    webkit-playsinline="true"
+    preload="auto"
+    class="w-full h-full object-cover"
+  ></video>
+</div>
+<script>
+  (function() {
+    if (sessionStorage.getItem('introPlayed')) {
+      document.write('<style>#splash-screen { display: none !important; }</style>');
+      return;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const splash = document.getElementById('splash-screen');
+      const video = document.getElementById('splash-video');
+      const fallback = document.getElementById('splash-fallback');
+      if (!splash) return;
+      let closed = false;
+      const closeSplash = () => {
+        if (closed) return;
+        closed = true;
+        sessionStorage.setItem('introPlayed', 'true');
+        splash.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(() => { splash.remove(); }, 700);
+      };
+      if (video) {
+        video.addEventListener('error', () => {
+          video.classList.add('hidden');
+          fallback.classList.remove('hidden');
+        });
+        video.addEventListener('ended', closeSplash);
+      }
+      setTimeout(closeSplash, 4000);
+    });
+  })();
+</script>
+
 <!-- ── TOAST ROOT ───────────────────────────────────────────────── -->
 <div id="toast-root"></div>
 
