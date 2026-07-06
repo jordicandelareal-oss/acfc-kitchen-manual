@@ -6,6 +6,7 @@ import {
   Euro, Truck, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { fetchData, saveData, fetchDashboardStats, fetchInsumos } from './api';
+import SplashScreen from './SplashScreen';
 import './index.css';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -423,6 +424,9 @@ const InsumosTab = ({ loading }) => {
 
 // ─── App principal ────────────────────────────────────────────────────────────
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('introPlayed');
+  });
   const [activeTab,  setActiveTab]  = useState('dashboard');
   const [month,      setMonth]      = useState('Julio');
   const [data,       setData]       = useState([]);
@@ -447,7 +451,16 @@ function App() {
   ];
 
   return (
-    <div className="app-container">
+    <>
+      {showIntro && (
+        <SplashScreen
+          onFinished={() => {
+            sessionStorage.setItem('introPlayed', 'true');
+            setShowIntro(false);
+          }}
+        />
+      )}
+      <div className="app-container">
       <header className="header">
         <div className="header-inner">
           <div>
@@ -498,6 +511,7 @@ function App() {
         ))}
       </nav>
     </div>
+    </>
   );
 }
 
