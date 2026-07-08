@@ -3544,7 +3544,7 @@ window.saveWeeklyConfig = async function() {
 
 // ── AJUSTES DE REGELAS NUTRICIONALES MODAL ────────────────────────
 const DEFAULT_MENU_RULES = [
-  { id: 'rule-carbs', text: 'Control de Carbohidratos: No repetir carbohidrato el mismo día (Almuerzo Pasta ➡️ Cena Arroz/Guiso).', type: 'fija', active: true, deleted: false },
+  { id: 'rule-carbs', text: 'Rotación Carbohidratos (Lunes a Viernes: Pasta mediodía / Arroz noche. Fin de semana: Libre)', type: 'fija', active: true, deleted: false },
   { id: 'rule-hours', text: 'Distribución Horaria: Almuerzo reservado para pastas, noches para Guisos y Arroces.', type: 'fija', active: true, deleted: false },
   { id: 'rule-rotation', text: 'Rotación Semanal: Queda prohibido repetir el mismo plato principal de Lunes a Domingo.', type: 'fija', active: true, deleted: false },
   { id: 'rule-veg', text: 'Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.', type: 'fija', active: true, deleted: false },
@@ -3562,7 +3562,13 @@ window.loadMenuRules = function() {
   if (stored) {
     try {
       MENU_RULES = JSON.parse(stored);
-      // Migration check
+      // Migration check: always update the text for existing rules to the new visual standard
+      MENU_RULES.forEach(r => {
+        const def = DEFAULT_MENU_RULES.find(d => d.id === r.id);
+        if (def) {
+          r.text = def.text;
+        }
+      });
       DEFAULT_MENU_RULES.forEach(def => {
         if (!MENU_RULES.some(r => r.id === def.id)) {
           MENU_RULES.push(def);
