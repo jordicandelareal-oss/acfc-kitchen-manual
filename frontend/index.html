@@ -276,7 +276,7 @@
     <nav class="desktop-nav flex items-center gap-1">
       <a id="nav-dashboard"   onclick="showScreen('dashboard')"   class="nav-link active"><span class="material-symbols-outlined ms">dashboard</span>Dashboard</a>
       <a id="nav-inventory"   onclick="showScreen('inventory')"   class="nav-link"><span class="material-symbols-outlined ms">inventory_2</span>Inventario</a>
-      <a id="nav-recetas"     onclick="showScreen('recetas')"     class="nav-link"><span class="material-symbols-outlined ms">receipt_long</span>Escandallos</a>
+      <a id="nav-recetas"     onclick="showScreen('recetas')"     class="nav-link"><span class="material-symbols-outlined ms">receipt_long</span>Recetas</a>
       <a id="nav-proveedores" onclick="showScreen('proveedores')" class="nav-link"><span class="material-symbols-outlined ms">local_shipping</span>Proveedores</a>
       <a id="nav-planner"     onclick="showScreen('planner')"     class="nav-link"><span class="material-symbols-outlined ms">calendar_month</span>Planificador</a>
       <a id="nav-recipes"     onclick="showScreen('recipes')"     class="nav-link"><span class="material-symbols-outlined ms">auto_awesome</span>Asistente IA</a>
@@ -304,7 +304,7 @@
     <div class="px-4 pt-2 space-y-1">
       <a id="mnav-dashboard"   onclick="showScreen('dashboard')"   class="nav-link w-full">  <span class="material-symbols-outlined ms">dashboard</span>Dashboard</a>
       <a id="mnav-inventory"   onclick="showScreen('inventory')"   class="nav-link w-full">  <span class="material-symbols-outlined ms">inventory_2</span>Inventario</a>
-      <a id="mnav-recetas"     onclick="showScreen('recetas')"     class="nav-link w-full">  <span class="material-symbols-outlined ms">receipt_long</span>Escandallos</a>
+      <a id="mnav-recetas"     onclick="showScreen('recetas')"     class="nav-link w-full">  <span class="material-symbols-outlined ms">receipt_long</span>Recetas</a>
       <a id="mnav-proveedores" onclick="showScreen('proveedores')" class="nav-link w-full">  <span class="material-symbols-outlined ms">local_shipping</span>Proveedores</a>
       <a id="mnav-planner"     onclick="showScreen('planner')"     class="nav-link w-full">  <span class="material-symbols-outlined ms">calendar_month</span>Planificador</a>
       <a id="mnav-recipes"     onclick="showScreen('recipes')"     class="nav-link w-full">  <span class="material-symbols-outlined ms">auto_awesome</span>Asistente IA</a>
@@ -1388,7 +1388,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div class="card p-5 cursor-pointer hover:-translate-y-0.5 transition-transform" onclick="showScreen('recetas')">
         <div class="kpi-icon bg-brand-muted mb-3"><span class="material-symbols-outlined text-brand" style="font-size:22px">receipt_long</span></div>
-        <p class="font-bold text-slate-900 text-sm" style="font-family:Outfit">Escandallos</p>
+        <p class="font-bold text-slate-900 text-sm" style="font-family:Outfit">Recetas</p>
         <p class="text-xs text-slate-400 mt-0.5">24 recetas activas</p>
       </div>
       <div class="card p-5 cursor-pointer hover:-translate-y-0.5 transition-transform" onclick="showScreen('proveedores')">
@@ -1515,7 +1515,7 @@
 
     <div class="flex flex-wrap justify-between items-end gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Recetas y Escandallos</h1>
+        <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Catálogo de Recetas</h1>
         <p class="text-sm text-slate-500 mt-1">Fichas de coste, márgenes y explosión de ingredientes</p>
       </div>
       <div class="flex flex-wrap gap-2 items-center">
@@ -1534,6 +1534,44 @@
           <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva receta
         </button>
       </div>
+    </div>
+
+    <!-- Barra de Filtros Operativos Avanzados (Píldoras de estrellas) -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center gap-6 text-xs mt-2">
+      <!-- Valoración -->
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Valoración:</span>
+        <div class="flex gap-1" id="filter-val-group">
+          <button onclick="setRecipeAdvancedFilter('valoracion', 3)" id="btn-val-3" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★★ (Altas)</button>
+          <button onclick="setRecipeAdvancedFilter('valoracion', 2)" id="btn-val-2" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★ (Medias)</button>
+          <button onclick="setRecipeAdvancedFilter('valoracion', 1)" id="btn-val-1" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★ (Bajas)</button>
+        </div>
+      </div>
+
+      <!-- Dificultad -->
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Dificultad:</span>
+        <div class="flex gap-1" id="filter-dif-group">
+          <button onclick="setRecipeAdvancedFilter('dificultad', 3)" id="btn-dif-3" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★★ (Alta)</button>
+          <button onclick="setRecipeAdvancedFilter('dificultad', 2)" id="btn-dif-2" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★ (Media)</button>
+          <button onclick="setRecipeAdvancedFilter('dificultad', 1)" id="btn-dif-1" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★ (Baja)</button>
+        </div>
+      </div>
+
+      <!-- Tiempo Elaboración -->
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Elaboración:</span>
+        <div class="flex gap-1" id="filter-elab-group">
+          <button onclick="setRecipeAdvancedFilter('tiempo_elaboracion', 3)" id="btn-elab-3" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★★ (Larga)</button>
+          <button onclick="setRecipeAdvancedFilter('tiempo_elaboracion', 2)" id="btn-elab-2" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★★ (Media)</button>
+          <button onclick="setRecipeAdvancedFilter('tiempo_elaboracion', 1)" id="btn-elab-1" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-brand font-semibold text-slate-700 bg-slate-50 transition-all">★ (Corta)</button>
+        </div>
+      </div>
+
+      <!-- Limpiar Filtros -->
+      <button onclick="clearRecipeAdvancedFilters()" class="flex items-center gap-1 px-3 py-1.5 border border-red-200 text-red-600 bg-white hover:bg-red-50 font-bold rounded-lg ml-auto transition-colors">
+        <span class="material-symbols-outlined text-[14px]">filter_alt_off</span> Limpiar Filtros
+      </button>
     </div>
 
     <!-- Summary stats -->
@@ -4976,6 +5014,13 @@ async function deleteSubcat(cat, sub) {
     if (mGrid) mGrid.innerHTML = html;
   }
 
+  // Advanced Filters State
+  let recipeAdvancedFilters = {
+    valoracion: null,
+    dificultad: null,
+    tiempo_elaboracion: null
+  };
+
   function filterRecipes() {
     try {
       const searchVal = (document.getElementById('recipe-search')?.value || '').toLowerCase().trim();
@@ -4985,6 +5030,25 @@ async function deleteSubcat(cat, sub) {
         const nameStr = r.name || '';
         const matchSearch = nameStr.toLowerCase().includes(searchVal);
         const matchFamily = !familyVal || r.category_id === familyVal;
+
+        // Filtro avanzado valoración
+        if (recipeAdvancedFilters.valoracion !== null) {
+          const val = Number(r.valoracion || 3); // default 3
+          if (val !== recipeAdvancedFilters.valoracion) return false;
+        }
+
+        // Filtro avanzado dificultad
+        if (recipeAdvancedFilters.dificultad !== null) {
+          const diff = Number(r.dificultad || 1); // default 1
+          if (diff !== recipeAdvancedFilters.dificultad) return false;
+        }
+
+        // Filtro avanzado tiempo de elaboración
+        if (recipeAdvancedFilters.tiempo_elaboracion !== null) {
+          const elab = Number(r.tiempo_elaboracion || 1); // default 1
+          if (elab !== recipeAdvancedFilters.tiempo_elaboracion) return false;
+        }
+
         return matchSearch && matchFamily;
       });
       
@@ -5029,6 +5093,64 @@ async function deleteSubcat(cat, sub) {
       toast("❌ Error al filtrar recetas: " + e.message);
     }
   }
+
+  function setRecipeAdvancedFilter(type, value) {
+    if (recipeAdvancedFilters[type] === value) {
+      recipeAdvancedFilters[type] = null; // toggle-off if clicked again
+    } else {
+      recipeAdvancedFilters[type] = value;
+    }
+    
+    // Update button visual styles
+    const types = ['valoracion', 'dificultad', 'tiempo_elaboracion'];
+    const typeIds = { valoracion: 'val', dificultad: 'dif', tiempo_elaboracion: 'elab' };
+    
+    types.forEach(t => {
+      const prefix = typeIds[t];
+      for (let v = 1; v <= 3; v++) {
+        const btn = document.getElementById(`btn-${prefix}-${v}`);
+        if (btn) {
+          if (recipeAdvancedFilters[t] === v) {
+            btn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
+            btn.classList.add('bg-brand', 'text-white', 'border-brand', 'shadow-sm');
+          } else {
+            btn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+            btn.classList.remove('bg-brand', 'text-white', 'border-brand', 'shadow-sm');
+          }
+        }
+      }
+    });
+
+    filterRecipes();
+  }
+
+  function clearRecipeAdvancedFilters() {
+    recipeAdvancedFilters = {
+      valoracion: null,
+      dificultad: null,
+      tiempo_elaboracion: null
+    };
+
+    const types = ['valoracion', 'dificultad', 'tiempo_elaboracion'];
+    const typeIds = { valoracion: 'val', dificultad: 'dif', tiempo_elaboracion: 'elab' };
+    
+    types.forEach(t => {
+      const prefix = typeIds[t];
+      for (let v = 1; v <= 3; v++) {
+        const btn = document.getElementById(`btn-${prefix}-${v}`);
+        if (btn) {
+          btn.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+          btn.classList.remove('bg-brand', 'text-white', 'border-brand', 'shadow-sm');
+        }
+      }
+    });
+
+    filterRecipes();
+    toast('🧹 Filtros avanzados restablecidos');
+  }
+
+  window.setRecipeAdvancedFilter = setRecipeAdvancedFilter;
+  window.clearRecipeAdvancedFilters = clearRecipeAdvancedFilters;
 
   // ── NEW / EDIT RECIPE MODAL ──────────────────────────────────────
   function openNewRecipeModal(editId = null) {
