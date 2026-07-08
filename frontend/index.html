@@ -4242,6 +4242,40 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       // FASE 1: Bucle Aislado de Fin de Semana (Sábado [5] y Domingo [6])
       // ────────────────────────────────────────────────────────────────
       addAuditLog(`🚀 Fase 1: Planificando Fin de Semana...`, 'info');
+      
+      // Consultar a Supabase las recetas que cumplen estrictamente los 3 umbrales configurados para el fin de semana
+      let fdsPremiumPool = pools.baseRecipes;
+      if (sencilloFdsActive) {
+        addAuditLog(`🔍 Consultando recetas premium que cumplen: Valoración >= ${fdsValoracionMin}★, Dificultad <= ${fdsDificultadMax}★, Elaboración <= ${fdsElaboracionMax}★`, 'info');
+        
+        try {
+          // Hacemos una consulta directa limpia de Supabase sin LIMIT para extraer todas las recetas aptas
+          const { data: dbRecipes, error } = await window.supabase
+            .from('recipes')
+            .select('*, recipe_ingredients(*, ingredients(*))')
+            .gte('valoracion', fdsValoracionMin)
+            .lte('dificultad', fdsDificultadMax)
+            .lte('tiempo_elaboracion', fdsElaboracionMax);
+            
+          if (error) throw error;
+          
+          if (dbRecipes && dbRecipes.length > 0) {
+            // Filtrar usando getRecipeCategoryName por especiales si aplica
+            fdsPremiumPool = incluirEspeciales 
+              ? dbRecipes 
+              : dbRecipes.filter(r => getRecipeCategoryName(r).toLowerCase() !== 'especiales' && getRecipeCategoryName(r).toLowerCase() !== 'especial');
+            addAuditLog(`📊 Encontradas ${fdsPremiumPool.length} recetas aptas en Supabase para el fin de semana.`, 'success');
+          } else {
+            addAuditLog(`⚠️ Ninguna receta coincide con los 3 umbrales en base de datos. Relajando filtros...`, 'warn');
+            fdsPremiumPool = pools.baseRecipes;
+          }
+        } catch (dbErr) {
+          console.error("Error consultando recetas FDS en Supabase:", dbErr);
+          addAuditLog(`⚠️ Falló la consulta premium a base de datos. Usando catálogo local...`, 'warn');
+          fdsPremiumPool = pools.baseRecipes;
+        }
+      }
+
       const fdsDays = [5, 6];
       for (const i of fdsDays) {
         const d = new Date(baseDate);
@@ -4263,7 +4297,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         }
 
         // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
-        let lunchPool = pools.baseRecipes;
+        let lunchPool = fdsPremiumPool;
         // Fin de semana: no aplicar rotación intersemanal ni reglas de carbohidratos de diario, solo rotación simple
         lunchPool = filterCandidates(lunchPool, 'lunch', i, { rulePaellasLunchActive, ruleInterWeeklyActive: false, ruleCarbsActive: false, ruleHoursActive: false, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes: [], repeatedDishesCount: 0, usedRecipeIds, dayOfWeek: d.getDay() });
 
@@ -4284,7 +4318,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         }
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
-        let dinnerPool = pools.baseRecipes;
+        let dinnerPool = fdsPremiumPool;
         dinnerPool = filterCandidates(dinnerPool, 'dinner', i, { rulePaellasLunchActive, ruleInterWeeklyActive: false, ruleCarbsActive: false, ruleHoursActive: false, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes: [], repeatedDishesCount: 0, selectedLunchRecipeId: rLunch, usedRecipeIds, dayOfWeek: d.getDay() });
 
         const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
