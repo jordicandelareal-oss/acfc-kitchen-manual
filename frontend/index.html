@@ -4027,7 +4027,9 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       const dayName = dayNames[dayIndex] || `Día-${dayIndex}`;
 
       let candidates = pool.filter(recipe => {
-        if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
+        const isWeekday = dayIndex >= 0 && dayIndex <= 4; // Lunes (0) a Viernes (4)
+
+        if (isWeekday && mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat === 'paellas' || cat === 'paella') {
             addAuditLog(`❌ [${recipe.name}] descartada para cena del ${dayName}: Sin paella por la noche`, 'error');
@@ -4035,7 +4037,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           }
         }
 
-        if (mealType === 'lunch' && rulesState.ruleHoursActive) {
+        if (isWeekday && mealType === 'lunch' && rulesState.ruleHoursActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat !== 'pastas' && cat !== 'pasta') {
             addAuditLog(`❌ [${recipe.name}] descartada para almuerzo del ${dayName}: Solo pasta a mediodía`, 'error');
@@ -4043,7 +4045,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           }
         }
 
-        if (mealType === 'dinner' && rulesState.ruleCarbsActive && context.selectedLunchRecipeId) {
+        if (isWeekday && mealType === 'dinner' && rulesState.ruleCarbsActive && context.selectedLunchRecipeId) {
           const selectedLunch = allRecipes.find(r => r.id === context.selectedLunchRecipeId);
           if (selectedLunch) {
             const lunchCat = getRecipeCategoryName(selectedLunch).toLowerCase();
