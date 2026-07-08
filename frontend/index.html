@@ -951,8 +951,12 @@
                   </select>
                 </div>
                 <div>
-                  <label class="text-[9px] font-semibold text-slate-500 mb-1 block">Elaboración Máx (min)</label>
-                  <input type="number" id="fds-elaboracion-max" value="45" min="1" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" onchange="localStorage.setItem('menu_setting_fds_elaboracion', this.value);" />
+                  <label class="text-[9px] font-semibold text-slate-500 mb-1 block">Elaboración Máx</label>
+                  <select id="fds-elaboracion-max" class="w-full px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand bg-white" onchange="localStorage.setItem('menu_setting_fds_elaboracion', this.value);">
+                    <option value="1">★ (Corto)</option>
+                    <option value="2" selected>★★ (Medio)</option>
+                    <option value="3">★★★ (Largo)</option>
+                  </select>
                 </div>
                 <div>
                   <label class="text-[9px] font-semibold text-slate-500 mb-1 block">Valoración Mín (1-3)</label>
@@ -4000,12 +4004,11 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           const diffVal = Number(recipe.dificultad || 1);
           if (diffVal > rulesState.fdsDificultadMax) return false;
 
-          // Tiempo (r.tiempo_preparacion / r.elaboracion o default 30 <= max)
-          // El campo tiempo_elaboracion o similares
-          const timeVal = Number(recipe.tiempo_elaboracion || recipe.elaboracion || 30);
+          // Tiempo de elaboración (tiempo_elaboracion de 1 a 3, default 1 <= max)
+          const timeVal = Number(recipe.tiempo_elaboracion || 1);
           if (timeVal > rulesState.fdsElaboracionMax) return false;
 
-          // Valoracion (r.valoracion o default 3 >= min)
+          // Valoración (valoracion de 1 a 3, default 3 >= min)
           const valVal = Number(recipe.valoracion || 3);
           if (valVal < rulesState.fdsValoracionMin) return false;
         }
