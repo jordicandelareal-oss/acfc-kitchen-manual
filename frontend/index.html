@@ -4313,13 +4313,6 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         const rLunch = selectedLunch ? selectedLunch.id : null;
 
         let rSide = null;
-        if (ruleSaladActive) {
-          const selectedSide = selectRecipe(pools.salad, usedRecipeIds, true);
-          if (selectedSide) {
-            rSide = selectedSide.id;
-            usedRecipeIds.add(selectedSide.id);
-          }
-        }
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
         let dinnerPool = fdsPremiumPool;
@@ -4391,13 +4384,6 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         const rLunch = selectedLunch ? selectedLunch.id : null;
 
         let rSide = null;
-        if (ruleSaladActive) {
-          const selectedSide = selectRecipe(pools.salad, usedRecipeIds, true);
-          if (selectedSide) {
-            rSide = selectedSide.id;
-            usedRecipeIds.add(selectedSide.id);
-          }
-        }
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
         let dinnerPool = pools.baseRecipes;
@@ -4461,6 +4447,64 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
             lastDay.dinner_recipe_id = vegRecipe.id;
             if (ruleRotationActive) usedRecipeIds.add(vegRecipe.id);
           }
+        }
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // FASE 3: Asignación Independiente de Guarniciones (Acompañamientos)
+      // ────────────────────────────────────────────────────────────────
+      if (ruleSaladActive) {
+        addAuditLog(`🚀 Fase 3: Asignando Guarniciones...`, 'info');
+        const sidePool = pools.salad || [];
+        
+        if (sidePool.length > 0) {
+          const usedSideIds = new Set();
+          
+          for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+            const day = weekData[dayIdx];
+            let availableSides = sidePool.filter(r => !usedSideIds.has(r.id));
+            
+            // Si el catálogo de guarniciones es menor a los días de la semana, reiniciamos el histórico
+            if (availableSides.length === 0) {
+              usedSideIds.clear();
+              availableSides = sidePool;
+            }
+            
+            if (priorizarStock) {
+              const getStockScore = (r) => {
+                let sum = 0;
+                if (r.recipe_ingredients) {
+                  r.recipe_ingredients.forEach(ri => {
+                    const ing = ri.ingredients;
+                    if (ing) {
+                      const stock = Number(ing.stock_actual !== null && ing.stock_actual !== undefined ? ing.stock_actual : ing.current_stock) || 0;
+                      sum += stock;
+                    }
+                  });
+                }
+                return sum;
+              };
+              availableSides = [...availableSides].sort((a, b) => getStockScore(b) - getStockScore(a));
+            }
+            
+            const selectedSide = availableSides[0];
+            if (selectedSide) {
+              day.lunch_side_recipe_id = selectedSide.id;
+              usedSideIds.add(selectedSide.id);
+              addAuditLog(`✅ Acompañamiento asignado el día ${dayIdx + 1}: [${selectedSide.name}]`, 'success');
+            } else {
+              day.lunch_side_recipe_id = null;
+            }
+          }
+        } else {
+          addAuditLog(`⚠️ No se encontraron guarniciones en el catálogo. Dejando vacío.`, 'warn');
+          for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+            weekData[dayIdx].lunch_side_recipe_id = null;
+          }
+        }
+      } else {
+        for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+          weekData[dayIdx].lunch_side_recipe_id = null;
         }
       }
 
