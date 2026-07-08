@@ -2995,10 +2995,10 @@ function renderCalendar() {
     let dinnerName = 'Añadir';
     
     if (menu) {
-       const br = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.breakfast_recipe_id);
-       const lr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.lunch_recipe_id);
-       const lsr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.lunch_side_recipe_id);
-       const dr = (typeof RECIPES !== 'undefined' ? RECIPES : []).find(r => r.id === menu.dinner_recipe_id);
+       const br = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.breakfast_recipe_id);
+       const lr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.lunch_recipe_id);
+       const lsr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.lunch_side_recipe_id);
+       const dr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.dinner_recipe_id);
        if (br) breakfastName = br.name;
        if (lr) lunchName = lr.name;
        if (lsr) lunchSideName = lsr.name;
