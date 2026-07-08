@@ -5141,8 +5141,10 @@ async function deleteSubcat(cat, sub) {
     const filterSelect = document.getElementById('recipe-family-filter');
     const modalSelect  = document.getElementById('recipe-category-select');
     if (filterSelect) {
+      const currentCategory = filterSelect.value;
       filterSelect.innerHTML = '<option value="">Todas las familias</option>' +
         RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      filterSelect.value = currentCategory;
     }
     if (modalSelect) {
       modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
