@@ -3783,20 +3783,27 @@ window.fetchMenuPlannerData = fetchPlannerData;
 
 // ── GENERADOR AUTOMÁTICO DE MENÚS (MOCK/AUTO) ─────────────────────
 window.generateWeeklyMenu = async function(weeksToGenerate) {
+  // 1. Leer Selección de Semanas directamente desde los checkboxes
+  const checkedCheckboxes = document.querySelectorAll('input[name="generate-week"]:checked');
+  const selectedWeeksArray = Array.from(checkedCheckboxes).map(cb => parseInt(cb.value));
+
+  // 2. Validación Obligatoria con Escape Hatch y Toast
+  if (selectedWeeksArray.length === 0) {
+      toast("⚠️ Por favor, selecciona qué semana o semanas deseas configurar antes de generar");
+      setIsGenerating(false);
+      return;
+  }
+
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
   if (!allRecipes.length) {
     toast('⚠️ No hay recetas disponibles en la base de datos para generar menús.');
     return;
   }
 
-  // 1 & 2. COMPROBACIÓN Y VALIDACIÓN DE PARÁMETROS
-  if (!weeksToGenerate || weeksToGenerate.length === 0) {
-      alert("⚠️ Por favor, abre 'Ajustes de Menú' y selecciona al menos una semana antes de generar.");
-      setIsGenerating(false);
-      return;
-  }
-
   setIsGenerating(true);
+  
+  // Usar el array leído dinámicamente de la interfaz
+  weeksToGenerate = selectedWeeksArray;
   toast('⚡ Generando menú semanal inteligente...');
 
   try {
