@@ -1513,14 +1513,17 @@
   <!-- ════ SCREEN: RECETAS Y ESCANDALLOS ═══════════════════════ -->
   <div id="screen-recetas" class="screen">
 
-    <div class="flex flex-wrap justify-between items-end gap-4">
+    <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Catálogo de Recetas</h1>
         <p class="text-sm text-slate-500 mt-1">Fichas de coste, márgenes y explosión de ingredientes</p>
       </div>
-      <div class="flex flex-wrap gap-2 items-center">
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm mt-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-3">
         <input type="text" id="recipe-search" placeholder="Buscar receta..." onkeyup="filterRecipes()"
-          class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"/>
+          class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400 w-full sm:w-60"/>
         
         <select id="recipe-family-filter" onchange="filterRecipes()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 outline-none select-custom pr-8">
           <option value="">Todas las familias</option>
@@ -1530,45 +1533,39 @@
           <span class="material-symbols-outlined" style="font-size:16px">folder</span>Familias
         </button>
 
-        <button onclick="openNewRecipeModal()" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
-          <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva receta
-        </button>
-      </div>
-    </div>
+        <!-- Filtros Rápidos Premium Integrados en Línea -->
+        <div class="h-6 w-[1px] bg-slate-200 hidden lg:block"></div>
 
-    <!-- Barra de Filtros Operativos Avanzados (Píldoras de estrellas) -->
-    <div class="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-sm space-y-3.5 mt-2">
-      <!-- Valoración -->
-      <div class="flex items-center gap-3.5">
-        <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px] w-20 flex-shrink-0">Valoración</span>
-        <div class="flex flex-wrap gap-2" id="filter-val-group">
-          <button onclick="toggleRecipeAdvancedFilter('valoracion', 3)" id="btn-val-3" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">3 ★ (Altas)</button>
-          <button onclick="toggleRecipeAdvancedFilter('valoracion', 2)" id="btn-val-2" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">2 ★ (Medias)</button>
-          <button onclick="toggleRecipeAdvancedFilter('valoracion', 1)" id="btn-val-1" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">1 ★ (Bajas)</button>
+        <!-- Valoración -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl p-1">
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Val:</span>
+          <button onclick="toggleRecipeAdvancedFilter('valoracion', 3)" id="btn-val-3" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">3★</button>
+          <button onclick="toggleRecipeAdvancedFilter('valoracion', 2)" id="btn-val-2" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">2★</button>
+          <button onclick="toggleRecipeAdvancedFilter('valoracion', 1)" id="btn-val-1" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">1★</button>
         </div>
+
+        <!-- Dificultad -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl p-1">
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Dif:</span>
+          <button onclick="toggleRecipeAdvancedFilter('dificultad', 1)" id="btn-dif-1" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Fác</button>
+          <button onclick="toggleRecipeAdvancedFilter('dificultad', 2)" id="btn-dif-2" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Med</button>
+          <button onclick="toggleRecipeAdvancedFilter('dificultad', 3)" id="btn-dif-3" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Alt</button>
+        </div>
+
+        <!-- Tiempo -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl p-1">
+          <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Tiem:</span>
+          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 1)" id="btn-elab-1" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Rap</button>
+          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 2)" id="btn-elab-2" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Med</button>
+          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 3)" id="btn-elab-3" class="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-200 transition-all select-none">Lar</button>
+        </div>
+
+        <button onclick="clearRecipeAdvancedFilters()" class="text-[10px] text-slate-400 hover:text-red-500 hover:underline transition-colors font-semibold px-1">Limpiar</button>
       </div>
 
-      <!-- Dificultad -->
-      <div class="flex items-center gap-3.5">
-        <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px] w-20 flex-shrink-0">Dificultad</span>
-        <div class="flex flex-wrap gap-2" id="filter-dif-group">
-          <button onclick="toggleRecipeAdvancedFilter('dificultad', 1)" id="btn-dif-1" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Fácil</button>
-          <button onclick="toggleRecipeAdvancedFilter('dificultad', 2)" id="btn-dif-2" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Media</button>
-          <button onclick="toggleRecipeAdvancedFilter('dificultad', 3)" id="btn-dif-3" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Alta</button>
-        </div>
-      </div>
-
-      <!-- Tiempo Elaboración -->
-      <div class="flex items-center gap-3.5">
-        <span class="font-bold text-slate-400 uppercase tracking-wider text-[10px] w-20 flex-shrink-0">Tiempo</span>
-        <div class="flex flex-wrap gap-2" id="filter-elab-group">
-          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 1)" id="btn-elab-1" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Rápido</button>
-          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 2)" id="btn-elab-2" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Medio</button>
-          <button onclick="toggleRecipeAdvancedFilter('tiempo_elaboracion', 3)" id="btn-elab-3" class="px-4 py-1.5 rounded-full border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-600 bg-slate-50 transition-all duration-200 select-none">Largo</button>
-        </div>
-        
-        <button onclick="clearRecipeAdvancedFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline ml-auto transition-colors font-medium">Limpiar filtros</button>
-      </div>
+      <button onclick="openNewRecipeModal()" class="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm w-full sm:w-auto justify-center">
+        <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva receta
+      </button>
     </div>
 
     <!-- Summary stats -->
