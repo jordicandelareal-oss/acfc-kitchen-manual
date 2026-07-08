@@ -1667,7 +1667,7 @@
         <button onclick="openResetPlannerModal()" class="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-all text-xs whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">delete_sweep</span> Resetear Cuadrícula
         </button>
-        <button id="planner-generate-btn" onclick="generateWeeklyMenu(window.selectedWeeks)" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
+        <button id="planner-generate-btn" onclick="openMenuSettingsModal(); setTimeout(() => { const el = document.getElementById('content-weekly'); if(el && el.classList.contains('hidden')) { toggleAccordion('weekly'); } document.getElementById('content-weekly')?.scrollIntoView({ behavior: 'smooth' }); }, 150);" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px] hidden" id="planner-generate-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
           <span class="material-symbols-outlined text-[16px]" id="planner-generate-icon">bolt</span> 
           <span id="planner-generate-text">Generar Menú Semanal</span>
