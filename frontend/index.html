@@ -3935,6 +3935,24 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
     const fdsElaboracionMax = Number(localStorage.getItem('menu_setting_fds_elaboracion') || '45');
     const fdsValoracionMin = Number(localStorage.getItem('menu_setting_fds_valoracion') || '3');
 
+    console.log("⚙️ INICIO GENERACIÓN MENÚ SEMANALES. Configuraciones activas:", {
+      semanasSeleccionadas: weeksToGenerate,
+      ruleCarbsActive,
+      ruleHoursActive,
+      ruleRotationActive,
+      ruleVegActive,
+      ruleSaladActive,
+      incluirDesayuno,
+      priorizarStock,
+      rulePaellasLunchActive,
+      ruleInterWeeklyActive,
+      incluirEspeciales,
+      sencilloFdsActive,
+      fdsDificultadMax,
+      fdsElaboracionMax,
+      fdsValoracionMin
+    });
+
     const getRecipeCategoryName = (r) => {
       if (r.category_id) {
         const cat = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.id === r.category_id);
@@ -3981,10 +3999,14 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
     // Candidates filter wrapper
     const filterCandidates = (pool, mealType, dayIndex, rulesState, context) => {
+      const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+      const dayName = dayNames[dayIndex] || `Día-${dayIndex}`;
+
       let candidates = pool.filter(recipe => {
         if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat === 'paellas' || cat === 'paella') {
+            console.log(`❌ [${recipe.name}] descartada para el almuerzo/cena del ${dayName} por regla: Sin paella por la noche`);
             return false;
           }
         }
@@ -3992,6 +4014,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         if (mealType === 'lunch' && rulesState.ruleHoursActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat !== 'pastas' && cat !== 'pasta') {
+            console.log(`❌ [${recipe.name}] descartada para almuerzo de diario en ${dayName} por regla: Solo pasta a mediodía`);
             return false;
           }
         }
@@ -4003,6 +4026,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
             if (lunchCat === 'pastas' || lunchCat === 'pasta') {
               const c = getRecipeCategoryName(recipe).toLowerCase();
               if (c === 'pastas' || c === 'pasta') {
+                console.log(`❌ [${recipe.name}] descartada para cena de ${dayName} por regla: No repetir carbohidrato en el mismo día`);
                 return false;
               }
             }
@@ -4010,6 +4034,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         }
 
         if (rulesState.ruleRotationActive && context.usedRecipeIds.has(recipe.id)) {
+          console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Rotación (el plato ya se usó esta semana)`);
           return false;
         }
 
@@ -4017,6 +4042,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           const matches = context.prevWeekRecipes.filter(prev => prev.id === recipe.id);
           if (matches.length > 0) {
             if (context.repeatedDishesCount >= 2) {
+              console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Límite de repeticiones intersemanales superado`);
               return false;
             }
             const hasCloseMatch = matches.some(prev => {
@@ -4024,6 +4050,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
               return dist < 4;
             });
             if (hasCloseMatch) {
+              console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Muy cercana a la asignación de la semana pasada (distancia < 4 días)`);
               return false;
             }
           }
@@ -4032,22 +4059,31 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         if (rulesState.sencilloFdsActive && (context.dayOfWeek === 6 || context.dayOfWeek === 0)) {
           // Dificultad (r.dificultad o default 1 <= max)
           const diffVal = Number(recipe.dificultad || 1);
-          if (diffVal > rulesState.fdsDificultadMax) return false;
+          if (diffVal > rulesState.fdsDificultadMax) {
+            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su dificultad es [${diffVal}★] y se requiere dificultad máxima [${rulesState.fdsDificultadMax}★]`);
+            return false;
+          }
 
           // Tiempo de elaboración (tiempo_elaboracion de 1 a 3, default 1 <= max)
           const timeVal = Number(recipe.tiempo_elaboracion || 1);
-          if (timeVal > rulesState.fdsElaboracionMax) return false;
+          if (timeVal > rulesState.fdsElaboracionMax) {
+            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su tiempo de elaboración es [${timeVal}★] y se requiere un tiempo de elaboración máximo de [${rulesState.fdsElaboracionMax}★]`);
+            return false;
+          }
 
           // Valoración (valoracion de 1 a 3, default 3 >= min)
           const valVal = Number(recipe.valoracion || 3);
-          if (valVal < rulesState.fdsValoracionMin) return false;
+          if (valVal < rulesState.fdsValoracionMin) {
+            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su valoración es [${valVal}★] y se requiere valoración mínima [${rulesState.fdsValoracionMin}★]`);
+            return false;
+          }
         }
 
         return true;
       });
 
       if (candidates.length === 0) {
-        console.warn("⚠️ Pool de candidatos vacío. Relajando restricciones intersemanales, sencillas y de carbohidratos...");
+        console.warn(`⚠️ ADVERTENCIA: El catálogo se quedó con 0 recetas válidas para el ${dayName} (${mealType}) bajo las reglas actuales. Relajando restricciones intersemanales y carbohidratos...`);
         candidates = pool.filter(recipe => {
           if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
             const cat = getRecipeCategoryName(recipe).toLowerCase();
@@ -4063,6 +4099,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       }
 
       if (candidates.length === 0) {
+        console.warn(`⚠️ ADVERTENCIA: Aún con relajación, se encontraron 0 recetas para el ${dayName} (${mealType}). Usando pool completo.`);
         candidates = pool;
       }
 
@@ -4175,6 +4212,10 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         
         let dayNum = d.getDate();
         const existing = Object.values(PLANNER_DATA).find(p => p.date === dateStr) || {};
+        const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        const dayName = dayNames[i] || `Día-${i}`;
+
+        console.log(`📅 Iniciando planificación para el ${dayName} (${dateStr}). Total recetas base en catálogo: ${pools.baseRecipes.length}`);
 
         // PASO A: CONTROL DE DESAYUNOS
         let rBreakfast = existing.breakfast_recipe_id || null;
