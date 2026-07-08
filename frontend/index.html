@@ -4028,12 +4028,22 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
     const pools = getPools();
 
     // Candidates filter wrapper
-    const filterCandidates = (pool, mealType, dayIndex, rulesState, context) => {
+        const filterCandidates = (pool, mealType, dayIndex, rulesState, context) => {
       const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
       const dayName = dayNames[dayIndex] || `Día-${dayIndex}`;
       const isWeekend = dayIndex === 5 || dayIndex === 6;
 
       let candidates = pool.filter(recipe => {
+        // --- FILTRO DURO ABSOLUTO: NO PAELLAS EN LA CENA ---
+        if (mealType === 'dinner') {
+          const cat = getRecipeCategoryName(recipe).toLowerCase();
+          const name = (recipe.name || '').toLowerCase();
+          if (cat === 'paellas' || cat === 'paella' || name.includes('paella')) {
+            addAuditLog(`❌ [${recipe.name}] descartada absolutamente para cena: Paella no permitida por la noche`, 'error');
+            return false;
+          }
+        }
+
         // --- REGLAS DE FIN DE SEMANA (Umbrales de Valoración/Dificultad/Tiempo) ---
         if (isWeekend) {
           if (rulesState.sencilloFdsActive) {
@@ -4127,9 +4137,10 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       if (candidates.length === 0) {
         addAuditLog(`⚠️ ADVERTENCIA: 0 recetas válidas para ${dayName} (${mealType}). Relajando restricciones...`, 'warn');
         candidates = pool.filter(recipe => {
-          if (!isWeekend && mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
+          if (mealType === 'dinner') {
             const cat = getRecipeCategoryName(recipe).toLowerCase();
-            if (cat === 'paellas' || cat === 'paella') {
+            const name = (recipe.name || '').toLowerCase();
+            if (cat === 'paellas' || cat === 'paella' || name.includes('paella')) {
               return false;
             }
           }
