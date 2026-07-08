@@ -217,8 +217,18 @@ const DashboardTab = ({ onNavigate }) => {
 
 // ─── Tab: Menús ───────────────────────────────────────────────────────────────
 const MenusTab = ({ data, loading }) => {
-  if (loading) return <div className="loading-spinner" />;
-  if (!data.length) return (
+  if (loading) {
+    return (
+      <div className="skeleton-loading-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="skeleton-line" style={{ height: 24, width: '40%', background: '#1e293b', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="skeleton-row" style={{ height: 60, background: '#1e293b', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />
+        ))}
+      </div>
+    );
+  }
+  const safeData = data || [];
+  if (!safeData.length) return (
     <div className="empty-state">
       <Utensils size={40} className="empty-icon" />
       <p>No hay menús planificados.</p>
@@ -229,21 +239,21 @@ const MenusTab = ({ data, loading }) => {
     <div className="premium-card">
       <h2 className="section-title">Menú Semanal</h2>
       <div className="item-list">
-        {data.map((item, idx) => (
+        {safeData.map((item, idx) => (
           <div key={idx} className="menu-row">
-            <div className="menu-day">{item.planning_date || item.date || item.Día}</div>
+            <div className="menu-day">{item?.planning_date || item?.date || item?.Día}</div>
             <div className="menu-meals">
               <div className="menu-meal">
                 <span className="item-meta">Almuerzo</span>
-                <span className="item-name">{item.lunch_recipe || item.Almuerzo || '—'}</span>
+                <span className="item-name">{item?.lunch_recipe || item?.Almuerzo || '—'}</span>
               </div>
               <div className="menu-meal" style={{ alignItems: 'flex-end' }}>
                 <span className="item-meta">Cena</span>
-                <span className="item-name">{item.dinner_recipe || item.Cena || '—'}</span>
+                <span className="item-name">{item?.dinner_recipe || item?.Cena || '—'}</span>
               </div>
             </div>
-            {(item.side_dish || item.Guarnición) && (
-              <div className="menu-garnish">+ {item.side_dish || item.Guarnición}</div>
+            {(item?.side_dish || item?.Guarnición) && (
+              <div className="menu-garnish">+ {item?.side_dish || item?.Guarnición}</div>
             )}
           </div>
         ))}
@@ -254,11 +264,21 @@ const MenusTab = ({ data, loading }) => {
 
 // ─── Tab: Compras ─────────────────────────────────────────────────────────────
 const ComprasTab = ({ data, loading, month, onMonthChange }) => {
-  if (loading) return <div className="loading-spinner" />;
-  const getStock = i => i.stock_actual !== undefined && i.stock_actual !== null ? i.stock_actual : (i.current_stock ?? 0);
-  const getMin = i => i.stock_minimo !== undefined && i.stock_minimo !== null ? i.stock_minimo : (i.min_stock ?? 0);
+  if (loading) {
+    return (
+      <div className="skeleton-loading-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="skeleton-line" style={{ height: 24, width: '30%', background: '#1e293b', borderRadius: 4, animation: 'pulse 1.5s infinite' }} />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="skeleton-row" style={{ height: 50, background: '#1e293b', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />
+        ))}
+      </div>
+    );
+  }
+  const safeData = data || [];
+  const getStock = i => i?.stock_actual !== undefined && i?.stock_actual !== null ? i.stock_actual : (i?.current_stock ?? 0);
+  const getMin = i => i?.stock_minimo !== undefined && i?.stock_minimo !== null ? i.stock_minimo : (i?.min_stock ?? 0);
   
-  const lowStock = data.filter(i => getStock(i) < getMin(i));
+  const lowStock = safeData.filter(i => getStock(i) < getMin(i));
   return (
     <div>
       {lowStock.length > 0 && (
@@ -278,20 +298,20 @@ const ComprasTab = ({ data, loading, month, onMonthChange }) => {
           </select>
         </div>
         <div className="item-list">
-          {data.map((item, idx) => {
+          {safeData.map((item, idx) => {
             const stock = getStock(item);
             const min = getMin(item);
             return (
               <div key={idx} className="item-row">
                 <div className="item-info">
-                  <span className="item-name">{item.name}</span>
+                  <span className="item-name">{item?.name}</span>
                   <span className="item-meta">
-                    Stock: {stock} {item.unit} · Mín: {min} {item.unit}
-                    {item.proveedor_principal ? ` · ${item.proveedor_principal}` : ''}
+                    Stock: {stock} {item?.unit} · Mín: {min} {item?.unit}
+                    {item?.proveedor_principal ? ` · ${item.proveedor_principal}` : ''}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {item.precio_mas_bajo && (
+                  {item?.precio_mas_bajo && (
                     <span className="price-badge">€{Number(item.precio_mas_bajo).toFixed(2)}</span>
                   )}
                   <StockBadge qty={stock} min={min} />
@@ -299,7 +319,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange }) => {
               </div>
             );
           })}
-          {!data.length && <p className="empty-msg">No hay datos para este mes.</p>}
+          {!safeData.length && <p className="empty-msg">No hay datos para este mes.</p>}
         </div>
         <button className="btn-primary" style={{ marginTop: 20 }}>
           <ShoppingCart size={20} />
@@ -320,27 +340,40 @@ const InsumosTab = ({ loading }) => {
   useEffect(() => {
     setFetching(true);
     fetchInsumos().then(res => {
-      if (res.success) setItems(res.items);
+      if (res && res.success) setItems(res.items || []);
+      setFetching(false);
+    }).catch(e => {
+      console.error(e);
       setFetching(false);
     });
   }, []);
 
-  if (fetching || loading) return <div className="loading-spinner" />;
+  if (fetching || loading) {
+    return (
+      <div className="skeleton-loading-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="skeleton-line" style={{ height: 35, background: '#1e293b', borderRadius: 8, animation: 'pulse 1.5s infinite' }} />
+        {[1, 2].map(i => (
+          <div key={i} className="skeleton-row" style={{ height: 80, background: '#1e293b', borderRadius: 12, animation: 'pulse 1.5s infinite' }} />
+        ))}
+      </div>
+    );
+  }
 
+  const safeItems = items || [];
   // Unique categories for filter
-  const categories = [...new Set(items.map(i => i.category).filter(Boolean))].sort();
+  const categories = [...new Set(safeItems.map(i => i?.category).filter(Boolean))].sort();
 
-  const filtered = items.filter(item => {
+  const filtered = safeItems.filter(item => {
     const matchSearch = !search ||
-      item.name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.category?.toLowerCase().includes(search.toLowerCase());
-    const matchCat = !catFilter || item.category === catFilter;
+      item?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      item?.category?.toLowerCase().includes(search.toLowerCase());
+    const matchCat = !catFilter || item?.category === catFilter;
     return matchSearch && matchCat;
   });
 
   // Group by category
   const grouped = filtered.reduce((acc, item) => {
-    const cat = item.category || 'Sin categoría';
+    const cat = item?.category || 'Sin categoría';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
     return acc;
@@ -400,12 +433,12 @@ const InsumosTab = ({ loading }) => {
               <Tag size={12} style={{ marginRight: 5, verticalAlign: 'middle', color: '#3b82f6' }} />
               {cat}
             </span>
-            <span style={{ fontSize: 11, color: '#475569' }}>{rows.length} productos</span>
+            <span style={{ fontSize: 11, color: '#475569' }}>{rows?.length || 0} productos</span>
           </div>
           {/* Rows */}
           <div>
-            {rows.map((item, idx) => (
-              <InsumoRow key={item.id || idx} item={item} />
+            {(rows || []).map((item, idx) => (
+              <InsumoRow key={item?.id || idx} item={item} />
             ))}
           </div>
         </div>
@@ -413,7 +446,7 @@ const InsumosTab = ({ loading }) => {
 
       {!filtered.length && (
         <p className="empty-msg">
-          {items.length === 0
+          {safeItems.length === 0
             ? 'No hay insumos en la base de datos. Ejecuta el seed.'
             : 'Sin resultados para tu búsqueda.'}
         </p>
@@ -436,12 +469,24 @@ function App() {
   const loadData = useCallback(async () => {
     if (activeTab === 'dashboard' || activeTab === 'insumos') return;
     setLoading(true);
-    const res = await fetchData(activeTab, month);
-    if (res.success) setData(res.items);
-    setLoading(false);
+    try {
+      const res = await fetchData(activeTab, month);
+      if (res && res.success) {
+        setData(res.items || []);
+      } else {
+        setData([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
   }, [activeTab, month]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const tabs = [
     { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Inicio' },
