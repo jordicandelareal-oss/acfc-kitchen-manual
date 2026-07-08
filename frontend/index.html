@@ -4130,14 +4130,18 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       }
 
       let repeatedDishesCount = 0;
+      const weekDataMap = {};
 
-      for (let i = 0; i < 7; i++) {
+      // Primero planificamos los días de fin de semana (índices 5 y 6, es decir, Sábado y Domingo)
+      // si la regla está activa para que el pool de candidatos sencillos esté lleno de opciones válidas.
+      const orderOfDays = sencilloFdsActive ? [5, 6, 0, 1, 2, 3, 4] : [0, 1, 2, 3, 4, 5, 6];
+
+      for (const i of orderOfDays) {
         const d = new Date(baseDate);
         d.setDate(d.getDate() + i);
         const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
         
         let dayNum = d.getDate();
-
         const existing = Object.values(PLANNER_DATA).find(p => p.date === dateStr) || {};
 
         // PASO A: CONTROL DE DESAYUNOS
@@ -4179,7 +4183,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         }
         const rDinner = selectedDinner ? selectedDinner.id : null;
 
-        weekData.push({
+        weekDataMap[i] = {
           ...existing,
           ...config,
           date: dateStr,
@@ -4188,7 +4192,12 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           lunch_side_recipe_id: rSide,
           dinner_recipe_id: rDinner,
           dayNum
-        });
+        };
+      }
+
+      // Convertir el mapa de vuelta al array ordenado de Lunes (0) a Domingo (6)
+      for (let i = 0; i < 7; i++) {
+        weekData.push(weekDataMap[i]);
       }
 
       // PASO E: COMPROBACIÓN VEGETARIANA OBLIGATORIA
