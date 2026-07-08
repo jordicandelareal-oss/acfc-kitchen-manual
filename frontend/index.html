@@ -4031,11 +4031,44 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
     const filterCandidates = (pool, mealType, dayIndex, rulesState, context) => {
       const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
       const dayName = dayNames[dayIndex] || `Día-${dayIndex}`;
+      const isWeekend = dayIndex === 5 || dayIndex === 6;
 
       let candidates = pool.filter(recipe => {
-        const isWeekday = dayIndex >= 0 && dayIndex <= 4; // Lunes (0) a Viernes (4)
+        // --- REGLAS DE FIN DE SEMANA (Umbrales de Valoración/Dificultad/Tiempo) ---
+        if (isWeekend) {
+          if (rulesState.sencilloFdsActive) {
+            // Dificultad
+            const diffVal = Number(recipe.dificultad || 1);
+            if (diffVal > rulesState.fdsDificultadMax) {
+              addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por dificultad: [${diffVal}★] (max requerido: [${rulesState.fdsDificultadMax}★])`, 'error');
+              return false;
+            }
 
-        if (isWeekday && mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
+            // Tiempo de elaboración
+            const timeVal = Number(recipe.tiempo_elaboracion || 1);
+            if (timeVal > rulesState.fdsElaboracionMax) {
+              addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por tiempo: [${timeVal}★] (max requerido: [${rulesState.fdsElaboracionMax}★])`, 'error');
+              return false;
+            }
+
+            // Valoración
+            const valVal = Number(recipe.valoracion || 3);
+            if (valVal < rulesState.fdsValoracionMin) {
+              addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por valoración: [${valVal}★] (min requerido: [${rulesState.fdsValoracionMin}★])`, 'error');
+              return false;
+            }
+          }
+          
+          if (rulesState.ruleRotationActive && context.usedRecipeIds.has(recipe.id)) {
+            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName}: Rotación simple (ya usado en esta semana)`, 'error');
+            return false;
+          }
+          
+          return true;
+        }
+
+        // --- REGLAS DE DIARIO (Lunes a Viernes) ---
+        if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat === 'paellas' || cat === 'paella') {
             addAuditLog(`❌ [${recipe.name}] descartada para cena del ${dayName}: Sin paella por la noche`, 'error');
@@ -4043,7 +4076,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           }
         }
 
-        if (isWeekday && mealType === 'lunch' && rulesState.ruleHoursActive) {
+        if (mealType === 'lunch' && rulesState.ruleHoursActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat !== 'pastas' && cat !== 'pasta') {
             addAuditLog(`❌ [${recipe.name}] descartada para almuerzo del ${dayName}: Solo pasta a mediodía`, 'error');
@@ -4051,7 +4084,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           }
         }
 
-        if (isWeekday && mealType === 'dinner' && rulesState.ruleCarbsActive && context.selectedLunchRecipeId) {
+        if (mealType === 'dinner' && rulesState.ruleCarbsActive && context.selectedLunchRecipeId) {
           const selectedLunch = allRecipes.find(r => r.id === context.selectedLunchRecipeId);
           if (selectedLunch) {
             const lunchCat = getRecipeCategoryName(selectedLunch).toLowerCase();
@@ -4087,29 +4120,6 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
             }
           }
         }
-        // Regla Menús sencillos fin de semana (Sáb/Dom)
-        if (rulesState.sencilloFdsActive && (context.dayOfWeek === 6 || context.dayOfWeek === 0)) {
-          // Dificultad
-          const diffVal = Number(recipe.dificultad || 1);
-          if (diffVal > rulesState.fdsDificultadMax) {
-            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por dificultad: [${diffVal}★] (max requerido: [${rulesState.fdsDificultadMax}★])`, 'error');
-            return false;
-          }
-
-          // Tiempo de elaboración
-          const timeVal = Number(recipe.tiempo_elaboracion || 1);
-          if (timeVal > rulesState.fdsElaboracionMax) {
-            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por tiempo: [${timeVal}★] (max requerido: [${rulesState.fdsElaboracionMax}★])`, 'error');
-            return false;
-          }
-
-          // Valoración
-          const valVal = Number(recipe.valoracion || 3);
-          if (valVal < rulesState.fdsValoracionMin) {
-            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por valoración: [${valVal}★] (min requerido: [${rulesState.fdsValoracionMin}★])`, 'error');
-            return false;
-          }
-        }
 
         return true;
       });
@@ -4117,7 +4127,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       if (candidates.length === 0) {
         addAuditLog(`⚠️ ADVERTENCIA: 0 recetas válidas para ${dayName} (${mealType}). Relajando restricciones...`, 'warn');
         candidates = pool.filter(recipe => {
-          if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
+          if (!isWeekend && mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
             const cat = getRecipeCategoryName(recipe).toLowerCase();
             if (cat === 'paellas' || cat === 'paella') {
               return false;
