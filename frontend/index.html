@@ -3550,7 +3550,7 @@ const DEFAULT_MENU_RULES = [
   { id: 'rule-veg', text: 'Mínimo Vegetariano: Obligatorio al menos un plato vegetariano por semana.', type: 'fija', active: true, deleted: false },
   { id: 'rule-paellas-lunch', text: 'Restricción de Almuerzo: Las recetas de la categoría \'Paellas\' solo se permiten en el turno del mediodía.', type: 'fija', active: true, deleted: false },
   { id: 'rule-inter-weekly', text: 'Control Inter-semanal: Máximo 2 platos repetidos entre la semana anterior y la actual, distanciados por al menos 4 días de margen.', type: 'fija', active: true, deleted: false },
-  { id: 'rule-salad', text: 'Guarnición Automática: Insertar automáticamente la categoría \'Ensaladas\' como acompañamiento al mediodía.', type: 'especial', active: false, deleted: false },
+  { id: 'rule-salad', text: 'Acompañamiento automático de Guarniciones (si no hay, se deja vacío)', type: 'especial', active: false, deleted: false },
   { id: 'rule-breakfast', text: 'Incluir Desayuno en la cuadrícula de menús.', type: 'especial', active: false, deleted: false },
   { id: 'rule-stock', text: 'Optimizar según Stock rotativo: dar salida prioritaria a insumos con excedente en almacén.', type: 'especial', active: false, deleted: false }
 ];
@@ -4009,7 +4009,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
       const salad = baseRecipes.filter(r => {
         const cat = getRecipeCategoryName(r).toLowerCase();
-        return cat === 'ensaladas' || cat === 'ensalada';
+        return cat === 'guarniciones' || cat === 'guarnición' || cat === 'guarnicion';
       });
 
       const riceStew = baseRecipes.filter(r => {
@@ -4143,9 +4143,10 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       return candidates;
     };
     // Selector helper
-    const selectRecipe = (pool, usedSet) => {
+    const selectRecipe = (pool, usedSet, isSide = false) => {
       let available = pool.filter(r => !usedSet.has(r.id));
       if (available.length === 0) {
+        if (isSide) return null;
         available = pool;
       }
       if (available.length === 0) {
@@ -4313,8 +4314,11 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
         let rSide = null;
         if (ruleSaladActive) {
-          const selectedSide = selectRecipe(pools.salad, new Set());
-          rSide = selectedSide ? selectedSide.id : null;
+          const selectedSide = selectRecipe(pools.salad, usedRecipeIds, true);
+          if (selectedSide) {
+            rSide = selectedSide.id;
+            usedRecipeIds.add(selectedSide.id);
+          }
         }
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
@@ -4388,8 +4392,11 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
         let rSide = null;
         if (ruleSaladActive) {
-          const selectedSide = selectRecipe(pools.salad, new Set());
-          rSide = selectedSide ? selectedSide.id : null;
+          const selectedSide = selectRecipe(pools.salad, usedRecipeIds, true);
+          if (selectedSide) {
+            rSide = selectedSide.id;
+            usedRecipeIds.add(selectedSide.id);
+          }
         }
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
