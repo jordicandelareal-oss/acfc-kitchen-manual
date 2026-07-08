@@ -4130,14 +4130,8 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         });
       }
 
-      if (candidates.length === 0) {
-        addAuditLog(`⚠️ ADVERTENCIA: 0 recetas disponibles en catálogo tras relajación para ${dayName} (${mealType}). Forzando fallback.`, 'warn');
-        candidates = pool;
-      }
-
       return candidates;
     };
-
     // Selector helper
     const selectRecipe = (pool, usedSet) => {
       let available = pool.filter(r => !usedSet.has(r.id));
@@ -4232,12 +4226,14 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
       let repeatedDishesCount = 0;
       const weekDataMap = {};
+      const fdsBlockedRecipeIds = new Set(); // Platos asignados en Fase 1 (Sáb/Dom) para ser excluidos en Fase 2 (Lun/Vie)
 
-      // Primero planificamos los días de fin de semana (índices 5 y 6, es decir, Sábado y Domingo)
-      // si la regla está activa para que el pool de candidatos sencillos esté lleno de opciones válidas.
-      const orderOfDays = sencilloFdsActive ? [5, 6, 0, 1, 2, 3, 4] : [0, 1, 2, 3, 4, 5, 6];
-
-      for (const i of orderOfDays) {
+      // ────────────────────────────────────────────────────────────────
+      // FASE 1: Bucle Aislado de Fin de Semana (Sábado [5] y Domingo [6])
+      // ────────────────────────────────────────────────────────────────
+      addAuditLog(`🚀 Fase 1: Planificando Fin de Semana...`, 'info');
+      const fdsDays = [5, 6];
+      for (const i of fdsDays) {
         const d = new Date(baseDate);
         d.setDate(d.getDate() + i);
         const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
@@ -4245,7 +4241,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         let dayNum = d.getDate();
         const existing = Object.values(PLANNER_DATA).find(p => p.date === dateStr) || {};
         const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        const dayName = dayNames[i] || `Día-${i}`;
+        const dayName = dayNames[i];
 
         addAuditLog(`📅 Planificando el ${dayName} (${dateStr})...`, 'info');
 
@@ -4258,7 +4254,81 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
         // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
         let lunchPool = pools.baseRecipes;
-        lunchPool = filterCandidates(lunchPool, 'lunch', i, { rulePaellasLunchActive, ruleInterWeeklyActive, ruleCarbsActive, ruleHoursActive, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes, repeatedDishesCount, usedRecipeIds, dayOfWeek: d.getDay() });
+        // Fin de semana: no aplicar rotación intersemanal ni reglas de carbohidratos de diario, solo rotación simple
+        lunchPool = filterCandidates(lunchPool, 'lunch', i, { rulePaellasLunchActive, ruleInterWeeklyActive: false, ruleCarbsActive: false, ruleHoursActive: false, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes: [], repeatedDishesCount: 0, usedRecipeIds, dayOfWeek: d.getDay() });
+
+        const selectedLunch = selectRecipe(lunchPool, ruleRotationActive ? usedRecipeIds : new Set());
+        if (selectedLunch) {
+          if (ruleRotationActive) usedRecipeIds.add(selectedLunch.id);
+          fdsBlockedRecipeIds.add(selectedLunch.id);
+          addAuditLog(`✅ Almuerzo asignado: [${selectedLunch.name}]`, 'success');
+        } else {
+          addAuditLog(`⚠️ Almuerzo: No se pudo asignar plato`, 'warn');
+        }
+        const rLunch = selectedLunch ? selectedLunch.id : null;
+
+        let rSide = null;
+        if (ruleSaladActive) {
+          const selectedSide = selectRecipe(pools.salad, new Set());
+          rSide = selectedSide ? selectedSide.id : null;
+        }
+
+        // PASO C & D: PLANIFICACIÓN DE NOCHE
+        let dinnerPool = pools.baseRecipes;
+        dinnerPool = filterCandidates(dinnerPool, 'dinner', i, { rulePaellasLunchActive, ruleInterWeeklyActive: false, ruleCarbsActive: false, ruleHoursActive: false, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes: [], repeatedDishesCount: 0, selectedLunchRecipeId: rLunch, usedRecipeIds, dayOfWeek: d.getDay() });
+
+        const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
+        if (selectedDinner) {
+          if (ruleRotationActive) usedRecipeIds.add(selectedDinner.id);
+          fdsBlockedRecipeIds.add(selectedDinner.id);
+          addAuditLog(`✅ Cena asignada: [${selectedDinner.name}]`, 'success');
+        } else {
+          addAuditLog(`⚠️ Cena: No se pudo asignar plato`, 'warn');
+        }
+        const rDinner = selectedDinner ? selectedDinner.id : null;
+
+        weekDataMap[i] = {
+          ...existing,
+          ...config,
+          date: dateStr,
+          breakfast_recipe_id: rBreakfast,
+          lunch_recipe_id: rLunch,
+          lunch_side_recipe_id: rSide,
+          dinner_recipe_id: rDinner,
+          dayNum
+        };
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // FASE 2: Bucle de Días de Diario (Lunes a Viernes [0, 1, 2, 3, 4])
+      // ────────────────────────────────────────────────────────────────
+      addAuditLog(`🚀 Fase 2: Planificando Días de Diario...`, 'info');
+      const weekdayDays = [0, 1, 2, 3, 4];
+      for (const i of weekdayDays) {
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+        
+        let dayNum = d.getDate();
+        const existing = Object.values(PLANNER_DATA).find(p => p.date === dateStr) || {};
+        const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        const dayName = dayNames[i];
+
+        addAuditLog(`📅 Planificando el ${dayName} (${dateStr})...`, 'info');
+
+        // PASO A: CONTROL DE DESAYUNOS
+        let rBreakfast = existing.breakfast_recipe_id || null;
+        if (incluirDesayuno) {
+          const selectedBreakfast = selectRecipe(pools.breakfast, new Set());
+          rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
+        }
+
+        // PASO B: PLANIFICACIÓN DE MEDIODÍA (Almuerzo)
+        let lunchPool = pools.baseRecipes;
+        // Filtrar candidatos y excluir platos bloqueados del fin de semana (Fase 1)
+        lunchPool = filterCandidates(lunchPool, 'lunch', i, { rulePaellasLunchActive, ruleInterWeeklyActive, ruleCarbsActive, ruleHoursActive, ruleRotationActive, sencilloFdsActive: false }, { prevWeekRecipes, repeatedDishesCount, usedRecipeIds, dayOfWeek: d.getDay() });
+        // Filtrar platos del fin de semana para evitar colisión estricta
+        lunchPool = lunchPool.filter(r => !fdsBlockedRecipeIds.has(r.id));
 
         const selectedLunch = selectRecipe(lunchPool, ruleRotationActive ? usedRecipeIds : new Set());
         if (selectedLunch) {
@@ -4280,7 +4350,9 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
         // PASO C & D: PLANIFICACIÓN DE NOCHE
         let dinnerPool = pools.baseRecipes;
-        dinnerPool = filterCandidates(dinnerPool, 'dinner', i, { rulePaellasLunchActive, ruleInterWeeklyActive, ruleCarbsActive, ruleHoursActive, ruleRotationActive, sencilloFdsActive, fdsDificultadMax, fdsElaboracionMax, fdsValoracionMin }, { prevWeekRecipes, repeatedDishesCount, selectedLunchRecipeId: rLunch, usedRecipeIds, dayOfWeek: d.getDay() });
+        dinnerPool = filterCandidates(dinnerPool, 'dinner', i, { rulePaellasLunchActive, ruleInterWeeklyActive, ruleCarbsActive, ruleHoursActive, ruleRotationActive, sencilloFdsActive: false }, { prevWeekRecipes, repeatedDishesCount, selectedLunchRecipeId: rLunch, usedRecipeIds, dayOfWeek: d.getDay() });
+        // Filtrar platos del fin de semana para evitar colisión estricta
+        dinnerPool = dinnerPool.filter(r => !fdsBlockedRecipeIds.has(r.id));
 
         const selectedDinner = selectRecipe(dinnerPool, ruleRotationActive ? usedRecipeIds : new Set());
         if (selectedDinner) {
