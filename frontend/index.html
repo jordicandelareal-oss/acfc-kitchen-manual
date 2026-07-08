@@ -1756,26 +1756,43 @@
       </div>
     </div>
 
-    <!-- Legend -->
-    <div class="flex flex-wrap gap-4 text-xs text-slate-500">
-      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand inline-block"></span>Hoy</div>
-      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-brand-muted border border-brand/30 inline-block"></span>Menú planificado</div>
-      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-white border border-slate-200 inline-block"></span>Sin planificar</div>
-    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-5">
+      <!-- Columna Principal: Cuadrícula Calendario (3/4 de la pantalla en pantallas grandes) -->
+      <div class="xl:col-span-3 space-y-4">
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-4 text-xs text-slate-500">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-brand inline-block"></span>Hoy</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-brand-muted border border-brand/30 inline-block"></span>Menú planificado</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-white border border-slate-200 inline-block"></span>Sin planificar</div>
+        </div>
 
-    <!-- Day headers -->
-    <div class="hidden md:grid grid-cols-7 gap-2">
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Lun</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mar</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mié</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Jue</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Vie</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Sáb</div>
-      <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Dom</div>
-    </div>
-    <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
-    <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
+        <!-- Day headers -->
+        <div class="hidden md:grid grid-cols-7 gap-2">
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Lun</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mar</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Mié</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Jue</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Vie</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Sáb</div>
+          <div class="text-center text-xs font-semibold text-slate-400 uppercase py-1">Dom</div>
+        </div>
+        <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
+        <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
       </div>
+
+      <!-- Columna Lateral Derecha: Consola de Auditoría (1/4 de la pantalla en pantallas grandes) -->
+      <div class="xl:col-span-1 flex flex-col h-full min-h-[400px] bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3 flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest" style="font-family:Outfit">Auditoría de Algoritmo</h4>
+          </div>
+          <button onclick="document.getElementById('live-audit-logs').innerHTML = `<p class='text-[10px] text-slate-500 italic'>Consola vacía. Listo para auditar.</p>`" class="text-[10px] text-slate-400 hover:text-slate-200 underline transition-colors">Limpiar</p>
+        </div>
+        <!-- Contenedor de logs con scroll -->
+        <div id="live-audit-logs" class="flex-grow overflow-y-auto space-y-1.5 font-mono text-[10px] text-slate-400 leading-relaxed pr-1" style="max-height: 520px;">
+          <p class="text-slate-500 italic">Esperando generación automática...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -3916,6 +3933,28 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       return r ? !r.deleted : false;
     };
 
+    // Live UI Logging helper
+    const logContainer = document.getElementById('live-audit-logs');
+    if (logContainer) {
+      logContainer.innerHTML = ''; // Limpiar logs previos
+    }
+    const addAuditLog = (msg, type = 'info') => {
+      if (!logContainer) return;
+      const p = document.createElement('p');
+      if (type === 'error') {
+        p.className = 'text-red-400 font-semibold';
+      } else if (type === 'warn') {
+        p.className = 'text-amber-500 font-semibold';
+      } else if (type === 'success') {
+        p.className = 'text-green-400 font-bold';
+      } else {
+        p.className = 'text-slate-300';
+      }
+      p.textContent = msg;
+      logContainer.appendChild(p);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    };
+
     const ruleCarbsActive = getRuleExists('rule-carbs');
     const ruleHoursActive = getRuleExists('rule-hours');
     const ruleRotationActive = getRuleExists('rule-rotation');
@@ -3935,23 +3974,8 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
     const fdsElaboracionMax = Number(localStorage.getItem('menu_setting_fds_elaboracion') || '45');
     const fdsValoracionMin = Number(localStorage.getItem('menu_setting_fds_valoracion') || '3');
 
-    console.log("⚙️ INICIO GENERACIÓN MENÚ SEMANALES. Configuraciones activas:", {
-      semanasSeleccionadas: weeksToGenerate,
-      ruleCarbsActive,
-      ruleHoursActive,
-      ruleRotationActive,
-      ruleVegActive,
-      ruleSaladActive,
-      incluirDesayuno,
-      priorizarStock,
-      rulePaellasLunchActive,
-      ruleInterWeeklyActive,
-      incluirEspeciales,
-      sencilloFdsActive,
-      fdsDificultadMax,
-      fdsElaboracionMax,
-      fdsValoracionMin
-    });
+    addAuditLog(`⚙️ INICIO GENERACIÓN. Semanas: [${weeksToGenerate.join(', ')}]`, 'info');
+    addAuditLog(`⚙️ Reglas activas: Rotación=${ruleRotationActive}, FDS Sencillo=${sencilloFdsActive}`, 'info');
 
     const getRecipeCategoryName = (r) => {
       if (r.category_id) {
@@ -4006,7 +4030,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat === 'paellas' || cat === 'paella') {
-            console.log(`❌ [${recipe.name}] descartada para el almuerzo/cena del ${dayName} por regla: Sin paella por la noche`);
+            addAuditLog(`❌ [${recipe.name}] descartada para cena del ${dayName}: Sin paella por la noche`, 'error');
             return false;
           }
         }
@@ -4014,7 +4038,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         if (mealType === 'lunch' && rulesState.ruleHoursActive) {
           const cat = getRecipeCategoryName(recipe).toLowerCase();
           if (cat !== 'pastas' && cat !== 'pasta') {
-            console.log(`❌ [${recipe.name}] descartada para almuerzo de diario en ${dayName} por regla: Solo pasta a mediodía`);
+            addAuditLog(`❌ [${recipe.name}] descartada para almuerzo del ${dayName}: Solo pasta a mediodía`, 'error');
             return false;
           }
         }
@@ -4026,7 +4050,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
             if (lunchCat === 'pastas' || lunchCat === 'pasta') {
               const c = getRecipeCategoryName(recipe).toLowerCase();
               if (c === 'pastas' || c === 'pasta') {
-                console.log(`❌ [${recipe.name}] descartada para cena de ${dayName} por regla: No repetir carbohidrato en el mismo día`);
+                addAuditLog(`❌ [${recipe.name}] descartada para cena de ${dayName}: No repetir carbohidrato`, 'error');
                 return false;
               }
             }
@@ -4034,7 +4058,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         }
 
         if (rulesState.ruleRotationActive && context.usedRecipeIds.has(recipe.id)) {
-          console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Rotación (el plato ya se usó esta semana)`);
+          addAuditLog(`❌ [${recipe.name}] descartada para ${dayName}: Rotación (ya usado)`, 'error');
           return false;
         }
 
@@ -4042,7 +4066,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           const matches = context.prevWeekRecipes.filter(prev => prev.id === recipe.id);
           if (matches.length > 0) {
             if (context.repeatedDishesCount >= 2) {
-              console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Límite de repeticiones intersemanales superado`);
+              addAuditLog(`❌ [${recipe.name}] descartada para ${dayName}: Repetición intersemanal excedida`, 'error');
               return false;
             }
             const hasCloseMatch = matches.some(prev => {
@@ -4050,31 +4074,31 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
               return dist < 4;
             });
             if (hasCloseMatch) {
-              console.log(`❌ [${recipe.name}] descartada para ${dayName} por regla: Muy cercana a la asignación de la semana pasada (distancia < 4 días)`);
+              addAuditLog(`❌ [${recipe.name}] descartada para ${dayName}: Distancia corta con la semana pasada`, 'error');
               return false;
             }
           }
         }
         // Regla Menús sencillos fin de semana (Sáb/Dom)
         if (rulesState.sencilloFdsActive && (context.dayOfWeek === 6 || context.dayOfWeek === 0)) {
-          // Dificultad (r.dificultad o default 1 <= max)
+          // Dificultad
           const diffVal = Number(recipe.dificultad || 1);
           if (diffVal > rulesState.fdsDificultadMax) {
-            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su dificultad es [${diffVal}★] y se requiere dificultad máxima [${rulesState.fdsDificultadMax}★]`);
+            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por dificultad: [${diffVal}★] (max requerido: [${rulesState.fdsDificultadMax}★])`, 'error');
             return false;
           }
 
-          // Tiempo de elaboración (tiempo_elaboracion de 1 a 3, default 1 <= max)
+          // Tiempo de elaboración
           const timeVal = Number(recipe.tiempo_elaboracion || 1);
           if (timeVal > rulesState.fdsElaboracionMax) {
-            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su tiempo de elaboración es [${timeVal}★] y se requiere un tiempo de elaboración máximo de [${rulesState.fdsElaboracionMax}★]`);
+            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por tiempo: [${timeVal}★] (max requerido: [${rulesState.fdsElaboracionMax}★])`, 'error');
             return false;
           }
 
-          // Valoración (valoracion de 1 a 3, default 3 >= min)
+          // Valoración
           const valVal = Number(recipe.valoracion || 3);
           if (valVal < rulesState.fdsValoracionMin) {
-            console.log(`❌ [${recipe.name}] descartada para ${dayName} porque su valoración es [${valVal}★] y se requiere valoración mínima [${rulesState.fdsValoracionMin}★]`);
+            addAuditLog(`❌ [${recipe.name}] descartada para ${dayName} por valoración: [${valVal}★] (min requerido: [${rulesState.fdsValoracionMin}★])`, 'error');
             return false;
           }
         }
@@ -4083,7 +4107,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       });
 
       if (candidates.length === 0) {
-        console.warn(`⚠️ ADVERTENCIA: El catálogo se quedó con 0 recetas válidas para el ${dayName} (${mealType}) bajo las reglas actuales. Relajando restricciones intersemanales y carbohidratos...`);
+        addAuditLog(`⚠️ ADVERTENCIA: 0 recetas válidas para ${dayName} (${mealType}). Relajando restricciones...`, 'warn');
         candidates = pool.filter(recipe => {
           if (mealType === 'dinner' && rulesState.rulePaellasLunchActive) {
             const cat = getRecipeCategoryName(recipe).toLowerCase();
@@ -4099,7 +4123,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       }
 
       if (candidates.length === 0) {
-        console.warn(`⚠️ ADVERTENCIA: Aún con relajación, se encontraron 0 recetas para el ${dayName} (${mealType}). Usando pool completo.`);
+        addAuditLog(`⚠️ ADVERTENCIA: 0 recetas disponibles en catálogo tras relajación para ${dayName} (${mealType}). Forzando fallback.`, 'warn');
         candidates = pool;
       }
 
@@ -4215,7 +4239,7 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         const dayName = dayNames[i] || `Día-${i}`;
 
-        console.log(`📅 Iniciando planificación para el ${dayName} (${dateStr}). Total recetas base en catálogo: ${pools.baseRecipes.length}`);
+        addAuditLog(`📅 Planificando el ${dayName} (${dateStr})...`, 'info');
 
         // PASO A: CONTROL DE DESAYUNOS
         let rBreakfast = existing.breakfast_recipe_id || null;
@@ -4234,6 +4258,9 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           if (ruleInterWeeklyActive && prevWeekRecipes.some(prev => prev.id === selectedLunch.id)) {
             repeatedDishesCount++;
           }
+          addAuditLog(`✅ Almuerzo asignado: [${selectedLunch.name}]`, 'success');
+        } else {
+          addAuditLog(`⚠️ Almuerzo: No se pudo asignar plato`, 'warn');
         }
         const rLunch = selectedLunch ? selectedLunch.id : null;
 
@@ -4253,6 +4280,9 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           if (ruleInterWeeklyActive && prevWeekRecipes.some(prev => prev.id === selectedDinner.id)) {
             repeatedDishesCount++;
           }
+          addAuditLog(`✅ Cena asignada: [${selectedDinner.name}]`, 'success');
+        } else {
+          addAuditLog(`⚠️ Cena: No se pudo asignar plato`, 'warn');
         }
         const rDinner = selectedDinner ? selectedDinner.id : null;
 
