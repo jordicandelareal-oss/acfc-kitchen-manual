@@ -1745,6 +1745,11 @@
           <span class="material-symbols-outlined text-[16px]" id="planner-generate-icon">bolt</span> 
           <span id="planner-generate-text">Generar Menú Semanal</span>
         </button>
+        <button id="planner-save-all-btn" onclick="saveAndConfirmMenuUI()" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:shadow-glow-brand hover:-translate-y-0.5 transition-all whitespace-nowrap">
+          <span class="material-symbols-outlined text-[16px] hidden" id="planner-save-all-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+          <span class="material-symbols-outlined text-[16px]" id="planner-save-all-icon">save</span>
+          <span id="planner-save-all-text">💾 Guardar Menú y Descontar Stock</span>
+        </button>
         <button onclick="calculateShoppingList()" class="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-all whitespace-nowrap">
           <span class="material-symbols-outlined text-[16px]">shopping_cart</span>Lista compra
         </button>
@@ -3037,6 +3042,8 @@ function renderCalendar() {
   for (let i = 0; i < offset; i++) html += '<div></div>';
   
   let mHtml = '';
+  let allConfirmed = true;
+  let hasItems = false;
 
   for (let d = 1; d <= 31; d++) {
     const isToday = d === today;
@@ -3059,6 +3066,12 @@ function renderCalendar() {
     }
 
     const hasMenu = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id || menu.breakfast_recipe_id || menu.lunch_side_recipe_id);
+    if (hasMenu) {
+      hasItems = true;
+      if (!menu.confirmado) {
+        allConfirmed = false;
+      }
+    }
     
     html += `
       <div class="cal-day ${isToday ? 'today' : ''} flex flex-col h-full min-h-[120px] relative transition-colors" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropMealInDay(event, '${d}')">
@@ -3118,6 +3131,22 @@ function renderCalendar() {
   }
   grid.innerHTML = html;
   if (mList) mList.innerHTML = mHtml;
+
+  const saveAllBtn = document.getElementById('planner-save-all-btn');
+  const saveAllTxt = document.getElementById('planner-save-all-text');
+  if (saveAllBtn && saveAllTxt) {
+    if (hasItems && allConfirmed) {
+      saveAllBtn.disabled = true;
+      saveAllBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      saveAllBtn.classList.add('bg-slate-300', 'cursor-not-allowed');
+      saveAllTxt.textContent = 'Menú Confirmado (Stock Actualizado)';
+    } else {
+      saveAllBtn.disabled = false;
+      saveAllBtn.classList.remove('bg-slate-300', 'cursor-not-allowed');
+      saveAllBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      saveAllTxt.textContent = '💾 Guardar Menú y Descontar Stock';
+    }
+  }
 }
 
 window.updatePlannerState = function(meal, field, value) {
@@ -3259,6 +3288,72 @@ window.confirmarYDescontarStockUI = async function() {
     if (txt) txt.textContent = 'Confirmar y Descontar Stock';
   } finally {
     if (spinner) spinner.classList.add('hidden');
+  }
+}
+
+window.saveAndConfirmMenuUI = async function() {
+  const days = Object.values(PLANNER_DATA);
+  if (days.length === 0) {
+    toast('⚠️ No hay datos en el planificador para guardar.');
+    return;
+  }
+  
+  const unconfirmedDays = days.filter(d => !d.confirmado);
+  if (unconfirmedDays.length === 0) {
+    toast('ℹ️ Todos los menús en la cuadrícula ya están confirmados.');
+    return;
+  }
+  
+  if (!confirm(`¿Estás seguro de guardar el menú y descontar los ingredientes del stock actual para los ${unconfirmedDays.length} días pendientes?`)) {
+    return;
+  }
+  
+  const btn = document.getElementById('planner-save-all-btn');
+  const spinner = document.getElementById('planner-save-all-spinner');
+  const txt = document.getElementById('planner-save-all-text');
+  
+  try {
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+    if (txt) txt.textContent = 'Procesando...';
+    
+    const payload = days.map(d => ({
+      date: d.date,
+      breakfast_recipe_id: d.breakfast_recipe_id || null,
+      breakfast_players: Number(d.breakfast_players) || 0,
+      lunch_recipe_id: d.lunch_recipe_id || null,
+      lunch_players: Number(d.lunch_players) || 0,
+      dinner_recipe_id: d.dinner_recipe_id || null,
+      dinner_players: Number(d.dinner_players) || 0,
+      lunch_side_recipe_id: d.lunch_side_recipe_id || null
+    }));
+    
+    const { data, error } = await window.guardarYConfirmarMenu(payload);
+    if (error) throw error;
+    
+    toast('✅ Menú guardado en Supabase y stock actualizado correctamente.');
+    
+    if (window.fetchPlannerData) {
+      await window.fetchPlannerData();
+    }
+    if (window.renderCalendar) {
+      window.renderCalendar();
+    }
+    
+    if (window.fetchIngredients && window.renderInventory) {
+      const { data: items } = await window.fetchIngredients();
+      if (items) {
+        window.INVENTORY = items;
+        window.renderInventory(items);
+      }
+    }
+  } catch (err) {
+    console.error('Error al guardar y confirmar menú:', err);
+    toast('❌ Error: ' + (err.message || 'No se pudo guardar el menú'));
+  } finally {
+    if (btn) btn.disabled = false;
+    if (spinner) spinner.classList.add('hidden');
+    if (txt) txt.textContent = '💾 Guardar Menú y Descontar Stock';
   }
 }
 
@@ -4640,35 +4735,10 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
           PLANNER_DATA[day.dayNum] = day;
         }
       });
-
-      const finalUpserts = weekData.map(day => {
-        const copy = { ...day };
-        delete copy.dayNum;
-        return copy;
-      });
-
-      // El identificador único del esquema de base de datos para la fila es la columna 'date'
-      let { error } = await window.upsertPlannerDays(finalUpserts);
-      if (error) {
-        if (error.message && error.message.includes('lunch_side_recipe_id')) {
-          console.warn('⚠️ Column lunch_side_recipe_id not found in Supabase. Retrying without it.');
-          const fallbackUpserts = finalUpserts.map(item => {
-            const copy = { ...item };
-            delete copy.lunch_side_recipe_id;
-            return copy;
-          });
-          const { error: fallbackError } = await window.upsertPlannerDays(fallbackUpserts);
-          if (fallbackError) throw fallbackError;
-        } else {
-          throw error;
-        }
-      }
     }
     
-    // Refetch planner data from Supabase so all generated weeks are reflected
-    await window.fetchMenuPlannerData();
     renderCalendar();
-    toast('✅ Menú semanal autogenerado y guardado con éxito');
+    toast('✅ Menú semanal generado localmente. Presiona "Guardar Menú y Descontar Stock" para guardar.');
   } catch (err) {
     console.error('Error al autogenerar menú semanal:', err);
     toast('❌ Error: ' + err.message);
@@ -5249,6 +5319,7 @@ async function deleteSubcat(cat, sub) {
   window.uploadRecipeImageFile = api.uploadRecipeImageFile;
   window.getRecipePublicUrl = api.getRecipePublicUrl;
   window.confirmarYDescontarStock = api.confirmarYDescontarStock;
+  window.guardarYConfirmarMenu = api.guardarYConfirmarMenu;
 
   // ── INIT ──────────────────────────────────────────────────────────
   async function init() {

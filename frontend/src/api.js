@@ -279,3 +279,7 @@ export const getRecipePublicUrl = (filePath) => {
 export const confirmarYDescontarStock = async (planId) => {
   return supabase.rpc('confirmar_y_descontar_stock', { plan_id: planId });
 };
+
+export const guardarYConfirmarMenu = async (menuDays) => {
+  return supabase.rpc('guardar_y_confirmar_menu', { p_menu_days: menuDays });
+};
