@@ -106,10 +106,26 @@ export function agruparInsumos(meals) {
           supplierObj: hasSupplierObj ? ing.suppliers : null,
           isElCairo: isElCairo,
           ingName: ing.name,
-          tipoCorte: ri.tipo_corte || 'entera'
+          tipoCorte: ri.tipo_corte || 'entera',
+          destinations: []
         };
       }
       needs[key].quantity += totalNeeded;
+
+      const dayNames = {
+        6: 'Lunes',
+        7: 'Martes',
+        8: 'Miércoles',
+        9: 'Jueves',
+        10: 'Viernes',
+        11: 'Sábado',
+        12: 'Domingo'
+      };
+      const dayName = dayNames[meal.day] || `Día ${meal.day}`;
+      const destStr = meal.recipeName ? `${meal.recipeName} (${meal.mealLabel} ${dayName})` : '';
+      if (destStr && !needs[key].destinations.includes(destStr)) {
+        needs[key].destinations.push(destStr);
+      }
     });
   });
   

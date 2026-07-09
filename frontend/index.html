@@ -4708,6 +4708,9 @@ window.calculateShoppingList = async function() {
       }
       
       activeMeals.push({
+        recipeName: recipe.name,
+        mealLabel: meal.label,
+        day: meal.day,
         players: meal.players,
         recipe_ingredients: recipe.recipe_ingredients || []
       });
@@ -4762,17 +4765,36 @@ window.calculateShoppingList = async function() {
         const checkCairoName = (s) => s && s.toLowerCase().includes('cairo');
         const isElCairoSup = sup.id === 'd257d90b-ad0b-4f84-97a0-fee73612953c' || checkCairoName(sup.name);
 
+        // Consolidate identical ingredients (group by name and format)
+        let consolidatedItems = [];
+        const itemMap = {};
+        items.forEach(i => {
+          const key = i.isElCairo ? `${i.ingName || i.name}_${i.tipoCorte || 'entera'}` : i.name;
+          if (!itemMap[key]) {
+            itemMap[key] = {
+              name: i.name,
+              ingName: i.ingName,
+              tipoCorte: i.tipoCorte,
+              quantity: 0,
+              unit: i.unit,
+              isElCairo: i.isElCairo
+            };
+            consolidatedItems.push(itemMap[key]);
+          }
+          itemMap[key].quantity += i.quantity;
+        });
+
         let itemsText = '';
         if (isElCairoSup) {
-          itemsText = items.map(i => {
+          itemsText = consolidatedItems.map(i => {
             const ingName = i.ingName || i.name;
             const corte = i.tipoCorte || 'entera';
             const qty = parseFloat(i.quantity.toFixed(1));
-            const unit = (i.unit || '').toLowerCase();
-            return `${ingName} ${corte} ${qty} ${unit}`;
-          }).join('\n\n');
+            const unit = i.unit || 'Gr';
+            return `${ingName} ${corte}: ${qty} ${unit}`;
+          }).join('\n');
         } else {
-          itemsText = items.map(i => `- ${i.name}: ${i.quantity.toFixed(1)} ${i.unit}`).join('\n');
+          itemsText = consolidatedItems.map(i => `- ${i.name}: ${i.quantity.toFixed(1)} ${i.unit}`).join('\n');
         }
 
         const orderText = `*Pedido Semanal ACFC Kitchen*\n\nHola ${sup.contactName || sup.name}, a continuación te desglosamos las necesidades de insumos para la semana:\n\n` + 
@@ -4806,20 +4828,25 @@ window.calculateShoppingList = async function() {
             </div>
             
             <div class="bg-white rounded-xl border border-slate-100 p-3">
-              <table class="w-full text-xs text-left">
+              <table class="w-full text-xs text-left table-fixed">
                 <thead>
                   <tr class="border-b border-slate-100 text-slate-400 font-bold uppercase">
-                    <th class="pb-1.5 w-2/3">Ingrediente</th>
-                    <th class="pb-1.5 text-right w-1/3">Cantidad</th>
+                    <th class="pb-1.5 w-5/12">Ingrediente</th>
+                    <th class="pb-1.5 w-4/12">Plato/Destino</th>
+                    <th class="pb-1.5 text-right w-3/12">Cantidad</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                  ${items.map(i => `
-                    <tr>
-                      <td class="py-1.5 font-medium text-slate-700">${i.name}</td>
-                      <td class="py-1.5 text-right font-mono font-bold text-slate-600">${i.quantity.toFixed(1)} ${i.unit}</td>
-                    </tr>
-                  `).join('')}
+                  ${items.map(i => {
+                    const destinationsText = i.destinations && i.destinations.length > 0 ? i.destinations.join(', ') : 'Varios';
+                    return `
+                      <tr>
+                        <td class="py-1.5 font-medium text-slate-700 truncate" title="${i.name}">${i.name}</td>
+                        <td class="py-1.5 text-slate-400 italic text-[10px] truncate" title="${destinationsText}">${destinationsText}</td>
+                        <td class="py-1.5 text-right font-mono font-bold text-slate-600">${i.quantity.toFixed(1)} ${i.unit}</td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
