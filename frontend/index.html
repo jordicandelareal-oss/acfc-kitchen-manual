@@ -3993,14 +3993,23 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
 
     // Pools builder based on specials filter
     const getPools = () => {
-      const baseRecipes = incluirEspeciales 
-        ? allRecipes 
-        : allRecipes.filter(r => getRecipeCategoryName(r).toLowerCase() !== 'especiales' && getRecipeCategoryName(r).toLowerCase() !== 'especial');
+      const desayunosCat = (typeof RECIPE_CATEGORIES !== 'undefined' ? RECIPE_CATEGORIES : []).find(c => c.name.toLowerCase() === 'desayunos' || c.name.toLowerCase() === 'desayuno');
+      const desayunosCatId = desayunosCat ? desayunosCat.id : null;
 
-      const breakfast = baseRecipes.filter(r => {
+      const breakfast = allRecipes.filter(r => {
+        if (desayunosCatId && r.category_id === desayunosCatId) return true;
         const cat = getRecipeCategoryName(r).toLowerCase();
         return cat === 'desayunos' || cat === 'desayuno';
       });
+
+      const baseRecipes = (incluirEspeciales 
+        ? allRecipes 
+        : allRecipes.filter(r => getRecipeCategoryName(r).toLowerCase() !== 'especiales' && getRecipeCategoryName(r).toLowerCase() !== 'especial'))
+        .filter(r => {
+          if (desayunosCatId && r.category_id === desayunosCatId) return false;
+          const cat = getRecipeCategoryName(r).toLowerCase();
+          return cat !== 'desayunos' && cat !== 'desayuno';
+        });
 
       const pasta = baseRecipes.filter(r => {
         const cat = getRecipeCategoryName(r).toLowerCase();
@@ -4154,13 +4163,14 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
       return candidates;
     };
     // Selector helper
-    const selectRecipe = (pool, usedSet, isSide = false) => {
+    const selectRecipe = (pool, usedSet, isSide = false, isBreakfast = false) => {
       let available = pool.filter(r => !usedSet.has(r.id));
       if (available.length === 0) {
         if (isSide) return null;
         available = pool;
       }
       if (available.length === 0) {
+        if (isBreakfast) return null;
         available = pools.baseRecipes.filter(r => !usedSet.has(r.id));
         if (available.length === 0) {
           available = pools.baseRecipes;
@@ -4304,7 +4314,12 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         // PASO A: CONTROL DE DESAYUNOS
         let rBreakfast = existing.breakfast_recipe_id || null;
         if (incluirDesayuno) {
-          const selectedBreakfast = selectRecipe(pools.breakfast, new Set());
+          const selectedBreakfast = selectRecipe(pools.breakfast, new Set(), false, true);
+          if (selectedBreakfast) {
+            addAuditLog(`☕ Desayuno asignado: [${selectedBreakfast.name}]`, 'success');
+          } else {
+            addAuditLog(`⚠️ Desayuno: No se pudo asignar plato`, 'warn');
+          }
           rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
         }
 
@@ -4371,7 +4386,12 @@ window.generateWeeklyMenu = async function(weeksToGenerate) {
         // PASO A: CONTROL DE DESAYUNOS
         let rBreakfast = existing.breakfast_recipe_id || null;
         if (incluirDesayuno) {
-          const selectedBreakfast = selectRecipe(pools.breakfast, new Set());
+          const selectedBreakfast = selectRecipe(pools.breakfast, new Set(), false, true);
+          if (selectedBreakfast) {
+            addAuditLog(`☕ Desayuno asignado: [${selectedBreakfast.name}]`, 'success');
+          } else {
+            addAuditLog(`⚠️ Desayuno: No se pudo asignar plato`, 'warn');
+          }
           rBreakfast = selectedBreakfast ? selectedBreakfast.id : null;
         }
 
