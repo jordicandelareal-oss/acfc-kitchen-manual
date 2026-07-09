@@ -852,6 +852,10 @@
     
     <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
       <button onclick="closePlannerDayModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+      <button onclick="confirmarYDescontarStockUI()" id="planner-confirm-stock-btn" class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-all flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px] hidden" id="planner-confirm-stock-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
+        <span id="planner-confirm-stock-text">Confirmar y Descontar Stock</span>
+      </button>
       <button onclick="savePlannerDay()" id="planner-save-btn" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
         <span class="material-symbols-outlined text-[18px] hidden" id="planner-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
         <span id="planner-save-text">Guardar Día</span>
@@ -3158,6 +3162,21 @@ window.openPlannerDayModal = function(d) {
   renderPlannerTarget('lunch');
   renderPlannerTarget('dinner');
   
+  const confirmBtn = document.getElementById('planner-confirm-stock-btn');
+  if (confirmBtn) {
+    if (menu.confirmado) {
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      confirmBtn.classList.add('bg-slate-300', 'cursor-not-allowed');
+      document.getElementById('planner-confirm-stock-text').textContent = 'Menú Confirmado (Stock Actualizado)';
+    } else {
+      confirmBtn.disabled = false;
+      confirmBtn.classList.remove('bg-slate-300', 'cursor-not-allowed');
+      confirmBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      document.getElementById('planner-confirm-stock-text').textContent = 'Confirmar y Descontar Stock';
+    }
+  }
+
   document.getElementById('modal-planner-day').classList.remove('hidden');
   document.getElementById('modal-planner-day').classList.add('flex');
 }
@@ -3165,6 +3184,82 @@ window.openPlannerDayModal = function(d) {
 window.closePlannerDayModal = function() {
   document.getElementById('modal-planner-day').classList.add('hidden');
   document.getElementById('modal-planner-day').classList.remove('flex');
+}
+
+window.confirmarYDescontarStockUI = async function() {
+  const d = _currentPlannerDay;
+  const menu = PLANNER_DATA[d] || {};
+  
+  if (!menu.id) {
+    toast('⚠️ Guarda los cambios de este día antes de confirmar y descontar stock.');
+    return;
+  }
+  
+  if (menu.confirmado) {
+    toast('⚠️ Este menú ya ha sido confirmado.');
+    return;
+  }
+  
+  // Check if there are recipes assigned
+  if (!menu.breakfast_recipe_id && !menu.lunch_recipe_id && !menu.dinner_recipe_id && !menu.lunch_side_recipe_id) {
+    toast('⚠️ No hay recetas planificadas para este día.');
+    return;
+  }
+  
+  if (!confirm('¿Estás seguro de confirmar el menú? Esto descontará los ingredientes del stock actual del almacén.')) {
+    return;
+  }
+  
+  const btn = document.getElementById('planner-confirm-stock-btn');
+  const spinner = document.getElementById('planner-confirm-stock-spinner');
+  const txt = document.getElementById('planner-confirm-stock-text');
+  
+  try {
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+    if (txt) txt.textContent = 'Procesando...';
+    
+    const { data, error } = await window.confirmarYDescontarStock(menu.id);
+    if (error) throw error;
+    
+    toast('✅ Stock actualizado e ingredientes descontados correctamente.');
+    
+    // Update local state
+    menu.confirmado = true;
+    PLANNER_DATA[d] = menu;
+    
+    // Update UI button
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      btn.classList.add('bg-slate-300', 'cursor-not-allowed');
+    }
+    if (txt) txt.textContent = 'Menú Confirmado (Stock Actualizado)';
+    
+    // Refresh calendar & data
+    if (window.fetchPlannerData) {
+      await window.fetchPlannerData();
+    }
+    if (window.renderCalendar) {
+      window.renderCalendar();
+    }
+    
+    // Refresh inventory screen if available
+    if (window.fetchIngredients && window.renderInventory) {
+      const { data: items } = await window.fetchIngredients();
+      if (items) {
+        window.INVENTORY = items;
+        window.renderInventory(items);
+      }
+    }
+  } catch (err) {
+    console.error('Error al confirmar y descontar stock:', err);
+    toast('❌ Error: ' + (err.message || 'No se pudo actualizar el stock'));
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = 'Confirmar y Descontar Stock';
+  } finally {
+    if (spinner) spinner.classList.add('hidden');
+  }
 }
 
 window.renderPlannerTarget = function(target) {
@@ -5153,6 +5248,7 @@ async function deleteSubcat(cat, sub) {
   window.resetPlannerDates = api.resetPlannerDates;
   window.uploadRecipeImageFile = api.uploadRecipeImageFile;
   window.getRecipePublicUrl = api.getRecipePublicUrl;
+  window.confirmarYDescontarStock = api.confirmarYDescontarStock;
 
   // ── INIT ──────────────────────────────────────────────────────────
   async function init() {

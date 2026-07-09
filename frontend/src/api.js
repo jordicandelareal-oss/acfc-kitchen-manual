@@ -275,3 +275,7 @@ export const uploadRecipeImageFile = async (filePath, file, options = {}) => {
 export const getRecipePublicUrl = (filePath) => {
   return supabase.storage.from('recipe-images').getPublicUrl(filePath);
 };
+
+export const confirmarYDescontarStock = async (planId) => {
+  return supabase.rpc('confirmar_y_descontar_stock', { plan_id: planId });
+};
