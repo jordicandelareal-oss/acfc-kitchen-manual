@@ -3540,6 +3540,10 @@ window.saveAndConfirmMenuUI = async function() {
       }
     });
     
+    // Audit recipe ID structure before RPC call
+    const auditIds = payload.map(p => `Plato: ${getRecipeName(p.recipe_id)} -> recipe_id: ${p.recipe_id} (${typeof p.recipe_id})`).join(' | ');
+    addPlannerAuditLog(`[AUDITORÍA IDs] Estructura de recetas enviadas: ${auditIds}`, 'info');
+
     addPlannerAuditLog(`[PAYLOAD] Payload JSON empaquetado para Supabase: ${JSON.stringify(payload).slice(0, 160)}...`, 'info');
     addPlannerAuditLog("[CONEXIÓN] Invocando RPC 'guardar_y_confirmar_menu'...", 'info');
     
@@ -3547,13 +3551,15 @@ window.saveAndConfirmMenuUI = async function() {
     if (error) throw error;
     
     addPlannerAuditLog('[ÉXITO] Menú guardado y procesado. Supabase respondió de forma correcta.', 'success');
-    if (data && typeof data === 'string') {
+    if (data && typeof data === 'string' && data.trim().length > 0) {
       data.split('\n').forEach(line => {
         if (line.trim()) {
           const type = line.includes('[ALERTA') ? 'warn' : (line.includes('[DESCUENTO') ? 'success' : 'info');
           addPlannerAuditLog(line, type);
         }
       });
+    } else {
+      addPlannerAuditLog('[ALERTA FRONTEND] La función de la base de datos se ejecutó, pero devolvió un texto vacío. Esto significa que el bucle interno de ingredientes no procesó ningún insumo.', 'warn');
     }
     toast('✅ Menú guardado en Supabase y stock actualizado correctamente.');
     
