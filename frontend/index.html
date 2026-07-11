@@ -3612,7 +3612,24 @@ window.renderPlannerTarget = function(target) {
   }
 }
 
-window.clearPlannerRecipe = function(target) {
+window.clearPlannerRecipe = async function(target) {
+  // Capture old recipe & players BEFORE clearing, so we can release the reservation
+  const oldRecipeId = _currentPlannerState[`${target}_recipe_id`];
+  const playersKey = target === 'breakfast' ? 'breakfast_players' : `${target}_players`;
+  const oldPlayers = _currentPlannerState[playersKey] || _currentPlannerState.lunch_players || 0;
+
+  // Release the reserved stock in Supabase if a confirmed recipe was there
+  if (oldRecipeId && oldPlayers > 0 && window.liberarStockReservado) {
+    try {
+      await window.liberarStockReservado(oldRecipeId, oldPlayers);
+      if (window.addPlannerAuditLog) {
+        window.addPlannerAuditLog(`[LIBERACIÓN] Stock reservado liberado para la receta ${oldRecipeId} (${oldPlayers} comensales) del turno '${target}'.`, 'info');
+      }
+    } catch(e) {
+      console.error('[clearPlannerRecipe] Error liberando stock reservado:', e);
+    }
+  }
+
   _currentPlannerState[`${target}_recipe_id`] = null;
   renderPlannerTarget(target);
 }
@@ -5681,6 +5698,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
   window.getRecipePublicUrl = api.getRecipePublicUrl;
   window.confirmarYDescontarStock = api.confirmarYDescontarStock;
   window.guardarYConfirmarMenu = api.guardarYConfirmarMenu;
+  window.liberarStockReservado = api.liberarStockReservado;
 
   // ── INIT ──────────────────────────────────────────────────────────
   async function init() {
