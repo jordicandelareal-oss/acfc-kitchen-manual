@@ -5607,8 +5607,24 @@ Object.defineProperty(window, 'PLANNER_DATA', {
         const currentStock = Number(item.stock_actual !== null && item.stock_actual !== undefined ? item.stock_actual : item.current_stock) || 0;
         const minStock = Number(item.stock_minimo !== null && item.stock_minimo !== undefined ? item.stock_minimo : item.min_stock) || 0;
         
+        // Dynamic cost calculation using window.mathUtils for net cost if purchase_price is available
+        const price = Number(item.purchase_price) || 0;
+        const format = Number(item.purchase_format_gr) || 0;
+        const scenario = item.output_scenario || 'KG_LT';
+        const pct = Number(item.waste_percentage) || 0;
+        const processType = item.process_type || 'MERMA';
+
+        let netCost = 0;
+        if (price > 0 && window.mathUtils) {
+          const baseCost = window.mathUtils.calcularCosteBase(price, format || 1000, scenario);
+          netCost = window.mathUtils.calcularCosteNeto(baseCost, pct, processType);
+        }
+
+        const calculatedCost = netCost > 0 ? netCost : Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.precio_por_u || item.precio_por_kg || 0);
+
+        // Supplier name resolution: use UUID supplier relation, fallback to proveedor_principal, or default string
         const suppObj = (typeof SUPPLIERS !== 'undefined' ? SUPPLIERS : []).find(s => s.id === item.supplier_id);
-        const resolvedSupplierName = suppObj ? suppObj.name : (item.supplier_id ? 'Cargando...' : 'Sin proveedor asignado');
+        const resolvedSupplierName = suppObj ? suppObj.name : (item.proveedor_principal || (item.supplier_id ? 'Cargando...' : 'Sin proveedor asignado'));
 
         return {
           id: item.id,
@@ -5620,6 +5636,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
           provider_name: resolvedSupplierName,
           purchase_format_gr: Number(item.purchase_format_gr) || null,
           purchase_price: Number(item.purchase_price) || null,
+          precio_compra: Number(item.purchase_price) || null, // Map key matching Supabase field
           output_scenario: item.output_scenario || 'KG_LT',
           waste_percentage: Number(item.waste_percentage) || 0,
           process_type: item.process_type || 'MERMA',
@@ -5630,7 +5647,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
           stock_maximo: Number(item.stock_maximo !== null && item.stock_maximo !== undefined ? item.stock_maximo : item.max_stock) || 0,
           unit: item.unit || 'ud',
           min: minStock,
-          cost: Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
+          cost: calculatedCost,
           supplier: resolvedSupplierName,
           supplier_id: item.supplier_id || null,
           proveedor_principal: item.proveedor_principal || null,
