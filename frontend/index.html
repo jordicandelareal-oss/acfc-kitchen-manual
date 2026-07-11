@@ -1205,6 +1205,23 @@
       <button onclick="closeShoppingListModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
     </div>
 
+    <!-- Date Range Visual Indicator and Selector -->
+    <div class="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 text-xs">
+      <div class="flex items-center gap-1.5 text-slate-700 font-semibold">
+        <span id="shopping-list-date-range">🛒 Mostrando lista de compras...</span>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap text-slate-600">
+        <div class="flex items-center gap-1">
+          <label for="shopping-start-date" class="font-medium text-slate-400">Inicio:</label>
+          <input type="date" id="shopping-start-date" onchange="calculateShoppingList()" class="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-brand" />
+        </div>
+        <div class="flex items-center gap-1">
+          <label for="shopping-end-date" class="font-medium text-slate-400">Fin:</label>
+          <input type="date" id="shopping-end-date" onchange="calculateShoppingList()" class="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-brand" />
+        </div>
+      </div>
+    </div>
+
     <div id="shopping-list-alerts" class="space-y-2 mb-4 flex-shrink-0 hidden"></div>
 
     <div class="flex-1 overflow-y-auto pr-2 space-y-6" id="shopping-list-content">
@@ -4984,30 +5001,93 @@ window.closeShoppingListModal = function() {
 }
 
 window.calculateShoppingList = async function() {
-  // Calculate ingredients list for currently visible week (6th to 12th July 2026)
-  const days = [6, 7, 8, 9, 10, 11, 12];
+  let startDateVal = document.getElementById('shopping-start-date')?.value;
+  let endDateVal = document.getElementById('shopping-end-date')?.value;
+  
+  if (!startDateVal) {
+    startDateVal = '2026-07-06';
+    if (document.getElementById('shopping-start-date')) {
+      document.getElementById('shopping-start-date').value = startDateVal;
+    }
+  }
+  if (!endDateVal) {
+    endDateVal = '2026-07-12';
+    if (document.getElementById('shopping-end-date')) {
+      document.getElementById('shopping-end-date').value = endDateVal;
+    }
+  }
+
+  // Helper to format pretty date range
+  const formatPrettyDateRange = (startStr, endStr) => {
+    const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const formatDate = (dateStr) => {
+      const parts = dateStr.split('-');
+      const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      const dayName = daysOfWeek[date.getDay()];
+      const dayNum = parts[2].padStart(2, '0');
+      const monthNum = parts[1].padStart(2, '0');
+      return `${dayName} ${dayNum}/${monthNum}`;
+    };
+    return `🛒 Mostrando lista de compras del ${formatDate(startStr)} al ${formatDate(endStr)}`;
+  };
+
+  // Update visual indicator
+  const dateRangeEl = document.getElementById('shopping-list-date-range');
+  if (dateRangeEl) {
+    dateRangeEl.textContent = formatPrettyDateRange(startDateVal, endDateVal);
+  }
+
+  // Display modal immediately with loader
+  const modal = document.getElementById('modal-shopping-list');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  const contentEl = document.getElementById('shopping-list-content');
+  if (contentEl) {
+    contentEl.innerHTML = `
+      <div class="p-10 text-center text-slate-500 text-sm flex flex-col items-center justify-center gap-2">
+        <span class="material-symbols-outlined animate-spin text-brand text-2xl">progress_activity</span>
+        <p>Calculando lista de compras...</p>
+      </div>`;
+  }
+
+  // Fetch plan planner data in date range
+  const { data: menuData, error: dbError } = await window.supabase
+    .from('menu_planner')
+    .select('*')
+    .gte('date', startDateVal)
+    .lte('date', endDateVal);
+
+  if (dbError) {
+    console.error('Error fetching planner data for shopping list:', dbError);
+    if (contentEl) {
+      contentEl.innerHTML = `<p class="text-center text-red-500 py-10">❌ Error al cargar los menús: ${dbError.message}</p>`;
+    }
+    return;
+  }
+
   const allRecipes = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : []);
-  
-  let dietConflicts = []; // List of string alerts
+  let dietConflicts = [];
   const activeMeals = [];
-  
-  days.forEach(day => {
-    const menu = PLANNER_DATA[day];
-    if (!menu) return;
+
+  (menuData || []).forEach(menu => {
+    const parts = menu.date.split('-');
+    const day = parseInt(parts[2]);
     
     const meals = [
-      { id: menu.breakfast_recipe_id, players: 5, label: 'Desayuno', day }, // default pax for breakfast
+      { id: menu.breakfast_recipe_id, players: 5, label: 'Desayuno', day },
       { id: menu.lunch_recipe_id, players: menu.lunch_players || 0, label: 'Almuerzo', day, isHalal: menu.lunch_halal > 0, isKosher: menu.lunch_kosher > 0, isVegan: menu.lunch_vegan > 0, allergies: menu.lunch_allergies },
       { id: menu.dinner_recipe_id, players: menu.dinner_players || 0, label: 'Cena', day, isHalal: menu.dinner_halal > 0, isKosher: menu.dinner_kosher > 0, isVegan: menu.dinner_vegan > 0, allergies: menu.dinner_allergies }
     ];
-    
+
     meals.forEach(meal => {
       if (!meal.id || meal.players <= 0) return;
       
       const recipe = allRecipes.find(r => r.id === meal.id);
       if (!recipe) return;
       
-      // Perform diet constraints check
       const recipeCat = (recipe.category || '').toLowerCase();
       const isVegRecipe = recipeCat.includes('vegetariano') || recipeCat.includes('vegano') || recipeCat.includes('pasta');
       
