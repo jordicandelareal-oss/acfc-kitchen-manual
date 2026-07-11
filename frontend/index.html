@@ -5180,9 +5180,40 @@ window.calculateShoppingList = async function() {
 
   const needs = window.mathUtils ? window.mathUtils.agruparInsumos(activeMeals) : {};
 
+  const processedNeeds = {};
+  if (window.addPlannerAuditLog) {
+    window.addPlannerAuditLog('[INFO] Iniciando evaluación de stock disponible para la lista de compras...', 'info');
+  }
+
+  Object.entries(needs).forEach(([key, item]) => {
+    const ing = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).find(x => x.id === item.ingredientId);
+    const stockActual = ing ? (Number(ing.stock_actual) || 0) : 0;
+    const stockReservado = ing ? (Number(ing.stock_reservado) || 0) : 0;
+    const stockMinimo = ing ? (Number(ing.stock_minimo) || 0) : 0;
+    const balance = stockActual - stockReservado;
+    
+    let qtyToOrder = 0;
+    if (balance < 0) {
+      qtyToOrder = Math.abs(balance) + stockMinimo;
+    } else if (balance < stockMinimo) {
+      qtyToOrder = stockMinimo - balance;
+    }
+    
+    if (window.addPlannerAuditLog) {
+      window.addPlannerAuditLog(`[COMPRAS] Evaluando Ingrediente: ${item.ingName || item.name} | Stock Actual: ${stockActual}g | Reservado Futuro: ${stockReservado}g | Neto Disponible: ${balance}g ➔ Añadiendo ${qtyToOrder}g a la orden del proveedor.`, qtyToOrder > 0 ? 'success' : 'info');
+    }
+
+    if (qtyToOrder > 0) {
+      processedNeeds[key] = {
+        ...item,
+        quantity: qtyToOrder
+      };
+    }
+  });
+
   // Group needs by Supplier ID
   let groupedBySupplier = {}; // { supplierId: { name, phone, email, contactName, items: [] } }
-  Object.values(needs).forEach(item => {
+  Object.values(processedNeeds).forEach(item => {
     const sId = item.supplierId;
     if (!groupedBySupplier[sId]) {
       groupedBySupplier[sId] = {

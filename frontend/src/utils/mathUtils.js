@@ -99,6 +99,7 @@ export function agruparInsumos(meals) {
       if (!needs[key]) {
         needs[key] = {
           name: displayName,
+          ingredientId: ingId,
           quantity: 0,
           unit: ri.unit || 'Gr',
           supplierId: supplierId,
