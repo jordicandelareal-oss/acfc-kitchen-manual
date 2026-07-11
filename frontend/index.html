@@ -5189,18 +5189,14 @@ window.calculateShoppingList = async function() {
     const ing = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).find(x => x.id === item.ingredientId);
     const stockActual = ing ? (Number(ing.stock_actual) || 0) : 0;
     const stockReservado = ing ? (Number(ing.stock_reservado) || 0) : 0;
-    const stockMinimo = ing ? (Number(ing.stock_minimo) || 0) : 0;
-    const balance = stockActual - stockReservado;
-    
-    let qtyToOrder = 0;
-    if (balance < 0) {
-      qtyToOrder = Math.abs(balance) + stockMinimo;
-    } else if (balance < stockMinimo) {
-      qtyToOrder = stockMinimo - balance;
-    }
+
+    // Fórmula correcta: cuánto me falta para cubrir lo reservado
+    // Si stock_actual >= stock_reservado → ya tenemos suficiente → pedir 0
+    // Si stock_actual <  stock_reservado → nos faltan (reservado - actual) gramos
+    const qtyToOrder = Math.max(0, stockReservado - stockActual);
     
     if (window.addPlannerAuditLog) {
-      window.addPlannerAuditLog(`[COMPRAS] Evaluando Ingrediente: ${item.ingName || item.name} | Stock Actual: ${stockActual}g | Reservado Futuro: ${stockReservado}g | Neto Disponible: ${balance}g ➔ Añadiendo ${qtyToOrder}g a la orden del proveedor.`, qtyToOrder > 0 ? 'success' : 'info');
+      window.addPlannerAuditLog(`[COMPRAS] Evaluando Ingrediente: ${item.ingName || item.name} | Stock Actual: ${stockActual}g | Reservado Futuro: ${stockReservado}g | Neto Disponible: ${stockActual - stockReservado}g ➔ Añadiendo ${qtyToOrder}g a la orden del proveedor.`, qtyToOrder > 0 ? 'success' : 'info');
     }
 
     if (qtyToOrder > 0) {
