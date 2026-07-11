@@ -3547,6 +3547,14 @@ window.saveAndConfirmMenuUI = async function() {
     if (error) throw error;
     
     addPlannerAuditLog('[ÉXITO] Menú guardado y procesado. Supabase respondió de forma correcta.', 'success');
+    if (data && typeof data === 'string') {
+      data.split('\n').forEach(line => {
+        if (line.trim()) {
+          const type = line.includes('[ALERTA') ? 'warn' : (line.includes('[DESCUENTO') ? 'success' : 'info');
+          addPlannerAuditLog(line, type);
+        }
+      });
+    }
     toast('✅ Menú guardado en Supabase y stock actualizado correctamente.');
     
     // Clear local state and force reload
