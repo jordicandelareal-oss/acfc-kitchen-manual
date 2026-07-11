@@ -1,4 +1,5 @@
 -- MIGRATION 011: Create guardar_y_confirmar_menu RPC function
+DROP FUNCTION IF EXISTS guardar_y_confirmar_menu(jsonb);
 CREATE OR REPLACE FUNCTION guardar_y_confirmar_menu(p_menu_days JSONB)
 RETURNS TEXT AS $$
 DECLARE
@@ -9,10 +10,10 @@ DECLARE
     v_meal_type TEXT;
     v_plan_id UUID;
     v_confirmado BOOLEAN;
-    v_rec record;
-    v_confirmed_dates DATE[] := '{}';
+    v_ing record;
     v_log TEXT := '';
     v_ing_count INTEGER;
+    v_total_gasto NUMERIC;
 BEGIN
     v_log := v_log || '[INFO] Iniciando procesamiento en Supabase...' || CHR(10);
     
@@ -36,14 +37,8 @@ BEGIN
         SELECT id, confirmado INTO v_plan_id, v_confirmado 
         FROM menu_planner 
         WHERE date = v_date;
-        
-        -- 2. If it was confirmed BEFORE this function call, we skip to avoid double discounting
-        IF v_confirmado IS TRUE AND NOT (v_date = ANY(v_confirmed_dates)) THEN
-            v_log := v_log || '[INFO] Día ya confirmado anteriormente. Saltando descuento de stock para evitar duplicación.' || CHR(10);
-            CONTINUE;
-        END IF;
 
-        -- 3. Update or Insert the menu_planner day record
+        -- 2. Update or Insert the menu_planner day record
         IF v_plan_id IS NOT NULL THEN
             v_log := v_log || '[SQL] Actualizando día existente ' || v_plan_id || CHR(10);
             IF v_meal_type = 'breakfast' THEN
@@ -72,41 +67,40 @@ BEGIN
             END IF;
         END IF;
 
-        -- 4. Discount stock for the ingredients of this recipe using real column names
+        -- 3. Discount stock for the ingredients of this recipe (fuerza descuento siempre)
         v_ing_count := 0;
         IF v_comensales > 0 THEN
-            FOR v_rec IN (
-                SELECT ri.ingredient_id, ri.quantity_per_portion
-                FROM recipe_ingredients ri
-                WHERE ri.recipe_id = v_recipe_id
-            ) LOOP
+            FOR v_ing IN 
+                SELECT ingredient_id, quantity_per_portion 
+                FROM public.recipe_ingredients
+                WHERE recipe_id = v_recipe_id
+            LOOP
                 v_ing_count := v_ing_count + 1;
                 
-                -- Deduct from stock_actual (verified database column)
-                UPDATE ingredients 
-                SET 
-                    stock_actual = COALESCE(stock_actual, 0.0000) - (v_rec.quantity_per_portion * v_comensales),
+                -- Calcular gasto
+                v_total_gasto := (v_ing.quantity_per_portion * v_comensales);
+
+                -- Descontar del stock real apuntando a stock_actual
+                UPDATE public.ingredients
+                SET stock_actual = stock_actual - v_total_gasto,
                     updated_at = NOW()
-                WHERE id = v_rec.ingredient_id;
+                WHERE id = v_ing.ingredient_id;
                 
-                v_log := v_log || '[DESCUENTO REAL] Ingrediente ID: ' || v_rec.ingredient_id || ' | Restados: ' || (v_rec.quantity_per_portion * v_comensales) || ' grs.' || CHR(10);
+                -- Concatenar log para la Consola Visual
+                v_log := v_log || '[DESCUENTO REAL] Ingrediente ID: ' || v_ing.ingredient_id || ' | Restados: ' || v_total_gasto || ' grs.' || CHR(10);
             END LOOP;
         END IF;
 
         IF v_ing_count = 0 THEN
-            v_log := v_log || '[ALERTA SQL] La consulta de ingredientes no devolvió filas para la receta ' || v_recipe_id || '. Revisa si el id de la receta tiene insumos asignados en recipe_ingredients o si las columnas coinciden.' || CHR(10);
+            v_log := v_log || '[ALERTA SQL] No se encontraron filas para la receta ID: ' || v_recipe_id || CHR(10);
         END IF;
 
-        -- 5. Mark this day as confirmed and add it to our list of confirmed dates in this transaction
+        -- 4. Mark this day as confirmed
         UPDATE menu_planner 
         SET 
             confirmado = true,
             updated_at = NOW()
         WHERE id = v_plan_id;
-
-        IF NOT (v_date = ANY(v_confirmed_dates)) THEN
-            v_confirmed_dates := array_append(v_confirmed_dates, v_date);
-        END IF;
         
     END LOOP;
     
