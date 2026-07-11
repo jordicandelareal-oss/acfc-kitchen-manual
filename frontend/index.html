@@ -3317,22 +3317,49 @@ window.saveAndConfirmMenuUI = async function() {
     if (spinner) spinner.classList.remove('hidden');
     if (txt) txt.textContent = 'Procesando...';
     
-    const payload = days.map(d => ({
-      date: d.date,
-      breakfast_recipe_id: d.breakfast_recipe_id || null,
-      breakfast_players: Number(d.breakfast_players) || 0,
-      lunch_recipe_id: d.lunch_recipe_id || null,
-      lunch_players: Number(d.lunch_players) || 0,
-      dinner_recipe_id: d.dinner_recipe_id || null,
-      dinner_players: Number(d.dinner_players) || 0,
-      lunch_side_recipe_id: d.lunch_side_recipe_id || null
-    }));
+    const payload = [];
+    unconfirmedDays.forEach(d => {
+      if (d.breakfast_recipe_id) {
+        payload.push({
+          recipe_id: d.breakfast_recipe_id,
+          num_players: Number(d.breakfast_players) || 0,
+          date: d.date,
+          meal_type: 'breakfast'
+        });
+      }
+      if (d.lunch_recipe_id) {
+        payload.push({
+          recipe_id: d.lunch_recipe_id,
+          num_players: Number(d.lunch_players) || 0,
+          date: d.date,
+          meal_type: 'lunch'
+        });
+      }
+      if (d.dinner_recipe_id) {
+        payload.push({
+          recipe_id: d.dinner_recipe_id,
+          num_players: Number(d.dinner_players) || 0,
+          date: d.date,
+          meal_type: 'dinner'
+        });
+      }
+      if (d.lunch_side_recipe_id) {
+        payload.push({
+          recipe_id: d.lunch_side_recipe_id,
+          num_players: Number(d.lunch_players) || 0,
+          date: d.date,
+          meal_type: 'lunch_side'
+        });
+      }
+    });
     
     const { data, error } = await window.guardarYConfirmarMenu(payload);
     if (error) throw error;
     
     toast('✅ Menú guardado en Supabase y stock actualizado correctamente.');
     
+    // Clear local state and force reload
+    PLANNER_DATA = {};
     if (window.fetchPlannerData) {
       await window.fetchPlannerData();
     }
