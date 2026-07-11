@@ -2545,9 +2545,6 @@ window.saveAllInventoryChanges = async function() {
         stock_actual: fields.stock_actual,
         stock_minimo: fields.stock_minimo,
         stock_maximo: fields.stock_maximo,
-        current_stock: fields.stock_actual,
-        min_stock: fields.stock_minimo,
-        max_stock: fields.stock_maximo,
         updated_at: new Date().toISOString()
       };
       return window.updateIngredient(id, payload);

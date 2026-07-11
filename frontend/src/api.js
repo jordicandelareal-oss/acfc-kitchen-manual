@@ -81,11 +81,9 @@ export const updateIngredientPrice = async (id, fields) => {
     if (fields.precio_mas_bajo  != null) patch.precio_mas_bajo  = parseFloat(fields.precio_mas_bajo);
     if (fields.proveedor_principal != null) patch.proveedor_principal = fields.proveedor_principal;
     if (fields.stock_actual     != null) patch.stock_actual     = parseFloat(fields.stock_actual);
-    if (fields.current_stock    != null) patch.current_stock    = parseFloat(fields.current_stock);
-    if (fields.stock            != null) {
-      patch.stock_actual = parseFloat(fields.stock);
-      patch.current_stock = parseFloat(fields.stock);
-    }
+    if (fields.stock_minimo     != null) patch.stock_minimo     = parseFloat(fields.stock_minimo);
+    if (fields.stock_maximo     != null) patch.stock_maximo     = parseFloat(fields.stock_maximo);
+    if (fields.stock            != null) patch.stock_actual     = parseFloat(fields.stock);
 
     const { error } = await supabase.from('ingredients').update(patch).eq('id', id);
     if (error) throw error;

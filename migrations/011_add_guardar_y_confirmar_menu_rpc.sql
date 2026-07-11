@@ -121,7 +121,6 @@ BEGIN
             -- Update the ingredients stock
             UPDATE ingredients 
             SET 
-                current_stock = current_stock - (v_rec.quantity_per_portion * v_rec.servings),
                 stock_actual = COALESCE(stock_actual, 0.0000) - (v_rec.quantity_per_portion * v_rec.servings),
                 updated_at = NOW()
             WHERE id = v_rec.ingredient_id;
