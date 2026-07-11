@@ -3613,17 +3613,48 @@ window.renderPlannerTarget = function(target) {
 }
 
 window.clearPlannerRecipe = async function(target) {
-  // Capture old recipe & players BEFORE clearing, so we can release the reservation
+  // Capture old recipe & players BEFORE clearing
   const oldRecipeId = _currentPlannerState[`${target}_recipe_id`];
   const playersKey = target === 'breakfast' ? 'breakfast_players' : `${target}_players`;
   const oldPlayers = _currentPlannerState[playersKey] || _currentPlannerState.lunch_players || 0;
 
-  // Release the reserved stock in Supabase if a confirmed recipe was there
-  if (oldRecipeId && oldPlayers > 0 && window.liberarStockReservado) {
+  // Release reserved stock directly via Supabase JS — no RPC function needed
+  if (oldRecipeId && oldPlayers > 0 && window.supabase) {
     try {
-      await window.liberarStockReservado(oldRecipeId, oldPlayers);
-      if (window.addPlannerAuditLog) {
-        window.addPlannerAuditLog(`[LIBERACIÓN] Stock reservado liberado para la receta ${oldRecipeId} (${oldPlayers} comensales) del turno '${target}'.`, 'info');
+      // 1. Fetch the ingredients of this recipe and their portion quantities
+      const { data: recipeIngs, error: fetchErr } = await window.supabase
+        .from('recipe_ingredients')
+        .select('ingredient_id, quantity_per_portion')
+        .eq('recipe_id', oldRecipeId);
+
+      if (fetchErr) throw fetchErr;
+
+      // 2. For each ingredient, subtract the committed amount from stock_reservado
+      for (const ri of (recipeIngs || [])) {
+        const totalToRelease = (ri.quantity_per_portion || 0) * oldPlayers;
+        if (totalToRelease <= 0) continue;
+
+        // Fetch current stock_reservado to ensure we don't go below 0
+        const { data: ing } = await window.supabase
+          .from('ingredients')
+          .select('stock_reservado')
+          .eq('id', ri.ingredient_id)
+          .single();
+
+        const currentReserved = Number(ing?.stock_reservado) || 0;
+        const newReserved = Math.max(0, currentReserved - totalToRelease);
+
+        await window.supabase
+          .from('ingredients')
+          .update({ stock_reservado: newReserved, updated_at: new Date().toISOString() })
+          .eq('id', ri.ingredient_id);
+
+        if (window.addPlannerAuditLog) {
+          window.addPlannerAuditLog(
+            `[LIBERACION] Ingrediente ${ri.ingredient_id} | Reservado anterior: ${currentReserved}g | Liberado: ${totalToRelease}g | Nuevo reservado: ${newReserved}g`,
+            'info'
+          );
+        }
       }
     } catch(e) {
       console.error('[clearPlannerRecipe] Error liberando stock reservado:', e);
