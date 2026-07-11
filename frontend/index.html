@@ -3487,12 +3487,8 @@ window.saveAndConfirmMenuUI = async function() {
       window.renderCalendar();
     }
     
-    if (window.fetchIngredients && window.renderInventory) {
-      const { data: items } = await window.fetchIngredients();
-      if (items) {
-        window.INVENTORY = items;
-        window.renderInventory(items);
-      }
+    if (window.loadSupabaseInventory) {
+      await window.loadSupabaseInventory();
     }
   } catch (err) {
     console.error('Error al guardar y confirmar menú:', err);
@@ -6432,6 +6428,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
   };
 
   // Expose functions globally
+  window.loadSupabaseInventory = loadSupabaseInventory;
   window.loadSupabaseRecipes = loadSupabaseRecipes;
   window.filterRecipes = filterRecipes;
   window.openNewRecipeModal = openNewRecipeModal;
