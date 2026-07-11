@@ -5127,7 +5127,6 @@ window.calculateShoppingList = async function() {
     }
   }
 
-  const contentEl = document.getElementById('shopping-list-content');
   if (contentEl) {
     const suppliersList = Object.values(groupedBySupplier);
     if (suppliersList.length === 0) {
@@ -5232,7 +5231,6 @@ window.calculateShoppingList = async function() {
   }
 
   // Display modal
-  const modal = document.getElementById('modal-shopping-list');
   if (modal) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -5490,6 +5488,46 @@ async function deleteSubcat(cat, sub) {
   renderSubcatPanel(cat);
   populateInventoryFilters();
 }
+
+// Expose functions and create getters/setters for variables to bridge between script blocks in Vite bundle
+window.initDashboard = initDashboard;
+window.renderInventory = renderInventory;
+window.renderRecipes = renderRecipes;
+window.fetchPlannerData = fetchPlannerData;
+window.renderCalendar = renderCalendar;
+window.fetchAndRenderSuppliers = fetchAndRenderSuppliers;
+window.showScreen = showScreen;
+
+Object.defineProperty(window, 'INVENTORY', {
+  get() { return INVENTORY; },
+  set(val) { INVENTORY = val; },
+  configurable: true
+});
+Object.defineProperty(window, 'RECIPES', {
+  get() { return RECIPES; },
+  set(val) { RECIPES = val; },
+  configurable: true
+});
+Object.defineProperty(window, 'ALL_RECIPES', {
+  get() { return ALL_RECIPES; },
+  set(val) { ALL_RECIPES = val; },
+  configurable: true
+});
+Object.defineProperty(window, 'RECIPE_CATEGORIES', {
+  get() { return RECIPE_CATEGORIES; },
+  set(val) { RECIPE_CATEGORIES = val; },
+  configurable: true
+});
+Object.defineProperty(window, 'SUPPLIERS', {
+  get() { return SUPPLIERS; },
+  set(val) { SUPPLIERS = val; },
+  configurable: true
+});
+Object.defineProperty(window, 'PLANNER_DATA', {
+  get() { return PLANNER_DATA; },
+  set(val) { PLANNER_DATA = val; },
+  configurable: true
+});
 </script>
 
 <script type="module">
