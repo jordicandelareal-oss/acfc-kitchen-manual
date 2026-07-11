@@ -1807,6 +1807,25 @@
       </div>
       <div class="hidden md:grid grid-cols-7 gap-2" id="cal-grid"></div>
       <div class="md:hidden flex flex-col gap-3 mt-4" id="cal-list-mobile"></div>
+
+      <!-- Panel de Control y Diagnóstico en Vivo -->
+      <div class="mt-6 border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-xl">
+        <div class="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-slate-850">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-widest font-sans">🛠️ Panel de Control y Diagnóstico en Vivo</h4>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('live-audit-logs').innerHTML = `<p class='text-slate-500 italic text-[11px]'>[INFO] Consola vacía. Listo para auditar.</p>`" class="text-[10px] text-slate-400 hover:text-slate-200 underline transition-colors">Limpiar Logs</button>
+            <button onclick="toggleDiagnosticsConsole()" id="btn-toggle-diagnostics" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-[10px] font-semibold transition-colors">Ocultar Diagnóstico</button>
+          </div>
+        </div>
+        <div id="diagnostics-console-body" class="p-3 transition-all duration-300">
+          <div id="live-audit-logs" class="max-h-[150px] overflow-y-auto font-mono text-[11px] text-green-400 space-y-1 pr-2 leading-relaxed">
+            <p class="text-slate-500 italic">[INFO] Consola iniciada. Esperando eventos de planificación y stock...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3411,6 +3430,42 @@ window.confirmarYDescontarStockUI = async function() {
   }
 }
 
+function addPlannerAuditLog(msg, type = 'info') {
+  const el = document.getElementById('live-audit-logs');
+  if (el) {
+    if (el.innerHTML.includes('Esperando eventos') || el.innerHTML.includes('Consola vacía')) {
+      el.innerHTML = '';
+    }
+    const p = document.createElement('p');
+    if (type === 'error') p.className = 'text-red-400 font-semibold';
+    else if (type === 'warn') p.className = 'text-amber-500 font-semibold';
+    else if (type === 'success') p.className = 'text-green-400 font-bold';
+    else p.className = 'text-slate-300';
+    
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    p.innerHTML = `<span class="text-slate-500">[${timeStr}]</span> ${msg}`;
+    el.appendChild(p);
+    el.scrollTop = el.scrollHeight;
+  }
+}
+window.addPlannerAuditLog = addPlannerAuditLog;
+
+function toggleDiagnosticsConsole() {
+  const body = document.getElementById('diagnostics-console-body');
+  const btn = document.getElementById('btn-toggle-diagnostics');
+  if (body && btn) {
+    if (body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      btn.textContent = 'Ocultar Diagnóstico';
+    } else {
+      body.classList.add('hidden');
+      btn.textContent = 'Mostrar Diagnóstico';
+    }
+  }
+}
+window.toggleDiagnosticsConsole = toggleDiagnosticsConsole;
+
 window.saveAndConfirmMenuUI = async function() {
   const days = Object.values(PLANNER_DATA);
   if (days.length === 0) {
@@ -3437,9 +3492,12 @@ window.saveAndConfirmMenuUI = async function() {
     if (spinner) spinner.classList.remove('hidden');
     if (txt) txt.textContent = 'Procesando...';
     
+    addPlannerAuditLog('[INFO] Iniciando confirmación de menú...', 'info');
+    
     const payload = [];
     unconfirmedDays.forEach(d => {
       if (d.breakfast_recipe_id) {
+        addPlannerAuditLog(`[PROCESANDO] Plato detectado (Desayuno): Receta ID: ${d.breakfast_recipe_id} | Comensales: ${d.breakfast_players || 0}`, 'info');
         payload.push({
           recipe_id: d.breakfast_recipe_id,
           num_players: Number(d.breakfast_players) || 0,
@@ -3448,6 +3506,7 @@ window.saveAndConfirmMenuUI = async function() {
         });
       }
       if (d.lunch_recipe_id) {
+        addPlannerAuditLog(`[PROCESANDO] Plato detectado (Almuerzo): Receta ID: ${d.lunch_recipe_id} | Comensales: ${d.lunch_players || 0}`, 'info');
         payload.push({
           recipe_id: d.lunch_recipe_id,
           num_players: Number(d.lunch_players) || 0,
@@ -3456,6 +3515,7 @@ window.saveAndConfirmMenuUI = async function() {
         });
       }
       if (d.dinner_recipe_id) {
+        addPlannerAuditLog(`[PROCESANDO] Plato detectado (Cena): Receta ID: ${d.dinner_recipe_id} | Comensales: ${d.dinner_players || 0}`, 'info');
         payload.push({
           recipe_id: d.dinner_recipe_id,
           num_players: Number(d.dinner_players) || 0,
@@ -3464,6 +3524,7 @@ window.saveAndConfirmMenuUI = async function() {
         });
       }
       if (d.lunch_side_recipe_id) {
+        addPlannerAuditLog(`[PROCESANDO] Plato detectado (Acompañamiento): Receta ID: ${d.lunch_side_recipe_id} | Comensales: ${d.lunch_players || 0}`, 'info');
         payload.push({
           recipe_id: d.lunch_side_recipe_id,
           num_players: Number(d.lunch_players) || 0,
@@ -3473,9 +3534,13 @@ window.saveAndConfirmMenuUI = async function() {
       }
     });
     
+    addPlannerAuditLog(`[PAYLOAD] Payload JSON empaquetado para Supabase: ${JSON.stringify(payload).slice(0, 160)}...`, 'info');
+    addPlannerAuditLog("[CONEXIÓN] Invocando RPC 'guardar_y_confirmar_menu'...", 'info');
+    
     const { data, error } = await window.guardarYConfirmarMenu(payload);
     if (error) throw error;
     
+    addPlannerAuditLog('[ÉXITO] Menú guardado y procesado. Supabase respondió de forma correcta.', 'success');
     toast('✅ Menú guardado en Supabase y stock actualizado correctamente.');
     
     // Clear local state and force reload
@@ -3491,6 +3556,7 @@ window.saveAndConfirmMenuUI = async function() {
       await window.loadSupabaseInventory();
     }
   } catch (err) {
+    addPlannerAuditLog(`[ERROR] Fallo en el descuento: ${err.message || err}`, 'error');
     console.error('Error al guardar y confirmar menú:', err);
     toast('❌ Error: ' + (err.message || 'No se pudo guardar el menú'));
   } finally {
