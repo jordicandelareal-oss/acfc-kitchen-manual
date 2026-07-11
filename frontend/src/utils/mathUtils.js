@@ -58,6 +58,8 @@ export function calcularCostePlato(recipeIngredients) {
 /**
  * Agrupa insumos requeridos en la lista de la compra optimizando el algoritmo de Carnicería El Cairo.
  * Utiliza un mapa indexado de complejidad O(n) para evitar agrupaciones costosas de forma óptima.
+ * Cada entrada incluye un array 'mealBreakdown' con el detalle por plato para simular
+ * el consumo secuencial de stock (Simulación de Despensa).
  * @param {Array} meals Lista de comidas del planificador.
  * @returns {Object} Mapa de necesidades agrupadas.
  */
@@ -96,6 +98,18 @@ export function agruparInsumos(meals) {
         ? `${ing.name} ${ri.tipo_corte || 'entera'}`
         : (ing.name || 'Sin nombre');
         
+      const dayNames = {
+        6: 'Lunes',
+        7: 'Martes',
+        8: 'Miércoles',
+        9: 'Jueves',
+        10: 'Viernes',
+        11: 'Sábado',
+        12: 'Domingo'
+      };
+      const dayName = dayNames[meal.day] || `Día ${meal.day}`;
+      const destStr = meal.recipeName ? `${meal.recipeName} (${meal.mealLabel} ${dayName})` : '';
+
       if (!needs[key]) {
         needs[key] = {
           name: displayName,
@@ -108,22 +122,15 @@ export function agruparInsumos(meals) {
           isElCairo: isElCairo,
           ingName: ing.name,
           tipoCorte: ri.tipo_corte || 'entera',
-          destinations: []
+          destinations: [],
+          // Per-dish breakdown for sequential stock simulation
+          mealBreakdown: []
         };
       }
       needs[key].quantity += totalNeeded;
+      // Store per-dish detail: label + raw needed quantity (before stock offset)
+      needs[key].mealBreakdown.push({ label: destStr || meal.mealLabel, needed: totalNeeded });
 
-      const dayNames = {
-        6: 'Lunes',
-        7: 'Martes',
-        8: 'Miércoles',
-        9: 'Jueves',
-        10: 'Viernes',
-        11: 'Sábado',
-        12: 'Domingo'
-      };
-      const dayName = dayNames[meal.day] || `Día ${meal.day}`;
-      const destStr = meal.recipeName ? `${meal.recipeName} (${meal.mealLabel} ${dayName})` : '';
       if (destStr && !needs[key].destinations.includes(destStr)) {
         needs[key].destinations.push(destStr);
       }

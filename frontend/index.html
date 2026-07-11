@@ -5229,28 +5229,49 @@ window.calculateShoppingList = async function() {
   const needs = window.mathUtils ? window.mathUtils.agruparInsumos(activeMeals) : {};
 
   const processedNeeds = {};
+  // Track running stock_disponible per ingredientId across all meal entries (shared pantry simulation)
+  const pantryStock = {}; // ingredientId → remaining physical stock (decremented chronologically)
+
   if (window.addPlannerAuditLog) {
-    window.addPlannerAuditLog('[INFO] Iniciando evaluación de stock disponible para la lista de compras...', 'info');
+    window.addPlannerAuditLog('[INFO] Iniciando simulación de despensa secuencial para la lista de compras...', 'info');
   }
 
   Object.entries(needs).forEach(([key, item]) => {
     const ing = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).find(x => x.id === item.ingredientId);
     const stockActual = ing ? (Number(ing.stock_actual) || 0) : 0;
-    const stockReservado = ing ? (Number(ing.stock_reservado) || 0) : 0;
 
-    // Fórmula correcta: cuánto me falta para cubrir lo reservado
-    // Si stock_actual >= stock_reservado → ya tenemos suficiente → pedir 0
-    // Si stock_actual <  stock_reservado → nos faltan (reservado - actual) gramos
-    const qtyToOrder = Math.max(0, stockReservado - stockActual);
-    
-    if (window.addPlannerAuditLog) {
-      window.addPlannerAuditLog(`[COMPRAS] Evaluando Ingrediente: ${item.ingName || item.name} | Stock Actual: ${stockActual}g | Reservado Futuro: ${stockReservado}g | Neto Disponible: ${stockActual - stockReservado}g ➔ Añadiendo ${qtyToOrder}g a la orden del proveedor.`, qtyToOrder > 0 ? 'success' : 'info');
+    // Initialize pantry stock for this ingredient only once (first time we encounter it)
+    if (pantryStock[item.ingredientId] === undefined) {
+      pantryStock[item.ingredientId] = stockActual;
     }
 
-    if (qtyToOrder > 0) {
+    // Apply sequential pantry simulation across each dish's portion
+    const simulatedBreakdown = (item.mealBreakdown || [{ label: item.destinations[0] || '', needed: item.quantity }]).map(dish => {
+      const needed = dish.needed;
+      const available = pantryStock[item.ingredientId];
+      const absorbedFromStock = Math.min(needed, available);
+      const toPurchase = Math.max(0, needed - absorbedFromStock);
+      // Consume from running pantry
+      pantryStock[item.ingredientId] = Math.max(0, available - absorbedFromStock);
+      return { label: dish.label, needed, absorbedFromStock, toPurchase };
+    });
+
+    const totalToPurchase = simulatedBreakdown.reduce((s, d) => s + d.toPurchase, 0);
+
+    if (window.addPlannerAuditLog) {
+      window.addPlannerAuditLog(`[COMPRAS] ${item.ingName || item.name} | Stock Fisico: ${stockActual}g | Total a pedir: ${totalToPurchase.toFixed(1)}g`, totalToPurchase > 0 ? 'success' : 'info');
+      simulatedBreakdown.forEach(d => {
+        if (d.needed > 0) {
+          window.addPlannerAuditLog(`  ↳ [${d.label}] Necesita: ${d.needed}g | Del almacen: ${d.absorbedFromStock}g | A comprar: ${d.toPurchase}g`, d.toPurchase > 0 ? 'success' : 'info');
+        }
+      });
+    }
+
+    if (totalToPurchase > 0) {
       processedNeeds[key] = {
         ...item,
-        quantity: qtyToOrder
+        quantity: totalToPurchase,
+        simulatedBreakdown
       };
     }
   });
