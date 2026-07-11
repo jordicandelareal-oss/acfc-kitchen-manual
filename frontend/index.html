@@ -1489,6 +1489,10 @@
         <h3 class="font-bold text-slate-900" style="font-family:Outfit">Live Stock Matrix</h3>
         <div class="flex items-center gap-3">
           <span id="inv-count" class="text-xs font-medium text-slate-400"></span>
+          <button id="save-all-inventory-btn" onclick="saveAllInventoryChanges()" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm hidden">
+            <span class="material-symbols-outlined" style="font-size:16px">save</span>
+            <span id="save-all-inventory-text">💾 Guardar Cambios de Inventario</span>
+          </button>
           <button onclick="openNewIngredientModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
             <span class="material-symbols-outlined" style="font-size:16px">add</span>Nuevo
           </button>
@@ -1500,8 +1504,9 @@
             <tr>
               <th class="px-6 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('name')">Ingrediente <span id="sort-name" class="inline-block ml-0.5"></span></th>
               <th class="px-4 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('cat')">Categoría <span id="sort-cat" class="inline-block ml-0.5"></span></th>
-              <th class="px-4 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('stock')">Stock <span id="sort-stock" class="inline-block ml-0.5"></span></th>
-              <th class="px-4 py-3 hidden md:table-cell">Nivel</th>
+              <th class="px-4 py-3 cursor-pointer hover:text-brand select-none" onclick="sortInventory('stock')">Stock Actual <span id="sort-stock" class="inline-block ml-0.5"></span></th>
+              <th class="px-4 py-3">Mínimo</th>
+              <th class="px-4 py-3">Máximo</th>
               <th class="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onclick="sortInventory('cost')">Coste/kg <span id="sort-cost" class="inline-block ml-0.5"></span></th>
               <th class="px-4 py-3 hidden lg:table-cell cursor-pointer hover:text-brand select-none" onclick="sortInventory('supplier')">Proveedor <span id="sort-supplier" class="inline-block ml-0.5"></span></th>
               <th class="px-4 py-3">Estado</th>
@@ -2331,11 +2336,10 @@ function renderInventory(items) {
   const count = document.getElementById('inv-count');
   if (!tbody) return;
   count.textContent = `${items.length} de ${INVENTORY.length} líneas`;
-  if (!items.length) { tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-slate-400 text-sm">Sin resultados para los filtros seleccionados.</td></tr>`; return; }
+  if (!items.length) { tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-slate-400 text-sm">Sin resultados para los filtros seleccionados.</td></tr>`; return; }
 
   tbody.innerHTML = items.map(item => {
     const pct = stockPct(item);
-    const barColor = item.critical ? '#ef4444' : pct < 70 ? '#d97706' : '#059669';
     const statusBadge = item.critical
       ? `<span class="badge badge-red pulse-red">REORDENAR</span>`
       : `<span class="badge badge-green">OK</span>`;
@@ -2346,21 +2350,40 @@ function renderInventory(items) {
         </td>
         <td class="px-4 py-4"><span class="badge badge-slate">${item.cat}</span></td>
         <td class="px-4 py-4" onclick="event.stopPropagation();">
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1">
             <input 
               type="number" 
               step="any"
               value="${item.stock_actual || 0}" 
-              oninput="updateInlineStock('${item.id}', this.value)"
-              class="w-20 px-2 py-1 text-sm font-semibold rounded-lg bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 focus:outline-none"
+              oninput="updateLocalStockField('${item.id}', 'stock_actual', this.value)"
+              class="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 focus:outline-none text-center"
             />
-            <span class="text-slate-400 text-xs font-normal">${item.unit}</span>
-            <span id="saving-indicator-${item.id}" class="text-[10px] text-emerald-600 hidden font-medium ml-1">Guardando...</span>
+            <span class="text-slate-400 text-[10px] font-normal">${item.unit}</span>
           </div>
         </td>
-        <td class="px-4 py-4 hidden md:table-cell" style="min-width:120px">
-          <div class="prog-track w-24"><div class="prog-fill" style="width:${pct}%;background:${barColor}"></div></div>
-          <p class="text-[10px] text-slate-400 mt-1">min: ${item.stock_minimo || 0} ${item.unit} · max: ${item.stock_maximo || 0} ${item.unit}</p>
+        <td class="px-4 py-4" onclick="event.stopPropagation();">
+          <div class="flex items-center gap-1">
+            <input 
+              type="number" 
+              step="any"
+              value="${item.stock_minimo || 0}" 
+              oninput="updateLocalStockField('${item.id}', 'stock_minimo', this.value)"
+              class="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 focus:outline-none text-center"
+            />
+            <span class="text-slate-400 text-[10px] font-normal">${item.unit}</span>
+          </div>
+        </td>
+        <td class="px-4 py-4" onclick="event.stopPropagation();">
+          <div class="flex items-center gap-1">
+            <input 
+              type="number" 
+              step="any"
+              value="${item.stock_maximo || 0}" 
+              oninput="updateLocalStockField('${item.id}', 'stock_maximo', this.value)"
+              class="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 focus:outline-none text-center"
+            />
+            <span class="text-slate-400 text-[10px] font-normal">${item.unit}</span>
+          </div>
         </td>
         <td class="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">${item.cost.toFixed(2)}€</td>
         <td class="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">${item.supplier}</td>
@@ -2469,52 +2492,89 @@ function populateInventoryFilters() {
     providers.map(p => `<option value="${p}">${p}</option>`).join('');
 }
 
-let _inlineStockDebounceTimeouts = {};
-window.updateInlineStock = function(id, value) {
+let PENDING_INVENTORY_CHANGES = {};
+
+window.updateLocalStockField = function(id, field, value) {
   const numVal = parseFloat(value) || 0;
-  const indicator = document.getElementById(`saving-indicator-${id}`);
-  if (indicator) {
-    indicator.classList.remove('hidden');
-    indicator.textContent = 'Guardando...';
+  
+  if (!PENDING_INVENTORY_CHANGES[id]) {
+    const original = INVENTORY.find(i => i.id === id) || {};
+    PENDING_INVENTORY_CHANGES[id] = {
+      stock_actual: original.stock_actual || 0,
+      stock_minimo: original.stock_minimo || 0,
+      stock_maximo: original.stock_maximo || 0
+    };
   }
+  
+  PENDING_INVENTORY_CHANGES[id][field] = numVal;
   
   const item = INVENTORY.find(i => i.id === id);
   if (item) {
-    item.stock = numVal;
-    item.stock_actual = numVal;
-    item.critical = numVal <= (item.min || 0);
-  }
-  
-  if (_inlineStockDebounceTimeouts[id]) {
-    clearTimeout(_inlineStockDebounceTimeouts[id]);
-  }
-  
-  _inlineStockDebounceTimeouts[id] = setTimeout(async () => {
-    try {
-      const { error } = await window.updateIngredient(id, { 
-        stock_actual: numVal,
-        current_stock: numVal 
-      });
-      if (error) throw error;
-      
-      if (indicator) {
-        indicator.textContent = '✅ Guardado';
-        setTimeout(() => {
-          indicator.classList.add('hidden');
-        }, 1500);
-      }
-      updateInventoryStats();
-    } catch (err) {
-      console.error('Error saving inline stock:', err);
-      if (indicator) {
-        indicator.textContent = '❌ Error';
-        setTimeout(() => {
-          indicator.classList.add('hidden');
-        }, 3000);
-      }
-      toast('❌ Error al guardar stock: ' + err.message);
+    item[field] = numVal;
+    if (field === 'stock_actual') {
+      item.stock = numVal;
+    } else if (field === 'stock_minimo') {
+      item.min = numVal;
     }
-  }, 1000);
+    item.critical = item.stock_actual <= item.stock_minimo;
+  }
+  
+  const saveBtn = document.getElementById('save-all-inventory-btn');
+  if (saveBtn) {
+    saveBtn.classList.remove('hidden');
+  }
+  updateInventoryStats();
+};
+
+window.saveAllInventoryChanges = async function() {
+  const btn = document.getElementById('save-all-inventory-btn');
+  const txt = document.getElementById('save-all-inventory-text');
+  
+  const entries = Object.entries(PENDING_INVENTORY_CHANGES);
+  if (entries.length === 0) {
+    toast('ℹ️ No hay cambios pendientes de guardar.');
+    return;
+  }
+  
+  try {
+    if (btn) btn.disabled = true;
+    if (txt) txt.textContent = 'Guardando...';
+    
+    const promises = entries.map(([id, fields]) => {
+      const payload = {
+        stock_actual: fields.stock_actual,
+        stock_minimo: fields.stock_minimo,
+        stock_maximo: fields.stock_maximo,
+        current_stock: fields.stock_actual,
+        min_stock: fields.stock_minimo,
+        max_stock: fields.stock_maximo,
+        updated_at: new Date().toISOString()
+      };
+      return window.updateIngredient(id, payload);
+    });
+    
+    const results = await Promise.all(promises);
+    const firstError = results.find(r => r.error);
+    if (firstError) throw firstError.error;
+    
+    toast('✅ Cambios de inventario guardados correctamente.');
+    
+    PENDING_INVENTORY_CHANGES = {};
+    if (btn) {
+      btn.classList.add('hidden');
+      btn.disabled = false;
+    }
+    if (txt) txt.textContent = '💾 Guardar Cambios de Inventario';
+    
+    if (window.loadSupabaseInventory) {
+      await window.loadSupabaseInventory();
+    }
+  } catch (err) {
+    console.error('Error al guardar cambios de inventario:', err);
+    toast('❌ Error: ' + (err.message || 'No se pudieron guardar los cambios'));
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = '💾 Guardar Cambios de Inventario';
+  }
 };
 
 function updateInventoryStats() {
