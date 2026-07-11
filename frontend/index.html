@@ -2345,7 +2345,19 @@ function renderInventory(items) {
           <p class="font-semibold text-slate-900">${item.name}</p>
         </td>
         <td class="px-4 py-4"><span class="badge badge-slate">${item.cat}</span></td>
-        <td class="px-4 py-4 font-semibold ${item.critical ? 'text-red-600' : 'text-slate-900'}">${item.stock_actual || 0} ${item.unit}</td>
+        <td class="px-4 py-4" onclick="event.stopPropagation();">
+          <div class="flex items-center gap-1.5">
+            <input 
+              type="number" 
+              step="any"
+              value="${item.stock_actual || 0}" 
+              oninput="updateInlineStock('${item.id}', this.value)"
+              class="w-20 px-2 py-1 text-sm font-semibold rounded-lg bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 focus:outline-none"
+            />
+            <span class="text-slate-400 text-xs font-normal">${item.unit}</span>
+            <span id="saving-indicator-${item.id}" class="text-[10px] text-emerald-600 hidden font-medium ml-1">Guardando...</span>
+          </div>
+        </td>
         <td class="px-4 py-4 hidden md:table-cell" style="min-width:120px">
           <div class="prog-track w-24"><div class="prog-fill" style="width:${pct}%;background:${barColor}"></div></div>
           <p class="text-[10px] text-slate-400 mt-1">min: ${item.stock_minimo || 0} ${item.unit} · max: ${item.stock_maximo || 0} ${item.unit}</p>
@@ -2456,6 +2468,54 @@ function populateInventoryFilters() {
   provSel.innerHTML = '<option value="">Todos los proveedores</option>' +
     providers.map(p => `<option value="${p}">${p}</option>`).join('');
 }
+
+let _inlineStockDebounceTimeouts = {};
+window.updateInlineStock = function(id, value) {
+  const numVal = parseFloat(value) || 0;
+  const indicator = document.getElementById(`saving-indicator-${id}`);
+  if (indicator) {
+    indicator.classList.remove('hidden');
+    indicator.textContent = 'Guardando...';
+  }
+  
+  const item = INVENTORY.find(i => i.id === id);
+  if (item) {
+    item.stock = numVal;
+    item.stock_actual = numVal;
+    item.critical = numVal <= (item.min || 0);
+  }
+  
+  if (_inlineStockDebounceTimeouts[id]) {
+    clearTimeout(_inlineStockDebounceTimeouts[id]);
+  }
+  
+  _inlineStockDebounceTimeouts[id] = setTimeout(async () => {
+    try {
+      const { error } = await window.updateIngredient(id, { 
+        stock_actual: numVal,
+        current_stock: numVal 
+      });
+      if (error) throw error;
+      
+      if (indicator) {
+        indicator.textContent = '✅ Guardado';
+        setTimeout(() => {
+          indicator.classList.add('hidden');
+        }, 1500);
+      }
+      updateInventoryStats();
+    } catch (err) {
+      console.error('Error saving inline stock:', err);
+      if (indicator) {
+        indicator.textContent = '❌ Error';
+        setTimeout(() => {
+          indicator.classList.add('hidden');
+        }, 3000);
+      }
+      toast('❌ Error al guardar stock: ' + err.message);
+    }
+  }, 1000);
+};
 
 function updateInventoryStats() {
   const total = INVENTORY.length;
@@ -5404,6 +5464,9 @@ async function deleteSubcat(cat, sub) {
           process_type: item.process_type || 'MERMA',
           calculated_net_cost_kg: Number(item.calculated_net_cost_kg) || 0,
           stock: currentStock,
+          stock_actual: currentStock,
+          stock_minimo: minStock,
+          stock_maximo: Number(item.stock_maximo !== null && item.stock_maximo !== undefined ? item.stock_maximo : item.max_stock) || 0,
           unit: item.unit || 'ud',
           min: minStock,
           cost: Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.cost_per_unit || item.precio_por_u || item.precio_por_kg || 0),
