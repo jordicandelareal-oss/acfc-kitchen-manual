@@ -2385,7 +2385,7 @@ function renderInventory(items) {
             <span class="text-slate-400 text-[10px] font-normal">${item.unit}</span>
           </div>
         </td>
-        <td class="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">${item.cost.toFixed(2)}€</td>
+        <td class="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">${(Number(item.cost) || 0).toFixed(2)}€</td>
         <td class="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">${item.supplier}</td>
         <td class="px-4 py-4">${statusBadge}</td>
         <td class="px-4 py-4">
@@ -2578,9 +2578,12 @@ function updateInventoryStats() {
   const total = INVENTORY.length;
   const critical = INVENTORY.filter(i => i.critical).length;
   const fillRate = total > 0 ? Math.round(((total - critical) / total) * 100) : 0;
-  const value = INVENTORY.reduce((sum, i) => sum + (i.cost * i.stock_actual), 0);
+  const value = INVENTORY.reduce((sum, i) => sum + ((Number(i.cost) || 0) * (Number(i.stock_actual) || 0)), 0);
   
-  const fmt = v => v >= 1000 ? (v/1000).toFixed(1) + 'K€' : v.toFixed(0) + '€';
+  const fmt = v => {
+    const num = Number(v) || 0;
+    return num >= 1000 ? (num/1000).toFixed(1) + 'K€' : num.toFixed(0) + '€';
+  };
   document.getElementById('inv-stat-total').textContent = total;
   document.getElementById('inv-stat-critical').textContent = critical;
   document.getElementById('inv-stat-fillrate').textContent = fillRate + '%';
