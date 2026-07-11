@@ -4986,8 +4986,10 @@ window.openNotificationsModal = function() {
   
   const lowStockItems = (typeof INVENTORY !== 'undefined' ? INVENTORY : []).filter(i => {
     const stock = Number(i.stock_actual) || 0;
+    const reservado = Number(i.stock_reservado) || 0;
+    const disponible = stock - reservado;
     const min = Number(i.stock_minimo || i.min_stock || 0);
-    return stock < min;
+    return disponible < min;
   });
   
   let html = '';
@@ -5002,13 +5004,15 @@ window.openNotificationsModal = function() {
   } else {
     html = lowStockItems.map(i => {
       const stock = Number(i.stock_actual) || 0;
+      const reservado = Number(i.stock_reservado) || 0;
+      const disponible = stock - reservado;
       const min = Number(i.stock_minimo || i.min_stock || 0);
       return `
         <div class="flex items-start gap-3 p-3 bg-red-50/50 hover:bg-red-50 border border-red-100 rounded-xl transition-all">
           <span class="material-symbols-outlined text-red-500 text-[18px] mt-0.5">warning</span>
           <div class="flex-1">
             <h5 class="text-xs font-bold text-slate-800">${i.name}</h5>
-            <p class="text-[10px] text-slate-500 mt-0.5">El stock actual es de <strong class="text-red-600">${stock} ${i.unit || 'ud'}</strong> (Mínimo: ${min} ${i.unit || 'ud'}).</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">El stock disponible neto es de <strong class="text-red-600">${disponible} ${i.unit || 'ud'}</strong> (Físico: ${stock} | Reservado: ${reservado} | Mínimo: ${min} ${i.unit || 'ud'}).</p>
             <span class="inline-block mt-2 px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded-md">Stock Bajo</span>
           </div>
         </div>
@@ -5725,6 +5729,8 @@ Object.defineProperty(window, 'PLANNER_DATA', {
           calculated_net_cost_kg: Number(item.calculated_net_cost_kg) || 0,
           stock: currentStock,
           stock_actual: currentStock,
+          stock_reservado: Number(item.stock_reservado) || 0,
+          stock_disponible: currentStock - (Number(item.stock_reservado) || 0),
           stock_minimo: minStock,
           stock_maximo: Number(item.stock_maximo !== null && item.stock_maximo !== undefined ? item.stock_maximo : item.max_stock) || 0,
           unit: item.unit || 'ud',
@@ -5733,7 +5739,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
           supplier: resolvedSupplierName,
           supplier_id: item.supplier_id || null,
           proveedor_principal: item.proveedor_principal || null,
-          critical: currentStock <= minStock,
+          critical: (currentStock - (Number(item.stock_reservado) || 0)) <= minStock,
           nutritional_category: item.nutritional_category || 'Sin asignar'
         };
       });

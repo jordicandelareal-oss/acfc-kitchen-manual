@@ -80,14 +80,14 @@ BEGIN
                 -- Calcular gasto
                 v_total_gasto := (v_ing.quantity_per_portion * v_comensales);
 
-                -- Descontar del stock real apuntando a stock_actual
+                -- Sumar al stock reservado
                 UPDATE public.ingredients
-                SET stock_actual = stock_actual - v_total_gasto,
+                SET stock_reservado = COALESCE(stock_reservado, 0.0000) + v_total_gasto,
                     updated_at = NOW()
                 WHERE id = v_ing.ingredient_id;
                 
                 -- Concatenar log para la Consola Visual
-                v_log := v_log || '[DESCUENTO REAL] Ingrediente ID: ' || v_ing.ingredient_id || ' | Restados: ' || v_total_gasto || ' grs.' || CHR(10);
+                v_log := v_log || '[RESERVA REAL] Ingrediente ID: ' || v_ing.ingredient_id || ' | Comprometidos: ' || v_total_gasto || ' grs para el servicio.' || CHR(10);
             END LOOP;
         END IF;
 
