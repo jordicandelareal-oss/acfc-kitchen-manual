@@ -2214,6 +2214,7 @@ async function saveIngredient() {
 
   const supplierIdVal = document.getElementById('ing-provider').value || null;
 
+  const scenario = document.getElementById('ing-output-scenario').value;
   const payload = {
     name: nameVal,
     brand: document.getElementById('ing-brand').value.trim(),
@@ -2223,16 +2224,27 @@ async function saveIngredient() {
     provider_ref: document.getElementById('ing-provider-ref').value.trim(),
     purchase_format_gr: parseFloat(document.getElementById('ing-format-gr').value) || null,
     purchase_price: parseFloat(document.getElementById('ing-purchase-price').value) || null,
-    output_scenario: document.getElementById('ing-output-scenario').value,
+    output_scenario: scenario,
     waste_percentage: parseFloat(document.getElementById('ing-waste').value) || 0,
     process_type: _processType,
-    calculated_net_cost_kg: netCost,
     unit: 'gr',
     stock_actual: parseFloat(document.getElementById('ing-stock-actual').value) || 0,
     stock_minimo: parseFloat(document.getElementById('ing-stock-minimo').value) || 0,
     stock_maximo: parseFloat(document.getElementById('ing-stock-maximo').value) || 0,
     image_url: document.getElementById('ing-image-input').value.trim() || null
   };
+
+  if (netCost > 0) {
+    payload.calculated_net_cost_kg = netCost;
+    payload.precio_mas_bajo = netCost;
+    if (scenario === 'KG_LT') {
+      payload.precio_por_kg = netCost;
+      payload.precio_por_gramo = netCost / 1000;
+    } else if (scenario === 'UNIDADES') {
+      payload.precio_por_u = netCost;
+      payload.precio_por_gramo = netCost;
+    }
+  }
 
   try {
     if (isCreateMode) {
@@ -2401,14 +2413,14 @@ function renderInventory(items) {
         <td class="px-6 py-4">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
-              ${item.image_url 
-                ? `<img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/100/2a2a2a/ffffff?text=${encodeURIComponent(item.name.substring(0,2))}'" />` 
+              ${item?.image_url 
+                ? `<img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/100/2a2a2a/ffffff?text=${encodeURIComponent(item?.name ? item.name.substring(0,2) : '')}'" />` 
                 : `<span class="material-symbols-outlined text-slate-400 text-lg">image</span>`
               }
             </div>
             <div>
-              <p class="font-semibold text-slate-900">${item.name}</p>
-              ${item.brand ? `<p class="text-[10px] text-slate-400 font-medium">${item.brand}</p>` : ''}
+              <p class="font-semibold text-slate-900">${item?.name || 'Sin nombre'}</p>
+              ${item?.brand ? `<p class="text-[10px] text-slate-400 font-medium">${item.brand}</p>` : ''}
             </div>
           </div>
         </td>

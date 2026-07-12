@@ -91,7 +91,16 @@ export const fetchInsumos = async (filters = {}) => {
         stock_maximo,
         stock_reservado,
         supplier_id,
-        updated_at
+        updated_at,
+        image_url,
+        brand,
+        provider_ref,
+        purchase_format_gr,
+        purchase_price,
+        output_scenario,
+        waste_percentage,
+        process_type,
+        calculated_net_cost_kg
       `)
       .order('category', { ascending: true })
       .order('name',     { ascending: true });
@@ -112,9 +121,9 @@ export const fetchInsumos = async (filters = {}) => {
 export const updateIngredientPrice = async (id, fields) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
-    if (fields.precio_por_kg    != null) patch.precio_por_kg    = parseFloat(fields.precio_por_kg);
-    if (fields.precio_por_u     != null) patch.precio_por_u     = parseFloat(fields.precio_por_u);
-    if (fields.precio_mas_bajo  != null) patch.precio_mas_bajo  = parseFloat(fields.precio_mas_bajo);
+    if (fields.precio_por_kg    != null && parseFloat(fields.precio_por_kg) > 0) patch.precio_por_kg    = parseFloat(fields.precio_por_kg);
+    if (fields.precio_por_u     != null && parseFloat(fields.precio_por_u) > 0) patch.precio_por_u     = parseFloat(fields.precio_por_u);
+    if (fields.precio_mas_bajo  != null && parseFloat(fields.precio_mas_bajo) > 0) patch.precio_mas_bajo  = parseFloat(fields.precio_mas_bajo);
     if (fields.proveedor_principal != null) patch.proveedor_principal = fields.proveedor_principal;
     if (fields.stock_actual     != null) patch.stock_actual     = parseFloat(fields.stock_actual);
     if (fields.stock_minimo     != null) patch.stock_minimo     = parseFloat(fields.stock_minimo);
