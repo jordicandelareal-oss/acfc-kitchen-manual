@@ -5959,6 +5959,7 @@ async function requestRecipeSuggestions() {
   showScreen('recipes');
   toast('🤖 Consultando Chef Nutricionista...');
 
+  // Extraer todos los insumos activos del catálogo tengan o no stock
   const insumos = INVENTORY.map(i => ({
     id: i.id,
     name: i.name,
@@ -5967,8 +5968,10 @@ async function requestRecipeSuggestions() {
     critical: (i.stock_actual <= i.stock_minimo)
   }));
 
+  window.addAiLog('[INFO] Catálogo de insumos cargado (' + insumos.length + ' ingredientes detectados).', 'info');
+  window.addAiLog('[INFO] Despachando petición POST a la Edge Function de Supabase para conectar con Gemini 1.5 Flash...', 'info');
+
   const thinkingId = _appendAIThinking(msgs);
-  window.addAiLog('[INFO] Enviando inventario de Supabase y perfiles de dieta a Gemini 1.5 Flash...', 'info');
 
   try {
     const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
