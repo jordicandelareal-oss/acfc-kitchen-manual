@@ -5,11 +5,46 @@ export const fetchMenus = async () => {
   try {
     const { data, error } = await supabase
       .from('menu_planning')
-      .select('*')
+      .select(`
+        id,
+        planning_date,
+        meal_type,
+        servings,
+        recipe_id,
+        recipes (
+          id,
+          name
+        )
+      `)
       .order('planning_date', { ascending: true })
       .limit(30);
     if (error) throw error;
-    return { success: true, items: data || [] };
+
+    // Group the planning by date to fit the MenusTab expectation of date-grouped rows
+    const grouped = {};
+    (data || []).forEach(row => {
+      const dateStr = row.planning_date;
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = {
+          date: dateStr,
+          lunch_recipe: null,
+          dinner_recipe: null,
+          side_dish: null,
+          breakfast_recipe: null
+        };
+      }
+      if (row.meal_type === 'lunch') {
+        grouped[dateStr].lunch_recipe = row.recipes?.name || null;
+      } else if (row.meal_type === 'dinner') {
+        grouped[dateStr].dinner_recipe = row.recipes?.name || null;
+      } else if (row.meal_type === 'side' || row.meal_type === 'lunch_side') {
+        grouped[dateStr].side_dish = row.recipes?.name || null;
+      } else if (row.meal_type === 'breakfast') {
+        grouped[dateStr].breakfast_recipe = row.recipes?.name || null;
+      }
+    });
+
+    return { success: true, items: Object.values(grouped) };
   } catch (err) {
     console.error('fetchMenus:', err);
     return { success: false, items: [], error: err.message };
@@ -257,7 +292,13 @@ export const insertRecipeIngredients = async (ingredientsArray) => {
 
 // ── Planner ──
 export const fetchPlannerDataDb = async () => {
-  return supabase.from('menu_planner').select('*');
+  return supabase.from('menu_planner').select(`
+    *,
+    breakfast_recipe:recipes!breakfast_recipe_id(id, name, image_url),
+    lunch_recipe:recipes!lunch_recipe_id(id, name, image_url),
+    lunch_side_recipe:recipes!lunch_side_recipe_id(id, name, image_url),
+    dinner_recipe:recipes!dinner_recipe_id(id, name, image_url)
+  `);
 };
 
 export const upsertPlannerDays = async (upsertsArray) => {

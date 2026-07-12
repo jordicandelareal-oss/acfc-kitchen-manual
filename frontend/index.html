@@ -3150,6 +3150,7 @@ async function saveNewSupplier() {
 
 // ── PLANNER LOGIC ──────────────────────────────────────────────────
 let PLANNER_DATA = {};
+let PLANNER_LOADING = true;
 let _currentPlannerDay = null;
 let _currentPlannerTarget = null;
 let _currentPlannerState = {};
@@ -3175,6 +3176,26 @@ function renderCalendar() {
   const grid = document.getElementById('cal-grid');
   const mList = document.getElementById('cal-list-mobile');
   if (!grid) return;
+
+  if (typeof PLANNER_LOADING !== 'undefined' && PLANNER_LOADING) {
+    // Show a premium skeleton loader
+    let html = '';
+    for (let i = 0; i < 35; i++) {
+      html += `
+        <div class="animate-pulse bg-slate-50 border border-slate-100 rounded-xl p-4 h-28 flex flex-col justify-between">
+          <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+          <div class="space-y-2">
+            <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+            <div class="h-3 bg-slate-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      `;
+    }
+    grid.innerHTML = html;
+    if (mList) mList.innerHTML = '<p class="text-center text-slate-400 py-8">Cargando planificación...</p>';
+    return;
+  }
+
   const today = new Date().getDate();
   const offset = 2; // Wed 1 July -> Mon=0, Tue=1, Wed=2
   let html = '';
@@ -3198,10 +3219,11 @@ function renderCalendar() {
        const lr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.lunch_recipe_id);
        const lsr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.lunch_side_recipe_id);
        const dr = (typeof ALL_RECIPES !== 'undefined' ? ALL_RECIPES : (typeof RECIPES !== 'undefined' ? RECIPES : [])).find(r => r.id === menu.dinner_recipe_id);
-       if (br) breakfastName = br.name;
-       if (lr) lunchName = lr.name;
-       if (lsr) lunchSideName = lsr.name;
-       if (dr) dinnerName = dr.name;
+       
+       breakfastName = br ? br.name : (menu.breakfast_recipe?.name || 'Añadir');
+       lunchName = lr ? lr.name : (menu.lunch_recipe?.name || 'Añadir');
+       lunchSideName = lsr ? lsr.name : (menu.lunch_side_recipe?.name || 'Añadir');
+       dinnerName = dr ? dr.name : (menu.dinner_recipe?.name || 'Añadir');
     }
 
     const hasMenu = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id || menu.breakfast_recipe_id || menu.lunch_side_recipe_id);
@@ -5843,11 +5865,19 @@ Object.defineProperty(window, 'PLANNER_DATA', {
     renderInventory(INVENTORY);
     renderRecipes();
     loadSupabaseRecipes().catch(e => console.error("Error loading recipes on init", e));
-    // Fetch planner data before rendering calendar
-    fetchPlannerData().then(renderCalendar).catch(err => {
+    
+    // Fetch planner data with loading state and skeleton loader
+    PLANNER_LOADING = true;
+    renderCalendar();
+    fetchPlannerData().then(() => {
+      PLANNER_LOADING = false;
+      renderCalendar();
+    }).catch(err => {
       console.error('Planner init error:', err);
-      renderCalendar(); // Fallback render
+      PLANNER_LOADING = false;
+      renderCalendar();
     });
+    
     // Suppliers: load asynchronously — never blocks the app
     fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
     
@@ -6007,6 +6037,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
     requestAnimationFrame(() => {
       if (typeof renderRecipeSelectorCategories === 'function') renderRecipeSelectorCategories();
       if (typeof applyRecipeSelectorFilters === 'function') applyRecipeSelectorFilters();
+      if (typeof renderCalendar === 'function') renderCalendar();
     });
   }
 
