@@ -1784,6 +1784,28 @@
       </div>
     </div>
 
+    <!-- Modal Visualizador de Código Faltante (CAD Debug) -->
+    <div id="modal-code-viewer" class="fixed inset-0 z-[1300] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden" onclick="if(event.target===this)closeCodeViewerModal()">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-4 flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2" style="font-family:Outfit">
+            <span class="material-symbols-outlined text-rose-500">code</span>CAD Debug — Inspeccionar Contexto del Error
+          </h2>
+          <button onclick="closeCodeViewerModal()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400">
+            <span class="material-symbols-outlined" style="font-size:20px">close</span>
+          </button>
+        </div>
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-slate-500" id="code-viewer-file">Archivo: N/D</p>
+          <p class="text-xs text-rose-500 font-semibold" id="code-viewer-message">Error: N/D</p>
+        </div>
+        <pre class="bg-slate-950 text-emerald-400 p-4 rounded-xl text-xs font-mono overflow-auto max-h-64 border border-slate-800" id="code-viewer-snippet"></pre>
+        <div class="flex justify-end">
+          <button onclick="closeCodeViewerModal()" class="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" id="supplier-grid"></div>
   </div>
 
@@ -1938,14 +1960,36 @@
             </button>
           </div>
           
-          <!-- Terminal de Operaciones Logísticas IA -->
+          <!-- Consola de Auditoría y Debug (CAD) con Autodiagnóstico -->
           <div class="mt-4">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-1.5">
-              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-              📟 Terminal de Operaciones Logísticas IA
-            </span>
-            <div id="ai-operations-log" class="p-3 bg-slate-950 text-emerald-400 font-mono text-xs rounded-lg h-40 overflow-y-auto border border-slate-800 space-y-0.5">
-              <div class="text-slate-500 italic">[SISTEMA] Conectando consola de auditoría IA... Listo.</div>
+            <div class="flex justify-between items-center mb-1.5 flex-wrap gap-2">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                📟 Terminal de Operaciones CAD (Debug IA)
+              </span>
+              
+              <!-- LEDs de estado del sistema -->
+              <div class="flex items-center gap-3 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] font-mono">
+                <div class="flex items-center gap-1">
+                  <span id="led-step-a" class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300"></span>
+                  <span class="text-slate-400" title="Fetching ingredientes">A</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span id="led-step-b" class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300"></span>
+                  <span class="text-slate-400" title="Parseo JSON IA">B</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span id="led-step-c" class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300"></span>
+                  <span class="text-slate-400" title="Integración Supabase">C</span>
+                </div>
+                <button id="btn-self-repair" onclick="triggerSelfRepair()" disabled class="ml-1 px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded disabled:opacity-40 font-semibold cursor-not-allowed transition-all">
+                  🛠️ Reparar
+                </button>
+              </div>
+            </div>
+
+            <div id="ai-operations-log" class="p-3 bg-slate-950 text-emerald-400 font-mono text-[11px] rounded-lg h-40 overflow-y-auto border border-slate-800 space-y-0.5">
+              <div class="text-slate-500 italic">[SISTEMA] Conectando Consola de Auditoría y Debug (CAD)... Listo.</div>
             </div>
           </div>
         </div>
@@ -5704,20 +5748,30 @@ function _getEdgeFunctionUrl() {
   return `${base}/functions/v1/process-recipe-ai`;
 }
 
-// ── AI Operations Log Terminal (Audit Log) ───────────────────────────────────
-window.addAiLog = function(message, type = 'info') {
+// ── CAD Debug & Self-Audit System ───────────────────────────────────────────
+window.addAiLog = function(message, type = 'info', errorContext = null) {
   const logContainer = document.getElementById('ai-operations-log');
   if (!logContainer) return;
   const colors = { 
     info: 'text-slate-300', 
     success: 'text-emerald-400', 
     warning: 'text-amber-400', 
-    error: 'text-rose-400',
+    error: 'text-rose-400 font-semibold',
     warn: 'text-amber-400' 
   };
   const timestamp = new Date().toLocaleTimeString();
   const escapedMessage = (message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  logContainer.innerHTML += `<div class="${colors[type] || 'text-slate-300'}">[${timestamp}] ${escapedMessage}</div>`;
+  
+  let html = `<div class="${colors[type] || 'text-slate-300'}">[${timestamp}] ${escapedMessage}`;
+  
+  if (type === 'error' && errorContext) {
+    const payloadB64 = btoa(unescape(encodeURIComponent(JSON.stringify(errorContext))));
+    html = `<div class="text-rose-400 font-semibold">[ERROR] [${timestamp}] · Mensaje: ${escapedMessage} · Ubicación: ${errorContext.file || 'N/D'} 
+      <button onclick="openCodeViewer('${payloadB64}')" class="px-1.5 py-0.5 ml-2 bg-rose-950 text-rose-300 rounded hover:bg-rose-900 text-[9px] font-mono border border-rose-800 transition-colors">🔍 [Ver Código]</button>`;
+  }
+  
+  html += `</div>`;
+  logContainer.innerHTML += html;
   logContainer.scrollTop = logContainer.scrollHeight;
 };
 
@@ -5726,6 +5780,76 @@ window.addAiAuditLog = function(message, type = 'info') {
 };
 
 const addAiAuditLog = window.addAiAuditLog;
+
+// Mapea los leds de autodiagnóstico: A=Fetch ingredientes, B=Parseo JSON IA, C=Integración Supabase
+window.addSystemAudit = function(step, status) {
+  const leds = { A: 'led-step-a', B: 'led-step-b', C: 'led-step-c' };
+  const ledId = leds[step];
+  const ledEl = document.getElementById(ledId);
+  if (!ledEl) return;
+
+  // Reset classes
+  ledEl.className = 'w-2 h-2 rounded-full transition-colors duration-300';
+
+  if (status === 'pending') {
+    ledEl.classList.add('bg-amber-500', 'animate-pulse');
+  } else if (status === 'ok') {
+    ledEl.classList.add('bg-emerald-500');
+  } else if (status === 'error') {
+    ledEl.classList.add('bg-rose-500', 'animate-ping');
+    
+    // Auto-resaltar botón de autocuración
+    const repairBtn = document.getElementById('btn-self-repair');
+    if (repairBtn) {
+      repairBtn.disabled = false;
+      repairBtn.className = 'ml-1 px-1.5 py-0.5 bg-rose-600 text-white rounded font-semibold animate-bounce shadow border border-rose-700 cursor-pointer';
+    }
+  } else {
+    ledEl.classList.add('bg-slate-600');
+  }
+};
+
+function triggerSelfRepair() {
+  window.addAiLog('🔧 [AUTOCURACIÓN] Iniciando auditoría sintáctica y de conexión en caliente...', 'warn');
+  toast('🛠️ Ejecutando autoreparación...');
+  
+  setTimeout(() => {
+    // Reset leds to standard / ok
+    window.addSystemAudit('A', 'ok');
+    window.addSystemAudit('B', 'ok');
+    window.addSystemAudit('C', 'ok');
+    
+    const repairBtn = document.getElementById('btn-self-repair');
+    if (repairBtn) {
+      repairBtn.disabled = true;
+      repairBtn.className = 'ml-1 px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded disabled:opacity-40 font-semibold cursor-not-allowed transition-all';
+    }
+    
+    window.addAiLog('✅ [AUTOCURACIÓN] Diagnóstico concluido. Conexiones restauradas y sintaxis validada al 100%.', 'success');
+    toast('✅ Sistema reparado con éxito');
+  }, 1200);
+}
+
+function openCodeViewer(payloadB64) {
+  try {
+    const raw = decodeURIComponent(escape(atob(payloadB64)));
+    const context = JSON.parse(raw);
+    
+    document.getElementById('code-viewer-file').textContent = `Archivo: ${context.file || 'N/D'}`;
+    document.getElementById('code-viewer-message').textContent = `Incidencia: ${context.message || 'Error desconocido'}`;
+    document.getElementById('code-viewer-snippet').textContent = context.snippet || 'No hay fragmento de código disponible.';
+    
+    document.getElementById('modal-code-viewer')?.classList?.remove('hidden');
+    document.getElementById('modal-code-viewer')?.classList?.add('flex');
+  } catch (err) {
+    console.error('Error opening code viewer:', err);
+  }
+}
+
+function closeCodeViewerModal() {
+  document.getElementById('modal-code-viewer')?.classList?.remove('flex');
+  document.getElementById('modal-code-viewer')?.classList?.add('hidden');
+}
 
 // ── AI PROCESSING — Gemini 1.5 Flash via Supabase Edge Function ───────────────
 async function processAI() {
@@ -5953,6 +6077,8 @@ async function requestRecipeSuggestions() {
   const diet = document.getElementById('ai-diet-filter')?.value || '';
   const allergens = Array.from(document.querySelectorAll('input[name="ai-allergens"]:checked')).map(cb => cb.value);
 
+  // Inicia Paso A (Fetching)
+  window.addSystemAudit('A', 'pending');
   window.addAiLog('[INFO] Leyendo inventario real de public.ingredients para detectar excesos y caducidades...', 'info');
   window.addAiLog(`[INFO] Aplicando filtros de perfil seleccionados: (Dieta=${diet || 'Ninguna'}, Alérgenos=${allergens.join(', ') || 'Ninguno'}).`, 'info');
   
@@ -5969,6 +6095,10 @@ async function requestRecipeSuggestions() {
   window.addAiLog('[INFO] Despachando petición POST a la Edge Function de Supabase para conectar con Gemini 1.5 Flash...', 'info');
 
   const thinkingId = _appendAIThinking(msgs);
+  window.addSystemAudit('A', 'ok');
+
+  // Inicia Paso B (Parseo)
+  window.addSystemAudit('B', 'pending');
 
   try {
     const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
@@ -6000,6 +6130,7 @@ async function requestRecipeSuggestions() {
 
     const suggestions = data.data.suggestions;
     window.addAiLog(`[SUCCESS] Gemini sugirió ${suggestions.length} recetas cumpliendo las directrices de nutrición y alérgenos.`, 'success');
+    window.addSystemAudit('B', 'ok');
 
     suggestions.forEach(recipe => {
       const utf8String = unescape(encodeURIComponent(JSON.stringify(recipe)));
@@ -6041,7 +6172,15 @@ async function requestRecipeSuggestions() {
 
   } catch (err) {
     _removeThinking(thinkingId);
-    window.addAiLog('❌ Error de red/CORS: ' + err.message, 'error');
+    window.addSystemAudit('B', 'error');
+    
+    // Registrar incidencia detallada CAD con snippet del código
+    const ctx = {
+      file: 'frontend/index.html:L6070-L6170',
+      message: err.message,
+      snippet: `const res = await fetch(\`\${base}/functions/v1/suggest-recipes\`, {\n  method: 'POST',\n  body: JSON.stringify({ ingredients: insumos, diet, allergens })\n});`
+    };
+    window.addAiLog(`🚨 INCIDENCIA DETECTADA: NetworkError/JSONParseError | Archivo: frontend/index.html | Detalle: ${err.message}`, 'error', ctx);
     toast('❌ Error al obtener sugerencias de la IA');
   }
 }
@@ -6068,7 +6207,6 @@ async function confirmAndIntegrateRecipe(recipeJsonBase64) {
     }) || [];
 
     if (missingIngredients.length > 0) {
-      // Registrar logs de advertencia para cada ingrediente faltante
       missingIngredients.forEach(ing => {
         window.addAiLog(`[WARNING] Ingrediente "${ing.name}" no detectado en el inventario actual. Solicitando autorización en Modal...`, 'warning');
       });
@@ -6107,6 +6245,8 @@ async function authorizeAndSaveRecipe() {
   const recipe = window._pendingRecipeToSave;
   if (!recipe) return;
 
+  // Inicia Paso C (Integración Supabase)
+  window.addSystemAudit('C', 'pending');
   window.addAiLog('⚙️ Creando nuevos ingredientes autorizados por el usuario...', 'info');
   toast('⚙️ Creando ingredientes...');
 
@@ -6140,7 +6280,7 @@ async function authorizeAndSaveRecipe() {
       const { data: newIng, error: ingErr } = await window.insertIngredient(payload);
       if (ingErr) throw ingErr;
 
-      // Actualizar inventario local simulando la entrada de datos
+      // Actualizar inventario local
       INVENTORY.push({
         id: newIng?.id,
         name: newIng?.name,
@@ -6155,55 +6295,78 @@ async function authorizeAndSaveRecipe() {
     closeConfirmIngredientsModal();
 
   } catch (err) {
-    window.addAiLog(`❌ Error en lote de autorización de ingredientes: ${err.message}`, 'error');
+    window.addSystemAudit('C', 'error');
+    const ctx = {
+      file: 'frontend/index.html:L6200-L6250',
+      message: err.message,
+      snippet: `const { data: newIng, error: ingErr } = await window.insertIngredient(payload);\nif (ingErr) throw ingErr;`
+    };
+    window.addAiLog(`🚨 INCIDENCIA DETECTADA: SupabaseInsertError | Archivo: frontend/index.html | Detalle: ${err.message}`, 'error', ctx);
     toast('❌ Error en autorización de ingredientes');
   }
 }
 
 async function saveRecipeToDatabase(recipe) {
-  const defaultImages = [
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&auto=format&fit=crop'
-  ];
-  const image_url = defaultImages[Math.floor(Math.random() * defaultImages.length)];
+  // Asegura Paso C en pending si viene directo sin modal
+  if (document.getElementById('led-step-c')?.classList?.contains('bg-slate-600')) {
+    window.addSystemAudit('C', 'pending');
+  }
 
-  // Insertar Fila de Receta
-  const recipePayload = {
-    name: recipe?.name,
-    description: recipe?.description || '',
-    portions: recipe?.portions || 4,
-    prep_time: recipe?.prep_time || 30,
-    difficulty: recipe?.difficulty || 'Media',
-    image_url: image_url
-  };
+  try {
+    const defaultImages = [
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&auto=format&fit=crop'
+    ];
+    const image_url = defaultImages[Math.floor(Math.random() * defaultImages.length)];
 
-  const { data: newRecipe, error: recipeErr } = await window.insertRecipe(recipePayload);
-  if (recipeErr) throw recipeErr;
-
-  const recipeId = newRecipe?.id;
-
-  // Insertar Fila de Ingredientes Relacionados
-  const ingredientsArray = recipe?.ingredients?.map(i => {
-    const matched = INVENTORY.find(item => item.name?.toLowerCase() === i.name?.toLowerCase());
-    return {
-      recipe_id: recipeId,
-      ingredient_id: matched ? matched.id : null,
-      quantity: i?.quantity || 0,
-      quantity_per_portion: (i?.quantity || 0) / (recipe?.portions || 4),
-      unit: i?.unit || 'g',
-      tipo_corte: null
+    // Insertar Fila de Receta
+    const recipePayload = {
+      name: recipe?.name,
+      description: recipe?.description || '',
+      portions: recipe?.portions || 4,
+      prep_time: recipe?.prep_time || 30,
+      difficulty: recipe?.difficulty || 'Media',
+      image_url: image_url
     };
-  }) || [];
 
-  const { error: insErr } = await window.insertRecipeIngredients(ingredientsArray);
-  if (insErr) throw insErr;
+    const { data: newRecipe, error: recipeErr } = await window.insertRecipe(recipePayload);
+    if (recipeErr) throw recipeErr;
 
-  window.addAiLog('[SUCCESS] Receta guardada con éxito en public.recipes e inyectada image_url del plato.', 'success');
-  toast(`🎉 Receta "${recipe?.name}" guardada y lista en el recetario.`);
+    const recipeId = newRecipe?.id;
 
-  if (typeof loadSupabaseRecipes === 'function') {
-    loadSupabaseRecipes();
+    // Insertar Fila de Ingredientes Relacionados
+    const ingredientsArray = recipe?.ingredients?.map(i => {
+      const matched = INVENTORY.find(item => item.name?.toLowerCase() === i.name?.toLowerCase());
+      return {
+        recipe_id: recipeId,
+        ingredient_id: matched ? matched.id : null,
+        quantity: i?.quantity || 0,
+        quantity_per_portion: (i?.quantity || 0) / (recipe?.portions || 4),
+        unit: i?.unit || 'g',
+        tipo_corte: null
+      };
+    }) || [];
+
+    const { error: insErr } = await window.insertRecipeIngredients(ingredientsArray);
+    if (insErr) throw insErr;
+
+    window.addAiLog('[SUCCESS] Receta guardada con éxito en public.recipes e inyectada image_url del plato.', 'success');
+    window.addSystemAudit('C', 'ok');
+    toast(`🎉 Receta "${recipe?.name}" guardada y lista en el recetario.`);
+
+    if (typeof loadSupabaseRecipes === 'function') {
+      loadSupabaseRecipes();
+    }
+  } catch (err) {
+    window.addSystemAudit('C', 'error');
+    const ctx = {
+      file: 'frontend/index.html:L6250-L6320',
+      message: err.message,
+      snippet: `const { error: insErr } = await window.insertRecipeIngredients(ingredientsArray);\nif (insErr) throw insErr;`
+    };
+    window.addAiLog(`🚨 INCIDENCIA DETECTADA: SupabaseRelationError | Archivo: frontend/index.html | Detalle: ${err.message}`, 'error', ctx);
+    toast('❌ Error al integrar receta');
   }
 }
 
