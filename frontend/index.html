@@ -1896,6 +1896,11 @@
               <span id="ai-process-label">Procesar</span>
             </button>
           </div>
+          
+          <!-- Consola de Auditoría IA -->
+          <div id="ai-audit-log" class="mt-4 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-lg h-36 overflow-y-auto border border-slate-700">
+            <div class="text-slate-500 italic">[SISTEMA] Conectando consola de auditoría IA... Listo.</div>
+          </div>
         </div>
       </div>
 
@@ -1942,23 +1947,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- AI Audit Log Terminal Console -->
-    <div class="mt-6 card p-0 overflow-hidden border border-slate-200">
-      <div class="bg-slate-900 px-4 py-2.5 flex justify-between items-center border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="text-slate-200 font-mono text-xs font-semibold">Consola de Auditoría IA</span>
-        </div>
-        <button onclick="document.getElementById('ai-audit-logs').innerHTML = `<p class='text-slate-500 italic text-[11px]'>[INFO] Consola de IA vacía. Listo para auditar.</p>`" 
-                class="text-[10px] text-slate-400 hover:text-slate-200 underline transition-colors font-semibold">
-          Limpiar Logs
-        </button>
-      </div>
-      <div class="bg-slate-950 p-4 h-32 overflow-y-auto font-mono text-xs text-slate-300 leading-relaxed space-y-1" id="ai-audit-logs">
-        <p class="text-slate-500 italic">[INFO] Consola de auditoría de IA iniciada. Esperando eventos de extracción NLP...</p>
       </div>
     </div>
   </div>
@@ -5630,26 +5618,16 @@ function _getEdgeFunctionUrl() {
 }
 
 // ── AI Audit Log Function ────────────────────────────────────────────────────
-function addAiAuditLog(message, type = 'info') {
-  const container = document.getElementById('ai-audit-logs');
-  if (!container) return;
+window.addAiAuditLog = function(message, type = 'info') {
+  const logDiv = document.getElementById('ai-audit-log');
+  if (!logDiv) return;
+  const colors = { info: 'text-slate-300', success: 'text-emerald-400 font-semibold', error: 'text-rose-400 font-semibold', warn: 'text-amber-400' };
+  const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
+  logDiv.innerHTML += `<div class="${colors[type] || 'text-slate-300'}">[${time}] ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+  logDiv.scrollTop = logDiv.scrollHeight;
+};
 
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('es-ES', { hour12: false });
-  
-  let colorClass = 'text-slate-400';
-  if (type === 'success') colorClass = 'text-emerald-400 font-semibold';
-  if (type === 'error')   colorClass = 'text-red-400 font-semibold';
-  if (type === 'warn')    colorClass = 'text-amber-400';
-
-  const entry = document.createElement('p');
-  entry.className = colorClass;
-  entry.innerHTML = `[${timeStr}] [${type.toUpperCase()}] ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
-  
-  container.appendChild(entry);
-  container.scrollTop = container.scrollHeight;
-}
-window.addAiAuditLog = addAiAuditLog;
+const addAiAuditLog = window.addAiAuditLog;
 
 // ── AI PROCESSING — Gemini 1.5 Flash via Supabase Edge Function ───────────────
 async function processAI() {
