@@ -478,6 +478,27 @@
             <option value="UNIDADES">Por Unidades</option>
           </select>
         </div>
+        <div class="flex flex-col">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Foto del Insumo</label>
+          <div class="flex gap-3 items-center">
+            <input type="hidden" id="ing-image-input" />
+            <label class="flex-grow flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 border-dashed rounded-lg cursor-pointer hover:border-brand hover:bg-brand-muted/20 transition-all text-xs font-semibold text-slate-600">
+              <span class="material-symbols-outlined text-sm">cloud_upload</span>
+              <span id="ing-upload-btn-text">Subir imagen</span>
+              <input type="file" id="ing-file-input" accept="image/*" class="hidden" onchange="handleIngredientImageUpload(this)" />
+            </label>
+            <div id="ing-image-preview-container" class="w-10 h-10 border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center relative">
+              <img id="ing-image-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('ing-image-preview-placeholder').classList.remove('hidden');" />
+              <span id="ing-image-preview-placeholder" class="material-symbols-outlined text-slate-400 text-lg">image</span>
+              <div id="ing-upload-spinner" class="absolute inset-0 bg-white/80 hidden items-center justify-center">
+                <span class="material-symbols-outlined text-brand text-lg animate-spin">progress_activity</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">Precio base /KG</label>
           <div class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono" id="ing-base-price-display">—</div>
@@ -2052,6 +2073,10 @@ function openNewIngredientModal() {
   document.getElementById('ing-stock-actual').value = 0;
   document.getElementById('ing-stock-minimo').value = 0;
   document.getElementById('ing-stock-maximo').value = 0;
+  document.getElementById('ing-image-input').value = '';
+  if (window.updateIngredientImagePreview) {
+    window.updateIngredientImagePreview('');
+  }
   document.getElementById('ing-save-text').textContent = 'Crear Ingrediente';
   setProcessType('MERMA');
   calculateNetCost();
@@ -2080,6 +2105,10 @@ function openIngredientModal(id) {
   document.getElementById('ing-stock-actual').value = item.stock_actual || 0;
   document.getElementById('ing-stock-minimo').value = item.stock_minimo || 0;
   document.getElementById('ing-stock-maximo').value = item.stock_maximo || 0;
+  document.getElementById('ing-image-input').value = item.image_url || '';
+  if (window.updateIngredientImagePreview) {
+    window.updateIngredientImagePreview(item.image_url || '');
+  }
   setProcessType(item.process_type || 'MERMA');
   calculateNetCost();
   document.getElementById('modal-ingredient').classList.add('open');
@@ -2201,7 +2230,8 @@ async function saveIngredient() {
     unit: 'gr',
     stock_actual: parseFloat(document.getElementById('ing-stock-actual').value) || 0,
     stock_minimo: parseFloat(document.getElementById('ing-stock-minimo').value) || 0,
-    stock_maximo: parseFloat(document.getElementById('ing-stock-maximo').value) || 0
+    stock_maximo: parseFloat(document.getElementById('ing-stock-maximo').value) || 0,
+    image_url: document.getElementById('ing-image-input').value.trim() || null
   };
 
   try {
@@ -2238,7 +2268,8 @@ async function saveIngredient() {
         cost: netCost,
         supplier: resolvedSupplierName,
         supplier_id: data.supplier_id || null,
-        critical: (data.stock_actual || 0) <= (data.stock_minimo || 0)
+        critical: (data.stock_actual || 0) <= (data.stock_minimo || 0),
+        image_url: data.image_url || null
       };
       INVENTORY.push(newItem);
       INVENTORY.sort((a, b) => a.name.localeCompare(b.name));
@@ -2368,7 +2399,18 @@ function renderInventory(items) {
     return `
       <tr class="tr-hover cursor-pointer" onclick="openIngredientModal('${item.id}')">
         <td class="px-6 py-4">
-          <p class="font-semibold text-slate-900">${item.name}</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
+              ${item.image_url 
+                ? `<img src="${item.image_url}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/100/2a2a2a/ffffff?text=${encodeURIComponent(item.name.substring(0,2))}'" />` 
+                : `<span class="material-symbols-outlined text-slate-400 text-lg">image</span>`
+              }
+            </div>
+            <div>
+              <p class="font-semibold text-slate-900">${item.name}</p>
+              ${item.brand ? `<p class="text-[10px] text-slate-400 font-medium">${item.brand}</p>` : ''}
+            </div>
+          </div>
         </td>
         <td class="px-4 py-4"><span class="badge badge-slate">${item.cat}</span></td>
         <td class="px-4 py-4" onclick="event.stopPropagation();">
@@ -5968,7 +6010,8 @@ Object.defineProperty(window, 'PLANNER_DATA', {
           supplier_id: item.supplier_id || null,
           proveedor_principal: item.proveedor_principal || null,
           critical: (currentStock - (Number(item.stock_reservado) || 0)) <= minStock,
-          nutritional_category: item.nutritional_category || 'Sin asignar'
+          nutritional_category: item.nutritional_category || 'Sin asignar',
+          image_url: item.image_url || null
         };
       });
       
@@ -6356,6 +6399,104 @@ Object.defineProperty(window, 'PLANNER_DATA', {
       input.value = ''; // Reset input element
     }
   }
+
+  window.updateIngredientImagePreview = function(url) {
+    const img = document.getElementById('ing-image-preview');
+    const placeholder = document.getElementById('ing-image-preview-placeholder');
+    const btnText = document.getElementById('ing-upload-btn-text');
+    if (!img || !placeholder) return;
+    
+    if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+      img.src = url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      if (btnText) btnText.textContent = 'Cambiar foto';
+    } else {
+      img.src = '';
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      if (btnText) btnText.textContent = 'Subir imagen';
+    }
+  };
+
+  window.handleIngredientImageUpload = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const spinner = document.getElementById('ing-upload-spinner');
+    const btnText = document.getElementById('ing-upload-btn-text');
+    const imageInput = document.getElementById('ing-image-input');
+
+    if (spinner) spinner.classList.remove('hidden');
+    if (btnText) btnText.textContent = 'Procesando...';
+
+    try {
+      // 1. Process image inside browser (compress to WebP at 75% quality, max width 800px)
+      const compressedBlob = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxW = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxW) {
+              height = Math.round((height * maxW) / width);
+              width = maxW;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Canvas compression failed'));
+            }, 'image/webp', 0.75);
+          };
+          img.onerror = () => reject(new Error('Failed to load image file'));
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+      });
+
+      // 2. Upload WebP blob directly to Supabase storage public bucket 'recipe-images' under 'ingredients/'
+      const ingId = document.getElementById('ing-id').value || 'new';
+      const fileName = `ingredients/ingredient_${ingId}_${Date.now()}.webp`;
+
+      const { data, error } = await window.uploadRecipeImageFile(fileName, compressedBlob, {
+        contentType: 'image/webp',
+        cacheControl: '3600',
+        upsert: false
+      });
+
+      if (error) throw error;
+
+      // 3. Get Public URL and update DOM state
+      const { data: urlData } = window.getRecipePublicUrl(fileName);
+
+      if (urlData && urlData.publicUrl) {
+        imageInput.value = urlData.publicUrl;
+        updateIngredientImagePreview(urlData.publicUrl);
+        toast('✅ Foto de insumo subida y optimizada con éxito');
+      } else {
+        throw new Error('Failed to retrieve public URL');
+      }
+
+    } catch (err) {
+      console.error('Ingredient image compression or upload error:', err);
+      toast('❌ Error al subir imagen: ' + (err.message || err));
+    } finally {
+      if (spinner) spinner.classList.add('hidden');
+      if (btnText) btnText.textContent = imageInput.value ? 'Cambiar foto' : 'Subir imagen';
+      input.value = ''; // Reset input element
+    }
+  };
 
   function closeRecipeModal() {
     document.getElementById('modal-recipe').classList.remove('open');
