@@ -1938,9 +1938,15 @@
             </button>
           </div>
           
-          <!-- Consola de Auditoría IA -->
-          <div id="ai-audit-log" class="mt-4 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-lg h-36 overflow-y-auto border border-slate-700">
-            <div class="text-slate-500 italic">[SISTEMA] Conectando consola de auditoría IA... Listo.</div>
+          <!-- Terminal de Operaciones Logísticas IA -->
+          <div class="mt-4">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-1.5">
+              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+              📟 Terminal de Operaciones Logísticas IA
+            </span>
+            <div id="ai-operations-log" class="p-3 bg-slate-950 text-emerald-400 font-mono text-xs rounded-lg h-40 overflow-y-auto border border-slate-800 space-y-0.5">
+              <div class="text-slate-500 italic">[SISTEMA] Conectando consola de auditoría IA... Listo.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -5698,14 +5704,25 @@ function _getEdgeFunctionUrl() {
   return `${base}/functions/v1/process-recipe-ai`;
 }
 
-// ── AI Audit Log Function ────────────────────────────────────────────────────
+// ── AI Operations Log Terminal (Audit Log) ───────────────────────────────────
+window.addAiLog = function(message, type = 'info') {
+  const logContainer = document.getElementById('ai-operations-log');
+  if (!logContainer) return;
+  const colors = { 
+    info: 'text-slate-300', 
+    success: 'text-emerald-400', 
+    warning: 'text-amber-400', 
+    error: 'text-rose-400',
+    warn: 'text-amber-400' 
+  };
+  const timestamp = new Date().toLocaleTimeString();
+  const escapedMessage = (message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  logContainer.innerHTML += `<div class="${colors[type] || 'text-slate-300'}">[${timestamp}] ${escapedMessage}</div>`;
+  logContainer.scrollTop = logContainer.scrollHeight;
+};
+
 window.addAiAuditLog = function(message, type = 'info') {
-  const logDiv = document.getElementById('ai-audit-log');
-  if (!logDiv) return;
-  const colors = { info: 'text-slate-300', success: 'text-emerald-400 font-semibold', error: 'text-rose-400 font-semibold', warn: 'text-amber-400' };
-  const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
-  logDiv.innerHTML += `<div class="${colors[type] || 'text-slate-300'}">[${time}] ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
-  logDiv.scrollTop = logDiv.scrollHeight;
+  window.addAiLog(message, type);
 };
 
 const addAiAuditLog = window.addAiAuditLog;
@@ -5832,10 +5849,10 @@ async function processAI() {
 
 // ── TASK 1: UPDATE STOCK VIA PHOTO ──────────────────────────────────────────
 async function handleAiStockCameraUpload(event) {
-  const file = event.target.files?.[0];
+  const file = event?.target?.files?.[0];
   if (!file) return;
 
-  addAiAuditLog('📸 Foto de insumo detectada. Iniciando compresión local...', 'info');
+  window.addAiLog('[INFO] Capturando imagen desde cámara PWA... Comprimiendo en Canvas local a 1024px.', 'info');
   toast('📸 Procesando imagen...');
 
   // Comprimir imagen localmente usando un canvas
@@ -5867,7 +5884,7 @@ async function handleAiStockCameraUpload(event) {
       ctx.drawImage(img, 0, 0, width, height);
 
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      addAiAuditLog(`⚡ Imagen comprimida a ${width}x${height}px (calidad 80%). Enviando a Supabase Edge Function...`, 'info');
+      window.addAiLog('[INFO] Enviando Base64 optimizado a Edge Function (Gemini 1.5 Flash Vision)...', 'info');
 
       try {
         const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
@@ -5882,12 +5899,12 @@ async function handleAiStockCameraUpload(event) {
         }
 
         const data = await res.json();
-        if (!data.success || !data.data) {
-          throw new Error(data.error || 'Respuesta inválida de la IA');
+        if (!data?.success || !data?.data) {
+          throw new Error(data?.error || 'Respuesta inválida de la IA');
         }
 
         const { name, quantity, unit, confidence } = data.data;
-        addAiAuditLog(`✅ Gemini Vision identificó: "${name}" (${quantity} ${unit}) con confianza ${confidence}`, 'success');
+        window.addAiLog(`[SUCCESS] Insumo detectado: ${name || 'N/D'} - Cantidad estimada: ${quantity || 0} ${unit || 'ud'}.`, 'success');
 
         if (!name) {
           toast('🤔 La IA no reconoció ningún ingrediente en la foto');
@@ -5897,10 +5914,9 @@ async function handleAiStockCameraUpload(event) {
         // Buscar ingrediente en el inventario local
         const matched = INVENTORY.find(i => i.name?.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(i.name?.toLowerCase()));
         if (matched) {
-          addAiAuditLog(`🎯 Ingrediente coincidente encontrado en inventario: "${matched.name}". Abriendo modal...`, 'success');
+          window.addAiLog(`🎯 Ingrediente coincidente encontrado en inventario: "${matched.name}". Abriendo modal...`, 'success');
           openIngredientModal(matched.id);
           
-          // Rellenar stock sugerido y enfocar
           const inputStock = document.getElementById('ing-stock-actual');
           if (inputStock) {
             inputStock.value = quantity || 0;
@@ -5909,12 +5925,12 @@ async function handleAiStockCameraUpload(event) {
             toast(`🤖 Stock estimado de ${quantity} ${unit} para "${matched.name}" autocompletado.`);
           }
         } else {
-          addAiAuditLog(`⚠️ No se encontró "${name}" en tu inventario activo. Regístralo o búscalo manualmente.`, 'warn');
+          window.addAiLog(`⚠️ No se encontró "${name}" en tu inventario activo. Regístralo o búscalo manualmente.`, 'warn');
           toast(`🤖 Detectado: ${name} (${quantity} ${unit}), pero no coincide con tus insumos activos`);
         }
 
       } catch (err) {
-        addAiAuditLog(`❌ Error procesando imagen de stock: ${err.message}`, 'error');
+        window.addAiLog(`❌ Error procesando imagen de stock: ${err.message}`, 'error');
         toast('❌ Error al escanear insumo');
       }
     };
@@ -5931,7 +5947,9 @@ async function requestRecipeSuggestions() {
   const diet = document.getElementById('ai-diet-filter')?.value || '';
   const allergens = Array.from(document.querySelectorAll('input[name="ai-allergens"]:checked')).map(cb => cb.value);
 
-  addAiAuditLog(`🤖 Solicitando sugerencias de recetas. Filtros - Dieta: ${diet || 'Ninguna'}, Alérgenos a excluir: ${allergens.join(', ') || 'Ninguno'}...`, 'info');
+  window.addAiLog('[INFO] Leyendo inventario real de public.ingredients para detectar excesos y caducidades...', 'info');
+  window.addAiLog(`[INFO] Aplicando filtros de perfil seleccionados: Dieta=${diet || 'Ninguna'}, Alérgenos=${allergens.join(', ') || 'Ninguno'}.`, 'info');
+  
   showScreen('recipes');
   toast('🤖 Consultando Chef Nutricionista...');
 
@@ -5944,6 +5962,7 @@ async function requestRecipeSuggestions() {
   }));
 
   const thinkingId = _appendAIThinking(msgs);
+  window.addAiLog('[INFO] Enviando prompt consolidado a Gemini...', 'info');
 
   try {
     const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
@@ -5960,12 +5979,12 @@ async function requestRecipeSuggestions() {
     }
 
     const data = await res.json();
-    if (!data.success || !data.data?.suggestions) {
+    if (!data?.success || !data?.data?.suggestions) {
       throw new Error('Respuesta inválida de la IA');
     }
 
     const suggestions = data.data.suggestions;
-    addAiAuditLog(`✅ Gemini sugirió ${suggestions.length} recetas cumpliendo las directrices de nutrición y alérgenos.`, 'success');
+    window.addAiLog(`[SUCCESS] Gemini sugirió ${suggestions.length} recetas cumpliendo las directrices de nutrición y alérgenos.`, 'success');
 
     suggestions.forEach(recipe => {
       const b64Payload = btoa(unescape(encodeURIComponent(JSON.stringify(recipe))));
@@ -6006,7 +6025,7 @@ async function requestRecipeSuggestions() {
 
   } catch (err) {
     _removeThinking(thinkingId);
-    addAiAuditLog(`❌ Error solicitando recetas sugeridas: ${err.message}`, 'error');
+    window.addAiLog(`❌ Error solicitando recetas sugeridas: ${err.message}`, 'error');
     toast('❌ Error al obtener sugerencias de la IA');
   }
 }
@@ -6015,7 +6034,7 @@ async function requestRecipeSuggestions() {
 window._pendingRecipeToSave = null;
 
 function closeConfirmIngredientsModal() {
-  document.getElementById('modal-confirm-ingredients').classList.remove('open');
+  document.getElementById('modal-confirm-ingredients')?.classList?.remove('open');
   window._pendingRecipeToSave = null;
 }
 
@@ -6024,17 +6043,20 @@ async function confirmAndIntegrateRecipe(recipeJsonBase64) {
     const rawJson = decodeURIComponent(escape(atob(recipeJsonBase64)));
     const recipe = JSON.parse(rawJson);
 
-    addAiAuditLog(`🔍 Contrastando ingredientes para "${recipe.name}" con el catálogo real...`, 'info');
+    window.addAiLog(`[INFO] Iniciando inserción atómica de receta en Supabase...`, 'info');
 
     // Identificar ingredientes que NO existen en el inventario actual
-    const missingIngredients = recipe.ingredients.filter(ri => {
+    const missingIngredients = recipe?.ingredients?.filter(ri => {
       const match = INVENTORY.find(item => item.name?.toLowerCase() === ri.name?.toLowerCase());
       return !match;
-    });
+    }) || [];
 
     if (missingIngredients.length > 0) {
-      addAiAuditLog(`⚠️ Se detectaron ${missingIngredients.length} ingredientes no registrados en inventario. Abriendo flujo de autorización...`, 'warn');
-      
+      // Registrar logs de advertencia para cada ingrediente faltante
+      missingIngredients.forEach(ing => {
+        window.addAiLog(`[WARNING] Ingrediente "${ing.name}" no detectado en el inventario actual. Solicitando autorización en Modal...`, 'warning');
+      });
+
       // Guardar la receta temporalmente en memoria
       window._pendingRecipeToSave = recipe;
 
@@ -6051,17 +6073,16 @@ async function confirmAndIntegrateRecipe(recipeJsonBase64) {
         `).join('');
       }
 
-      document.getElementById('modal-confirm-ingredients').classList.add('open');
+      document.getElementById('modal-confirm-ingredients')?.classList?.add('open');
       toast('⚠️ Esta receta requiere autorizar nuevos ingredientes');
       return;
     }
 
     // Si todos existen, se crea directamente de forma automática
-    addAiAuditLog('✅ Todos los ingredientes existen en inventario. Guardando receta...', 'success');
     await saveRecipeToDatabase(recipe);
 
   } catch (err) {
-    addAiAuditLog(`❌ Error procesando integración de receta: ${err.message}`, 'error');
+    window.addAiLog(`❌ Error procesando integración de receta: ${err.message}`, 'error');
     toast('❌ Error al integrar receta');
   }
 }
@@ -6070,20 +6091,20 @@ async function authorizeAndSaveRecipe() {
   const recipe = window._pendingRecipeToSave;
   if (!recipe) return;
 
-  addAiAuditLog('⚙️ Creando nuevos ingredientes autorizados por el usuario...', 'info');
+  window.addAiLog('⚙️ Creando nuevos ingredientes autorizados por el usuario...', 'info');
   toast('⚙️ Creando ingredientes...');
 
   try {
-    const missingIngredients = recipe.ingredients.filter(ri => {
+    const missingIngredients = recipe?.ingredients?.filter(ri => {
       return !INVENTORY.find(item => item.name?.toLowerCase() === ri.name?.toLowerCase());
-    });
+    }) || [];
 
     // 1. Guardar ingredientes nuevos autorizados
     for (let idx = 0; idx < missingIngredients.length; idx++) {
-      const inputVal = document.getElementById(`missing-ing-name-${idx}`)?.value.trim();
+      const inputVal = document.getElementById(`missing-ing-name-${idx}`)?.value?.trim();
       const finalName = inputVal || missingIngredients[idx].name;
 
-      addAiAuditLog(`📥 Registrando nuevo ingrediente en base de datos: "${finalName}"`, 'info');
+      window.addAiLog(`📥 Registrando nuevo ingrediente en base de datos: "${finalName}"`, 'info');
       
       const payload = {
         name: finalName,
@@ -6105,9 +6126,9 @@ async function authorizeAndSaveRecipe() {
 
       // Actualizar inventario local simulando la entrada de datos
       INVENTORY.push({
-        id: newIng.id,
-        name: newIng.name,
-        cat: newIng.category,
+        id: newIng?.id,
+        name: newIng?.name,
+        cat: newIng?.category,
         stock_actual: 0,
         stock_minimo: 0
       });
@@ -6118,14 +6139,12 @@ async function authorizeAndSaveRecipe() {
     closeConfirmIngredientsModal();
 
   } catch (err) {
-    addAiAuditLog(`❌ Error en lote de autorización de ingredientes: ${err.message}`, 'error');
+    window.addAiLog(`❌ Error en lote de autorización de ingredientes: ${err.message}`, 'error');
     toast('❌ Error en autorización de ingredientes');
   }
 }
 
 async function saveRecipeToDatabase(recipe) {
-  addAiAuditLog(`📥 Guardando atómicamente la estructura de receta "${recipe.name}" en Supabase...`, 'info');
-
   const defaultImages = [
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop',
@@ -6135,37 +6154,37 @@ async function saveRecipeToDatabase(recipe) {
 
   // Insertar Fila de Receta
   const recipePayload = {
-    name: recipe.name,
-    description: recipe.description || '',
-    portions: recipe.portions || 4,
-    prep_time: recipe.prep_time || 30,
-    difficulty: recipe.difficulty || 'Media',
+    name: recipe?.name,
+    description: recipe?.description || '',
+    portions: recipe?.portions || 4,
+    prep_time: recipe?.prep_time || 30,
+    difficulty: recipe?.difficulty || 'Media',
     image_url: image_url
   };
 
   const { data: newRecipe, error: recipeErr } = await window.insertRecipe(recipePayload);
   if (recipeErr) throw recipeErr;
 
-  const recipeId = newRecipe.id;
+  const recipeId = newRecipe?.id;
 
   // Insertar Fila de Ingredientes Relacionados
-  const ingredientsArray = recipe.ingredients.map(i => {
+  const ingredientsArray = recipe?.ingredients?.map(i => {
     const matched = INVENTORY.find(item => item.name?.toLowerCase() === i.name?.toLowerCase());
     return {
       recipe_id: recipeId,
       ingredient_id: matched ? matched.id : null,
-      quantity: i.quantity || 0,
-      quantity_per_portion: (i.quantity || 0) / (recipe.portions || 4),
-      unit: i.unit || 'g',
+      quantity: i?.quantity || 0,
+      quantity_per_portion: (i?.quantity || 0) / (recipe?.portions || 4),
+      unit: i?.unit || 'g',
       tipo_corte: null
     };
-  });
+  }) || [];
 
   const { error: insErr } = await window.insertRecipeIngredients(ingredientsArray);
   if (insErr) throw insErr;
 
-  addAiAuditLog(`✅ Receta "${recipe.name}" e ingredientes integrados con éxito.`, 'success');
-  toast(`🎉 Receta "${recipe.name}" guardada y lista en el recetario.`);
+  window.addAiLog('[SUCCESS] Receta guardada con éxito en public.recipes e inyectada image_url del plato.', 'success');
+  toast(`🎉 Receta "${recipe?.name}" guardada y lista en el recetario.`);
 
   if (typeof loadSupabaseRecipes === 'function') {
     loadSupabaseRecipes();
