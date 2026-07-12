@@ -90,6 +90,12 @@
       50%      { box-shadow: 0 0 0 6px rgba(220,38,38,.0); }
     }
 
+    /* ── Spinner (AI loading) ── */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
     /* ── Toast ── */
     #toast-root { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .toast {
@@ -1861,7 +1867,7 @@
         <h1 class="text-3xl font-bold text-slate-900" style="font-family:Outfit">Asistente IA</h1>
         <p class="text-sm text-slate-500 mt-1">Extracción NLP de ingredientes · Generación automática de escandallos</p>
       </div>
-      <span class="badge badge-green flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-success inline-block"></span>Modelo activo</span>
+      <span class="badge badge-green flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-success inline-block animate-pulse"></span>Gemini 1.5 Flash · Activo</span>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -1884,15 +1890,16 @@
               class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-brand transition-colors resize-none placeholder-slate-400"></textarea>
           </div>
           <div class="flex justify-between items-center mt-3">
-            <p class="text-xs text-slate-400">Soporta texto libre, formato PDF o imagen escaneada</p>
-            <button onclick="processAI()" class="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-all">
-              <span class="material-symbols-outlined" style="font-size:16px">send</span>Procesar
+            <p class="text-xs text-slate-400">Texto libre en cualquier idioma · Gemini 1.5 Flash</p>
+            <button id="ai-process-btn" onclick="processAI()" class="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined" id="ai-process-icon" style="font-size:16px">send</span>
+              <span id="ai-process-label">Procesar</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Right panel: tips + history -->
+      <!-- Right panel: capabilities + session history -->
       <div class="space-y-5 lg:col-span-2">
         <div class="card p-6">
           <h3 class="font-bold text-slate-900 mb-4" style="font-family:Outfit">Capacidades del Asistente</h3>
@@ -1903,15 +1910,19 @@
             </div>
             <div class="flex gap-3 text-sm">
               <span class="material-symbols-outlined text-brand mt-0.5" style="font-size:18px">check_circle</span>
-              <span class="text-slate-600">Cálculo de coste por ración basado en precios del inventario</span>
+              <span class="text-slate-600">Texto libre en cualquier idioma · Modelo <strong>Gemini 1.5 Flash</strong></span>
             </div>
             <div class="flex gap-3 text-sm">
               <span class="material-symbols-outlined text-brand mt-0.5" style="font-size:18px">check_circle</span>
-              <span class="text-slate-600">Sugerencia de precio de venta con margen óptimo</span>
+              <span class="text-slate-600">Detección de Paellas y aviso de reglas de planificación</span>
             </div>
             <div class="flex gap-3 text-sm">
-              <span class="material-symbols-outlined text-success mt-0.5" style="font-size:18px">check_circle</span>
-              <span class="text-slate-600">Generación de ficha escandallo en PDF</span>
+              <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
+              <span class="text-slate-400">Escaneo de albaranes por foto (próximamente)</span>
+            </div>
+            <div class="flex gap-3 text-sm">
+              <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
+              <span class="text-slate-400">Conteo de stock por cámara (próximamente)</span>
             </div>
             <div class="flex gap-3 text-sm">
               <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
@@ -1921,37 +1932,13 @@
         </div>
 
         <div class="card p-6">
-          <h3 class="font-bold text-slate-900 mb-4" style="font-family:Outfit">Procesos Recientes</h3>
+          <h3 class="font-bold text-slate-900 mb-4" style="font-family:Outfit">Procesos de esta sesión</h3>
           <div class="space-y-3" id="ai-history">
-            <div class="flex items-center gap-3 text-sm">
-              <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-slate-400" style="font-size:16px">receipt_long</span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-medium text-slate-700 truncate">Risotto de Setas</p>
-                <p class="text-xs text-slate-400">hace 2 horas · 8 ingredientes</p>
-              </div>
-              <span class="badge badge-green ml-auto flex-shrink-0">OK</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm">
-              <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-slate-400" style="font-size:16px">receipt_long</span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-medium text-slate-700 truncate">Salmón a la Plancha</p>
-                <p class="text-xs text-slate-400">ayer · 5 ingredientes</p>
-              </div>
-              <span class="badge badge-green ml-auto flex-shrink-0">OK</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm">
-              <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-slate-400" style="font-size:16px">receipt_long</span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-medium text-slate-700 truncate">Crema de Calabaza</p>
-                <p class="text-xs text-slate-400">hace 3 días · 6 ingredientes</p>
-              </div>
-              <span class="badge badge-amber ml-auto flex-shrink-0">Revisión</span>
+            <!-- Populated dynamically by _addAIHistoryEntry() -->
+            <div id="ai-history-empty" class="flex flex-col items-center justify-center py-6 text-center">
+              <span class="material-symbols-outlined text-slate-300 mb-2" style="font-size:36px">auto_awesome</span>
+              <p class="text-sm text-slate-400">Aún no has procesado ninguna receta.</p>
+              <p class="text-xs text-slate-300 mt-1">Los resultados de esta sesión aparecerán aquí.</p>
             </div>
           </div>
         </div>
@@ -5617,67 +5604,230 @@ window.copyOrderToClipboard = function(text) {
 
 
 // ── AI ASSISTANT ──────────────────────────────────────────────────
-function processAI() {
-  const input = document.getElementById('ai-input');
-  const text = input.value.trim();
-  if (!text) { toast('⚠️ Escribe o pega el texto de una receta primero'); return; }
+// ── AI PROCESSING — Gemini 1.5 Flash via Supabase Edge Function ───────────────
+// Edge Function URL: resolved dynamically from window.SUPABASE_URL set in init
+function _getEdgeFunctionUrl() {
+  // Reads from the same Supabase project URL already configured for the client
+  const base = (typeof window._SUPABASE_URL !== 'undefined'
+    ? window._SUPABASE_URL
+    : 'https://aosweyggyalowhogjatz.supabase.co');
+  return `${base}/functions/v1/process-recipe-ai`;
+}
 
-  const msgs = document.getElementById('chat-messages');
+function _setAIBtnLoading(loading) {
+  const btn   = document.getElementById('ai-process-btn');
+  const icon  = document.getElementById('ai-process-icon');
+  const label = document.getElementById('ai-process-label');
+  if (!btn) return;
+  if (loading) {
+    btn.disabled = true;
+    if (icon)  icon.textContent  = 'progress_activity';
+    if (icon)  icon.style.animation = 'spin 1s linear infinite';
+    if (label) label.textContent = 'Procesando...';
+  } else {
+    btn.disabled = false;
+    if (icon)  icon.textContent  = 'send';
+    if (icon)  icon.style.animation = '';
+    if (label) label.textContent = 'Procesar';
+  }
+}
 
-  // User bubble
+function _appendUserBubble(msgs, text) {
+  const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
   msgs.innerHTML += `
     <div class="flex justify-end">
-      <div class="chat-bubble chat-user">${text.length > 200 ? text.substring(0,200)+'...' : text}</div>
+      <div class="chat-bubble chat-user">${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
     </div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
 
-  // Simulated response
-  const ingredients = extractIngredients(text);
-  setTimeout(() => {
+function _appendAIThinking(msgs) {
+  const id = 'ai-thinking-' + Date.now();
+  msgs.innerHTML += `
+    <div id="${id}" class="flex gap-3">
+      <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-brand" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span>
+      </div>
+      <div class="chat-bubble chat-ai text-slate-400 italic text-sm">Gemini está analizando la receta...</div>
+    </div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+
+function _removeThinking(id) {
+  document.getElementById(id)?.remove();
+}
+
+function _addAIHistoryEntry(count, label) {
+  const historyEl = document.getElementById('ai-history');
+  const emptyEl   = document.getElementById('ai-history-empty');
+  if (!historyEl) return;
+
+  // Hide empty state on first entry
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const now   = new Date();
+  const time  = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const entry = document.createElement('div');
+  entry.className = 'flex items-center gap-3 text-sm';
+  entry.innerHTML = `
+    <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
+      <span class="material-symbols-outlined text-brand" style="font-size:16px">auto_awesome</span>
+    </div>
+    <div class="min-w-0 flex-grow">
+      <p class="font-medium text-slate-700 truncate">${(label || 'Receta sin título').replace(/</g,'&lt;').substring(0, 40)}</p>
+      <p class="text-xs text-slate-400">${time} · ${count} ingrediente${count !== 1 ? 's' : ''}</p>
+    </div>
+    <span class="badge badge-green ml-auto flex-shrink-0">OK</span>`;
+  // Prepend so newest is on top
+  historyEl.insertBefore(entry, historyEl.firstChild);
+}
+
+function _appendAIResult(msgs, ingredients, modelNote, inputPreview) {
+  const listHtml = ingredients.map(i => {
+    const qty  = i.quantity > 0 ? `${i.quantity} ${i.unit}` : i.unit;
+    const name = (i.name || '').replace(/</g,'&lt;');
+    return `<li class="text-sm flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-brand inline-block flex-shrink-0"></span>
+      <span><strong>${qty}</strong> de ${name}</span>
+    </li>`;
+  }).join('');
+
+  msgs.innerHTML += `
+    <div class="flex gap-3">
+      <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-brand" style="font-size:18px">auto_awesome</span>
+      </div>
+      <div class="chat-bubble chat-ai">
+        <p class="font-semibold text-slate-900 mb-2">✅ ${ingredients.length} ingrediente${ingredients.length !== 1 ? 's' : ''} extraído${ingredients.length !== 1 ? 's' : ''} por Gemini:</p>
+        <ul class="space-y-1 mb-3">${listHtml}</ul>
+        <p class="text-xs text-slate-400 border-t border-slate-100 pt-2 mt-2">
+          Modelo: ${modelNote || 'gemini-1.5-flash'} · Cruza los resultados con tu inventario activo antes de confirmar el escandallo.
+        </p>
+      </div>
+    </div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Update session history panel
+  _addAIHistoryEntry(ingredients.length, inputPreview);
+}
+
+
+function _appendAIError(msgs, message) {
+  msgs.innerHTML += `
+    <div class="flex gap-3">
+      <div class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-red-500" style="font-size:18px">error</span>
+      </div>
+      <div class="chat-bubble chat-ai border border-red-100 bg-red-50">
+        <p class="font-semibold text-red-700 mb-1">❌ Error al procesar</p>
+        <p class="text-sm text-red-600">${(message || 'Error desconocido').replace(/</g,'&lt;')}</p>
+        <p class="text-xs text-slate-400 mt-2">Revisa tu conexión e inténtalo de nuevo.</p>
+      </div>
+    </div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function processAI() {
+  const input = document.getElementById('ai-input');
+  const msgs  = document.getElementById('chat-messages');
+  if (!input || !msgs) return;
+
+  const text = input.value.trim();
+
+  // ── Guard: empty input ────────────────────────────────────────────────────
+  if (!text) {
+    toast('⚠️ Escribe o pega el texto de una receta primero');
+    return;
+  }
+
+  // ── Guard: Paella in dinner context ──────────────────────────────────────
+  // Mirrors the absolute hard-block implemented in filterCandidates() (L.4687)
+  const lowerText = text.toLowerCase();
+  const isPaellaRelated = lowerText.includes('paella') || lowerText.includes('arroz negro') || lowerText.includes('fideuà');
+  const isCenaContext   = document.getElementById('planner-dinner-btn') != null; // Only warn if planner is active
+  if (isPaellaRelated) {
+    // Show contextual warning in chat — not a hard block for the AI extraction
     msgs.innerHTML += `
       <div class="flex gap-3">
-        <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined text-brand" style="font-size:18px">auto_awesome</span>
+        <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-warn" style="font-size:18px">warning</span>
         </div>
-        <div class="chat-bubble chat-ai">
-          <p class="font-semibold text-slate-900 mb-2">✅ Ingredientes extraídos (${ingredients.length} detectados):</p>
-          <ul class="space-y-1 mb-3">
-            ${ingredients.map(i => `<li class="text-sm flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand inline-block flex-shrink-0"></span>${i}</li>`).join('')}
-          </ul>
-          <p class="text-xs text-slate-400 border-t border-slate-100 pt-2 mt-2">Coste estimado calculado contra inventario activo. Revisa el escandallo en la sección Recetas.</p>
-          <button onclick="showScreen('recetas');toast('📋 Escandallo generado correctamente')" class="mt-3 flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">
-            <span class="material-symbols-outlined" style="font-size:14px">receipt_long</span>Ver escandallo generado
-          </button>
+        <div class="chat-bubble chat-ai border border-amber-200 bg-amber-50">
+          <p class="font-semibold text-amber-800 mb-1">⚠️ Aviso — Regla de negocio activa</p>
+          <p class="text-sm text-amber-700">Se detecta una receta de tipo <strong>Paella / Arroz</strong>. Recuerda que las Paellas están <strong>bloqueadas absolutamente para los turnos de Cena (dinner)</strong> según las directivas del sistema. Solo pueden planificarse en almuerzo (lunch).</p>
+          <p class="text-xs text-amber-600 mt-1">La extracción de ingredientes continuará igualmente.</p>
         </div>
       </div>`;
     msgs.scrollTop = msgs.scrollHeight;
-  }, 1200);
+  }
 
+  // ── Show user message ─────────────────────────────────────────────────────
+  _appendUserBubble(msgs, text);
   input.value = '';
-  msgs.scrollTop = msgs.scrollHeight;
-  toast('🤖 Procesando con IA...');
-}
 
-function extractIngredients(text) {
-  const units = ['kg', 'g', 'l', 'ml', 'ud', 'unidad', 'unidades', 'taza', 'cucharada', 'cucharadita', 'litro', 'litros'];
-  const words = text.toLowerCase().split(/\s+/);
-  const found = [];
-  const seen = new Set();
-  for (let i = 0; i < words.length - 1; i++) {
-    const isNum = /^\d+([.,]\d+)?$/.test(words[i]);
-    const isUnit = units.some(u => words[i+1]?.includes(u));
-    if (isNum && i + 2 < words.length) {
-      const ingredient = words.slice(i+1, Math.min(i+4, words.length)).join(' ')
-        .replace(/[,.:;]/g,'').trim();
-      if (!seen.has(ingredient) && ingredient.length > 2) {
-        found.push(`${words[i]} ${ingredient}`);
-        seen.add(ingredient);
-      }
+  // ── Loading state ─────────────────────────────────────────────────────────
+  _setAIBtnLoading(true);
+  const thinkingId = _appendAIThinking(msgs);
+
+  try {
+    // ── Fetch Edge Function ───────────────────────────────────────────────
+    const edgeUrl = _getEdgeFunctionUrl();
+    const res = await fetch(edgeUrl, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text }),
+    });
+
+    _removeThinking(thinkingId);
+
+    if (!res.ok) {
+      let errMsg = `Error HTTP ${res.status}`;
+      try { const errData = await res.json(); errMsg = errData.error || errMsg; } catch (_) {}
+      _appendAIError(msgs, errMsg);
+      toast(`❌ Error: ${errMsg}`);
+      return;
     }
+
+    const data = await res.json();
+
+    if (!data.success || !Array.isArray(data.ingredients)) {
+      _appendAIError(msgs, data.error || 'Respuesta inesperada del servidor');
+      toast('❌ El servidor devolvió una respuesta inválida');
+      return;
+    }
+
+    if (data.ingredients.length === 0) {
+      // Model found no ingredients
+      msgs.innerHTML += `
+        <div class="flex gap-3">
+          <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-brand" style="font-size:18px">auto_awesome</span>
+          </div>
+          <div class="chat-bubble chat-ai">
+            <p class="font-semibold text-slate-700 mb-1">🤔 No se detectaron ingredientes</p>
+            <p class="text-sm text-slate-500">${(data.message || 'El modelo no encontró ingredientes reconocibles. Prueba con un texto más descriptivo.').replace(/</g,'&lt;')}</p>
+          </div>
+        </div>`;
+      msgs.scrollTop = msgs.scrollHeight;
+      toast('ℹ️ No se encontraron ingredientes en el texto');
+      return;
+    }
+
+    // ── Render results ────────────────────────────────────────────────────
+    _appendAIResult(msgs, data.ingredients, data.model, text.substring(0, 40));
+    toast(`✅ ${data.ingredients.length} ingredientes extraídos por Gemini`);
+
+  } catch (networkErr) {
+    _removeThinking(thinkingId);
+    console.error('[processAI] Network error:', networkErr);
+    _appendAIError(msgs, 'No se pudo conectar con el servidor. Comprueba tu conexión a internet.');
+    toast('❌ Error de conexión con el servidor de IA');
+
+  } finally {
+    // Always restore button state
+    _setAIBtnLoading(false);
   }
-  if (found.length === 0) {
-    return ['Ingrediente A (cantidad detectada)', 'Ingrediente B (cantidad detectada)', 'Ingrediente C (cantidad detectada)'];
-  }
-  return found.slice(0, 10);
 }
 
 // ── INIT moved to module script ──
