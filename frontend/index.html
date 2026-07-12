@@ -1944,6 +1944,23 @@
         </div>
       </div>
     </div>
+
+    <!-- AI Audit Log Terminal Console -->
+    <div class="mt-6 card p-0 overflow-hidden border border-slate-200">
+      <div class="bg-slate-900 px-4 py-2.5 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-slate-200 font-mono text-xs font-semibold">Consola de Auditoría IA</span>
+        </div>
+        <button onclick="document.getElementById('ai-audit-logs').innerHTML = `<p class='text-slate-500 italic text-[11px]'>[INFO] Consola de IA vacía. Listo para auditar.</p>`" 
+                class="text-[10px] text-slate-400 hover:text-slate-200 underline transition-colors font-semibold">
+          Limpiar Logs
+        </button>
+      </div>
+      <div class="bg-slate-950 p-4 h-32 overflow-y-auto font-mono text-xs text-slate-300 leading-relaxed space-y-1" id="ai-audit-logs">
+        <p class="text-slate-500 italic">[INFO] Consola de auditoría de IA iniciada. Esperando eventos de extracción NLP...</p>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -5604,130 +5621,37 @@ window.copyOrderToClipboard = function(text) {
 
 
 // ── AI ASSISTANT ──────────────────────────────────────────────────
-// ── AI PROCESSING — Gemini 1.5 Flash via Supabase Edge Function ───────────────
-// Edge Function URL: resolved dynamically from window.SUPABASE_URL set in init
+// Reads from the same Supabase project URL already configured for the client
 function _getEdgeFunctionUrl() {
-  // Reads from the same Supabase project URL already configured for the client
   const base = (typeof window._SUPABASE_URL !== 'undefined'
     ? window._SUPABASE_URL
     : 'https://aosweyggyalowhogjatz.supabase.co');
   return `${base}/functions/v1/process-recipe-ai`;
 }
 
-function _setAIBtnLoading(loading) {
-  const btn   = document.getElementById('ai-process-btn');
-  const icon  = document.getElementById('ai-process-icon');
-  const label = document.getElementById('ai-process-label');
-  if (!btn) return;
-  if (loading) {
-    btn.disabled = true;
-    if (icon)  icon.textContent  = 'progress_activity';
-    if (icon)  icon.style.animation = 'spin 1s linear infinite';
-    if (label) label.textContent = 'Procesando...';
-  } else {
-    btn.disabled = false;
-    if (icon)  icon.textContent  = 'send';
-    if (icon)  icon.style.animation = '';
-    if (label) label.textContent = 'Procesar';
-  }
+// ── AI Audit Log Function ────────────────────────────────────────────────────
+function addAiAuditLog(message, type = 'info') {
+  const container = document.getElementById('ai-audit-logs');
+  if (!container) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-ES', { hour12: false });
+  
+  let colorClass = 'text-slate-400';
+  if (type === 'success') colorClass = 'text-emerald-400 font-semibold';
+  if (type === 'error')   colorClass = 'text-red-400 font-semibold';
+  if (type === 'warn')    colorClass = 'text-amber-400';
+
+  const entry = document.createElement('p');
+  entry.className = colorClass;
+  entry.innerHTML = `[${timeStr}] [${type.toUpperCase()}] ${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}`;
+  
+  container.appendChild(entry);
+  container.scrollTop = container.scrollHeight;
 }
+window.addAiAuditLog = addAiAuditLog;
 
-function _appendUserBubble(msgs, text) {
-  const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
-  msgs.innerHTML += `
-    <div class="flex justify-end">
-      <div class="chat-bubble chat-user">${preview.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-    </div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function _appendAIThinking(msgs) {
-  const id = 'ai-thinking-' + Date.now();
-  msgs.innerHTML += `
-    <div id="${id}" class="flex gap-3">
-      <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined text-brand" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span>
-      </div>
-      <div class="chat-bubble chat-ai text-slate-400 italic text-sm">Gemini está analizando la receta...</div>
-    </div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-  return id;
-}
-
-function _removeThinking(id) {
-  document.getElementById(id)?.remove();
-}
-
-function _addAIHistoryEntry(count, label) {
-  const historyEl = document.getElementById('ai-history');
-  const emptyEl   = document.getElementById('ai-history-empty');
-  if (!historyEl) return;
-
-  // Hide empty state on first entry
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  const now   = new Date();
-  const time  = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  const entry = document.createElement('div');
-  entry.className = 'flex items-center gap-3 text-sm';
-  entry.innerHTML = `
-    <div class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-      <span class="material-symbols-outlined text-brand" style="font-size:16px">auto_awesome</span>
-    </div>
-    <div class="min-w-0 flex-grow">
-      <p class="font-medium text-slate-700 truncate">${(label || 'Receta sin título').replace(/</g,'&lt;').substring(0, 40)}</p>
-      <p class="text-xs text-slate-400">${time} · ${count} ingrediente${count !== 1 ? 's' : ''}</p>
-    </div>
-    <span class="badge badge-green ml-auto flex-shrink-0">OK</span>`;
-  // Prepend so newest is on top
-  historyEl.insertBefore(entry, historyEl.firstChild);
-}
-
-function _appendAIResult(msgs, ingredients, modelNote, inputPreview) {
-  const listHtml = ingredients.map(i => {
-    const qty  = i.quantity > 0 ? `${i.quantity} ${i.unit}` : i.unit;
-    const name = (i.name || '').replace(/</g,'&lt;');
-    return `<li class="text-sm flex items-center gap-2">
-      <span class="w-1.5 h-1.5 rounded-full bg-brand inline-block flex-shrink-0"></span>
-      <span><strong>${qty}</strong> de ${name}</span>
-    </li>`;
-  }).join('');
-
-  msgs.innerHTML += `
-    <div class="flex gap-3">
-      <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined text-brand" style="font-size:18px">auto_awesome</span>
-      </div>
-      <div class="chat-bubble chat-ai">
-        <p class="font-semibold text-slate-900 mb-2">✅ ${ingredients.length} ingrediente${ingredients.length !== 1 ? 's' : ''} extraído${ingredients.length !== 1 ? 's' : ''} por Gemini:</p>
-        <ul class="space-y-1 mb-3">${listHtml}</ul>
-        <p class="text-xs text-slate-400 border-t border-slate-100 pt-2 mt-2">
-          Modelo: ${modelNote || 'gemini-1.5-flash'} · Cruza los resultados con tu inventario activo antes de confirmar el escandallo.
-        </p>
-      </div>
-    </div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-
-  // Update session history panel
-  _addAIHistoryEntry(ingredients.length, inputPreview);
-}
-
-
-function _appendAIError(msgs, message) {
-  msgs.innerHTML += `
-    <div class="flex gap-3">
-      <div class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined text-red-500" style="font-size:18px">error</span>
-      </div>
-      <div class="chat-bubble chat-ai border border-red-100 bg-red-50">
-        <p class="font-semibold text-red-700 mb-1">❌ Error al procesar</p>
-        <p class="text-sm text-red-600">${(message || 'Error desconocido').replace(/</g,'&lt;')}</p>
-        <p class="text-xs text-slate-400 mt-2">Revisa tu conexión e inténtalo de nuevo.</p>
-      </div>
-    </div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
+// ── AI PROCESSING — Gemini 1.5 Flash via Supabase Edge Function ───────────────
 async function processAI() {
   const input = document.getElementById('ai-input');
   const msgs  = document.getElementById('chat-messages');
@@ -5735,18 +5659,26 @@ async function processAI() {
 
   const text = input.value.trim();
 
+  addAiAuditLog('🤖 Iniciando procesamiento de texto libre...', 'info');
+
   // ── Guard: empty input ────────────────────────────────────────────────────
   if (!text) {
+    addAiAuditLog('❌ Validación fallida: El campo de entrada está vacío.', 'error');
     toast('⚠️ Escribe o pega el texto de una receta primero');
     return;
   }
+
+  addAiAuditLog('🔍 Validando contenido y buscando restricciones horarias...', 'info');
 
   // ── Guard: Paella in dinner context ──────────────────────────────────────
   // Mirrors the absolute hard-block implemented in filterCandidates() (L.4687)
   const lowerText = text.toLowerCase();
   const isPaellaRelated = lowerText.includes('paella') || lowerText.includes('arroz negro') || lowerText.includes('fideuà');
   const isCenaContext   = document.getElementById('planner-dinner-btn') != null; // Only warn if planner is active
+  
   if (isPaellaRelated) {
+    addAiAuditLog('⚠️ Aviso de regla de negocio: Receta de tipo Paella/Arroz detectada.', 'warn');
+    
     // Show contextual warning in chat — not a hard block for the AI extraction
     msgs.innerHTML += `
       <div class="flex gap-3">
@@ -5771,8 +5703,9 @@ async function processAI() {
   const thinkingId = _appendAIThinking(msgs);
 
   try {
-    // ── Fetch Edge Function ───────────────────────────────────────────────
     const edgeUrl = _getEdgeFunctionUrl();
+    addAiAuditLog(`📡 Enviando petición a Edge Function: ${edgeUrl}...`, 'info');
+    
     const res = await fetch(edgeUrl, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5784,6 +5717,8 @@ async function processAI() {
     if (!res.ok) {
       let errMsg = `Error HTTP ${res.status}`;
       try { const errData = await res.json(); errMsg = errData.error || errMsg; } catch (_) {}
+      
+      addAiAuditLog(`❌ Error en Edge Function: ${errMsg}`, 'error');
       _appendAIError(msgs, errMsg);
       toast(`❌ Error: ${errMsg}`);
       return;
@@ -5792,13 +5727,16 @@ async function processAI() {
     const data = await res.json();
 
     if (!data.success || !Array.isArray(data.ingredients)) {
-      _appendAIError(msgs, data.error || 'Respuesta inesperada del servidor');
+      const parseErr = data.error || 'Respuesta inesperada';
+      addAiAuditLog(`❌ Error en estructura de datos: ${parseErr}`, 'error');
+      _appendAIError(msgs, parseErr);
       toast('❌ El servidor devolvió una respuesta inválida');
       return;
     }
 
     if (data.ingredients.length === 0) {
-      // Model found no ingredients
+      addAiAuditLog('🤔 Petición procesada con éxito pero Gemini no detectó ningún ingrediente.', 'warn');
+      
       msgs.innerHTML += `
         <div class="flex gap-3">
           <div class="w-8 h-8 rounded-xl bg-brand-muted flex items-center justify-center flex-shrink-0">
@@ -5814,6 +5752,8 @@ async function processAI() {
       return;
     }
 
+    addAiAuditLog(`✅ Extracción exitosa. ${data.ingredients.length} ingredientes procesados con modelo ${data.model}.`, 'success');
+
     // ── Render results ────────────────────────────────────────────────────
     _appendAIResult(msgs, data.ingredients, data.model, text.substring(0, 40));
     toast(`✅ ${data.ingredients.length} ingredientes extraídos por Gemini`);
@@ -5821,11 +5761,12 @@ async function processAI() {
   } catch (networkErr) {
     _removeThinking(thinkingId);
     console.error('[processAI] Network error:', networkErr);
+    
+    addAiAuditLog(`❌ Error de red crítico al llamar a la Edge Function: ${networkErr.message}`, 'error');
     _appendAIError(msgs, 'No se pudo conectar con el servidor. Comprueba tu conexión a internet.');
     toast('❌ Error de conexión con el servidor de IA');
 
   } finally {
-    // Always restore button state
     _setAIBtnLoading(false);
   }
 }
@@ -5980,6 +5921,7 @@ function cancelAddSubcategory() {
 async function saveNewSubcategory() {
   const name = document.getElementById('subcat-new-name').value.trim();
   if (!name || !_catMgrSelectedCat) return;
+
   toast(`✅ Subcategoría "${name}" lista. Asígnala al editar un ingrediente.`);
   cancelAddSubcategory();
 }
