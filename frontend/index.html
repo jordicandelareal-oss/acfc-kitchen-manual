@@ -1211,13 +1211,15 @@
         <span id="shopping-list-date-range">🛒 Mostrando lista de compras...</span>
       </div>
       <div class="flex items-center gap-3 flex-wrap text-slate-600">
-        <div class="flex items-center gap-1">
-          <label for="shopping-start-date" class="font-medium text-slate-400">Inicio:</label>
-          <input type="date" id="shopping-start-date" onchange="calculateShoppingList()" class="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-brand" />
-        </div>
-        <div class="flex items-center gap-1">
-          <label for="shopping-end-date" class="font-medium text-slate-400">Fin:</label>
-          <input type="date" id="shopping-end-date" onchange="calculateShoppingList()" class="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-brand" />
+        <div class="flex items-center gap-2">
+          <label for="shopping-week-select" class="font-medium text-slate-400">Seleccionar Semana:</label>
+          <select id="shopping-week-select" onchange="calculateShoppingList()" class="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-brand">
+            <option value="2026-07-06">Semana 1 (Del 06/07 al 12/07)</option>
+            <option value="2026-07-13">Semana 2 (Del 13/07 al 19/07)</option>
+            <option value="2026-07-20">Semana 3 (Del 20/07 al 26/07)</option>
+            <option value="2026-07-27">Semana 4 (Del 27/07 al 02/08)</option>
+            <option value="2026-08-03">Semana 5 (Del 03/08 al 09/08)</option>
+          </select>
         </div>
       </div>
     </div>
@@ -5225,21 +5227,34 @@ window.closeShoppingListModal = function() {
 }
 
 window.calculateShoppingList = async function() {
-  let startDateVal = document.getElementById('shopping-start-date')?.value;
-  let endDateVal = document.getElementById('shopping-end-date')?.value;
+  const selectEl = document.getElementById('shopping-week-select');
+  let selectedMonday = selectEl?.value;
   
-  if (!startDateVal) {
-    startDateVal = '2026-07-06';
-    if (document.getElementById('shopping-start-date')) {
-      document.getElementById('shopping-start-date').value = startDateVal;
-    }
+  if (!selectedMonday) {
+    const checkedMain = document.querySelector('input[name="generate-week-main"]:checked');
+    const activeWeekNum = checkedMain ? parseInt(checkedMain.value) : 1;
+    const weekMondays = {
+      1: '2026-07-06',
+      2: '2026-07-13',
+      3: '2026-07-20',
+      4: '2026-07-27',
+      5: '2026-08-03'
+    };
+    selectedMonday = weekMondays[activeWeekNum] || '2026-07-06';
+    if (selectEl) selectEl.value = selectedMonday;
   }
-  if (!endDateVal) {
-    endDateVal = '2026-07-12';
-    if (document.getElementById('shopping-end-date')) {
-      document.getElementById('shopping-end-date').value = endDateVal;
-    }
-  }
+
+  const parts = selectedMonday.split('-');
+  const mondayDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  const sundayDate = new Date(mondayDate);
+  sundayDate.setDate(sundayDate.getDate() + 6);
+  
+  const formatDateStr = (d) => {
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  };
+  
+  const startDateVal = formatDateStr(mondayDate);
+  const endDateVal = formatDateStr(sundayDate);
 
   // Helper to format pretty date range
   const formatPrettyDateRange = (startStr, endStr) => {
