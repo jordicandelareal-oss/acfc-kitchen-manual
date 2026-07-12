@@ -5888,9 +5888,15 @@ async function handleAiStockCameraUpload(event) {
 
       try {
         const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
+        const key = (typeof window.supabase?.supabaseKey !== 'undefined' ? window.supabase.supabaseKey : '');
+        
         const res = await fetch(`${base}/functions/v1/process-stock-image`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
+          },
           body: JSON.stringify({ imageBase64: compressedBase64 })
         });
 
@@ -5948,7 +5954,7 @@ async function requestRecipeSuggestions() {
   const allergens = Array.from(document.querySelectorAll('input[name="ai-allergens"]:checked')).map(cb => cb.value);
 
   window.addAiLog('[INFO] Leyendo inventario real de public.ingredients para detectar excesos y caducidades...', 'info');
-  window.addAiLog(`[INFO] Aplicando filtros de perfil seleccionados: Dieta=${diet || 'Ninguna'}, Alérgenos=${allergens.join(', ') || 'Ninguno'}.`, 'info');
+  window.addAiLog(`[INFO] Aplicando filtros de perfil seleccionados: (Dieta=${diet || 'Ninguna'}, Alérgenos=${allergens.join(', ') || 'Ninguno'}).`, 'info');
   
   showScreen('recipes');
   toast('🤖 Consultando Chef Nutricionista...');
@@ -5962,13 +5968,19 @@ async function requestRecipeSuggestions() {
   }));
 
   const thinkingId = _appendAIThinking(msgs);
-  window.addAiLog('[INFO] Enviando prompt consolidado a Gemini...', 'info');
+  window.addAiLog('[INFO] Enviando prompt consolidado y datos de inventario a Gemini 1.5 Flash...', 'info');
 
   try {
     const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
+    const key = (typeof window.supabase?.supabaseKey !== 'undefined' ? window.supabase.supabaseKey : '');
+
     const res = await fetch(`${base}/functions/v1/suggest-recipes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'apikey': key,
+        'Authorization': `Bearer ${key}`
+      },
       body: JSON.stringify({ ingredients: insumos, diet, allergens })
     });
 
@@ -5987,7 +5999,8 @@ async function requestRecipeSuggestions() {
     window.addAiLog(`[SUCCESS] Gemini sugirió ${suggestions.length} recetas cumpliendo las directrices de nutrición y alérgenos.`, 'success');
 
     suggestions.forEach(recipe => {
-      const b64Payload = btoa(unescape(encodeURIComponent(JSON.stringify(recipe))));
+      const utf8String = unescape(encodeURIComponent(JSON.stringify(recipe)));
+      const b64Payload = btoa(utf8String);
       
       const dietaryTagsHtml = (recipe.dietary_tags || []).map(t => {
         return `<span class="badge badge-green text-[10px]">${t}</span>`;
@@ -6016,7 +6029,7 @@ async function requestRecipeSuggestions() {
             <p class="font-semibold text-xs text-slate-700 mb-1">Ingredientes requeridos:</p>
             <ul class="mb-3 space-y-0.5">${ingredientsHtml}</ul>
             <button onclick="confirmAndIntegrateRecipe('${b64Payload}')" class="flex items-center gap-1 px-3 py-1.5 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">
-              <span class="material-symbols-outlined" style="font-size:14px">add_circle</span>Confirmar e Integrar en la Plataforma
+              <span class="material-symbols-outlined" style="font-size:14px">add_circle</span>🤖 Confirmar e Integrar Receta
             </button>
           </div>
         </div>`;
