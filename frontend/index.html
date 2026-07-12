@@ -5959,13 +5959,10 @@ async function requestRecipeSuggestions() {
   showScreen('recipes');
   toast('🤖 Consultando Chef Nutricionista...');
 
-  // Extraer todos los insumos activos del catálogo tengan o no stock
+  // Extraer un catálogo optimizado (únicamente nombres y categorías) para minimizar el tamaño del payload enviado
   const insumos = INVENTORY.map(i => ({
-    id: i.id,
     name: i.name,
-    stock: i.stock_actual || 0,
-    min_stock: i.stock_minimo || 0,
-    critical: (i.stock_actual <= i.stock_minimo)
+    category: i.cat || 'Sin categoría'
   }));
 
   window.addAiLog('[INFO] Catálogo de insumos cargado (' + insumos.length + ' ingredientes detectados).', 'info');
@@ -5990,12 +5987,15 @@ async function requestRecipeSuggestions() {
     _removeThinking(thinkingId);
 
     if (!res.ok) {
+      window.addAiLog('❌ Error en servidor de Edge Functions: Código ' + res.status, 'error');
       throw new Error(`HTTP ${res.status}`);
     }
 
+    window.addAiLog('[SUCCESS] Edge Function respondió. Procesando JSON de recetas...', 'success');
+
     const data = await res.json();
     if (!data?.success || !data?.data?.suggestions) {
-      throw new Error('Respuesta inválida de la IA');
+      throw new Error('Respuesta de datos inválida de la IA');
     }
 
     const suggestions = data.data.suggestions;
@@ -6041,7 +6041,7 @@ async function requestRecipeSuggestions() {
 
   } catch (err) {
     _removeThinking(thinkingId);
-    window.addAiLog(`❌ Error solicitando recetas sugeridas: ${err.message}`, 'error');
+    window.addAiLog('❌ Error de red/CORS: ' + err.message, 'error');
     toast('❌ Error al obtener sugerencias de la IA');
   }
 }
