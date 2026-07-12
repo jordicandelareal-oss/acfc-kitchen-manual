@@ -2165,26 +2165,31 @@ function calculateNetCost() {
   const price  = parseFloat(document.getElementById('ing-purchase-price').value) || 0;
   const pct    = parseFloat(document.getElementById('ing-waste').value) || 0;
   const scenario = document.getElementById('ing-output-scenario').value;
+  const id = document.getElementById('ing-id').value;
   
   // Use centralized math utilities
   const baseCostPerKg = window.mathUtils ? window.mathUtils.calcularCosteBase(price, format, scenario) : (scenario === 'KG_LT' ? (format > 0 ? price / (format / 1000) : 0) : (format > 0 ? price / format : 0));
   const netCost = window.mathUtils ? window.mathUtils.calcularCosteNeto(baseCostPerKg, pct, _processType) : (_processType === 'MERMA' ? (1 - pct/100 > 0 ? baseCostPerKg / (1 - pct/100) : 0) : baseCostPerKg / (1 + pct/100));
   
+  const existingItem = id && typeof INVENTORY !== 'undefined' ? INVENTORY.find(i => i.id === id) : null;
+  const existingCost = existingItem ? (existingItem.cost || existingItem.precio_por_kg || existingItem.precio_por_u || existingItem.precio_mas_bajo || 0) : 0;
+  const finalCost = netCost > 0 ? netCost : existingCost;
+
   let formulaStr = '';
   if (_processType === 'MERMA') {
-    formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 - ${pct}%) = ${netCost.toFixed(4)}€`;
+    formulaStr = `${(netCost > 0 ? baseCostPerKg : 0).toFixed(4)}€ / (1 - ${pct}%) = ${(netCost > 0 ? netCost : 0).toFixed(4)}€`;
   } else {
-    formulaStr = `${baseCostPerKg.toFixed(4)}€ / (1 + ${pct}%) = ${netCost.toFixed(4)}€`;
+    formulaStr = `${(netCost > 0 ? baseCostPerKg : 0).toFixed(4)}€ / (1 + ${pct}%) = ${(netCost > 0 ? netCost : 0).toFixed(4)}€`;
   }
   
   // Display
   const basePriceDisplay = document.getElementById('ing-base-price-display');
-  if (basePriceDisplay) basePriceDisplay.textContent = baseCostPerKg > 0 ? baseCostPerKg.toFixed(4) + ' €/kg' : '—';
+  if (basePriceDisplay) basePriceDisplay.textContent = (netCost > 0 ? baseCostPerKg : 0) > 0 ? baseCostPerKg.toFixed(4) + ' €/kg' : '—';
   
-  document.getElementById('ing-calculated-cost').textContent = netCost.toFixed(2) + ' €';
-  document.getElementById('ing-cost-formula').textContent = formulaStr || '—';
+  document.getElementById('ing-calculated-cost').textContent = finalCost.toFixed(2) + ' €';
+  document.getElementById('ing-cost-formula').textContent = netCost > 0 ? formulaStr : '—';
   
-  return netCost;
+  return finalCost;
 }
 
 async function saveIngredient() {
@@ -2305,6 +2310,7 @@ async function saveIngredient() {
           ...payload,
           cat: payload.category || 'Sin categoría',
           cost: netCost,
+          calculated_net_cost_kg: netCost > 0 ? netCost : (INVENTORY[index].calculated_net_cost_kg || netCost),
           provider_name: resolvedSupplierName,
           supplier: resolvedSupplierName,
           stock_actual: payload.stock_actual,
@@ -2325,6 +2331,10 @@ async function saveIngredient() {
     populateInventoryFilters();
     updateInventoryStats();
     filterInventory();
+
+    if (typeof window.refreshReactInventory === 'function') {
+      window.refreshReactInventory();
+    }
 
   } catch (err) {
     console.error('Error guardando ingrediente:', err);
@@ -6490,7 +6500,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
       if (error) throw error;
 
       // 3. Get Public URL and update DOM state
-      const { data: urlData } = window.getRecipePublicUrl(fileName);
+      const { data: urlData } = await window.getRecipePublicUrl(fileName);
 
       if (urlData && urlData.publicUrl) {
         imageInput.value = urlData.publicUrl;

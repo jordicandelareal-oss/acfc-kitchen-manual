@@ -327,7 +327,7 @@ export const uploadRecipeImageFile = async (filePath, file, options = {}) => {
   return supabase.storage.from('recipe-images').upload(filePath, file, options);
 };
 
-export const getRecipePublicUrl = (filePath) => {
+export const getRecipePublicUrl = async (filePath) => {
   return supabase.storage.from('recipe-images').getPublicUrl(filePath);
 };
 

@@ -337,7 +337,7 @@ const InsumosTab = ({ loading }) => {
   const [search,   setSearch]   = useState('');
   const [catFilter, setCatFilter] = useState('');
 
-  useEffect(() => {
+  const refreshInventory = useCallback(() => {
     setFetching(true);
     fetchInsumos().then(res => {
       if (res && res.success) setItems(res.items || []);
@@ -347,6 +347,14 @@ const InsumosTab = ({ loading }) => {
       setFetching(false);
     });
   }, []);
+
+  useEffect(() => {
+    refreshInventory();
+    window.refreshReactInventory = refreshInventory;
+    return () => {
+      window.refreshReactInventory = null;
+    };
+  }, [refreshInventory]);
 
   if (fetching || loading) {
     return (
