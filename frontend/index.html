@@ -2006,16 +2006,16 @@
               <span class="text-slate-600">Detección de Paellas y aviso de reglas de planificación</span>
             </div>
             <div class="flex gap-3 text-sm">
-              <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
-              <span class="text-slate-400">Escaneo de albaranes por foto (próximamente)</span>
+              <span class="material-symbols-outlined text-brand mt-0.5" style="font-size:18px">check_circle</span>
+              <span class="text-slate-600">Identificación y conteo de stock físico por cámara</span>
             </div>
             <div class="flex gap-3 text-sm">
-              <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
-              <span class="text-slate-400">Conteo de stock por cámara (próximamente)</span>
+              <span class="material-symbols-outlined text-brand mt-0.5" style="font-size:18px">check_circle</span>
+              <span class="text-slate-600">Recomendaciones nutricionales Halal, Kosher y Veganas</span>
             </div>
             <div class="flex gap-3 text-sm">
-              <span class="material-symbols-outlined text-slate-300 mt-0.5" style="font-size:18px">radio_button_unchecked</span>
-              <span class="text-slate-400">Alergenos automáticos (próximamente)</span>
+              <span class="material-symbols-outlined text-brand mt-0.5" style="font-size:18px">check_circle</span>
+              <span class="text-slate-600">Alta y validación en bloque de nuevos insumos</span>
             </div>
           </div>
         </div>
@@ -5968,7 +5968,7 @@ async function requestRecipeSuggestions() {
   }));
 
   const thinkingId = _appendAIThinking(msgs);
-  window.addAiLog('[INFO] Enviando prompt consolidado y datos de inventario a Gemini 1.5 Flash...', 'info');
+  window.addAiLog('[INFO] Enviando inventario de Supabase y perfiles de dieta a Gemini 1.5 Flash...', 'info');
 
   try {
     const base = (typeof window._SUPABASE_URL !== 'undefined' ? window._SUPABASE_URL : 'https://aosweyggyalowhogjatz.supabase.co');
