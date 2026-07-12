@@ -3613,56 +3613,65 @@ window.renderPlannerTarget = function(target) {
 }
 
 window.clearPlannerRecipe = async function(target) {
+  const d = _currentPlannerDay;
+  const dateStr = `2026-07-${d.toString().padStart(2, '0')}`;
+  
   // Capture old recipe & players BEFORE clearing
   const oldRecipeId = _currentPlannerState[`${target}_recipe_id`];
   const playersKey = target === 'breakfast' ? 'breakfast_players' : `${target}_players`;
   const oldPlayers = _currentPlannerState[playersKey] || _currentPlannerState.lunch_players || 0;
 
-  // Release reserved stock directly via Supabase JS — no RPC function needed
-  if (oldRecipeId && oldPlayers > 0 && window.supabase) {
+  // Release reserved stock using RPC in a single server-side operation
+  if (oldRecipeId && oldPlayers > 0 && window.liberarStockReservado) {
     try {
-      // 1. Fetch the ingredients of this recipe and their portion quantities
-      const { data: recipeIngs, error: fetchErr } = await window.supabase
-        .from('recipe_ingredients')
-        .select('ingredient_id, quantity_per_portion')
-        .eq('recipe_id', oldRecipeId);
-
-      if (fetchErr) throw fetchErr;
-
-      // 2. For each ingredient, subtract the committed amount from stock_reservado
-      for (const ri of (recipeIngs || [])) {
-        const totalToRelease = (ri.quantity_per_portion || 0) * oldPlayers;
-        if (totalToRelease <= 0) continue;
-
-        // Fetch current stock_reservado to ensure we don't go below 0
-        const { data: ing } = await window.supabase
-          .from('ingredients')
-          .select('stock_reservado')
-          .eq('id', ri.ingredient_id)
-          .single();
-
-        const currentReserved = Number(ing?.stock_reservado) || 0;
-        const newReserved = Math.max(0, currentReserved - totalToRelease);
-
-        await window.supabase
-          .from('ingredients')
-          .update({ stock_reservado: newReserved, updated_at: new Date().toISOString() })
-          .eq('id', ri.ingredient_id);
-
-        if (window.addPlannerAuditLog) {
-          window.addPlannerAuditLog(
-            `[LIBERACION] Ingrediente ${ri.ingredient_id} | Reservado anterior: ${currentReserved}g | Liberado: ${totalToRelease}g | Nuevo reservado: ${newReserved}g`,
-            'info'
-          );
-        }
+      const { error: rpcErr } = await window.liberarStockReservado(oldRecipeId, oldPlayers);
+      if (rpcErr) throw rpcErr;
+      if (window.addPlannerAuditLog) {
+        window.addPlannerAuditLog(
+          `[LIBERACION] Liberado stock reservado de receta ${oldRecipeId} con ${oldPlayers} comensales.`,
+          'info'
+        );
       }
     } catch(e) {
-      console.error('[clearPlannerRecipe] Error liberando stock reservado:', e);
+      console.error('[clearPlannerRecipe] Error liberando stock reservado via RPC:', e);
     }
   }
 
+  // Update local states
   _currentPlannerState[`${target}_recipe_id`] = null;
+  
+  if (!PLANNER_DATA[d]) {
+    PLANNER_DATA[d] = {
+      date: dateStr,
+      breakfast_recipe_id: null,
+      lunch_recipe_id: null,
+      lunch_side_recipe_id: null,
+      dinner_recipe_id: null,
+      lunch_players: 0,
+      dinner_players: 0,
+      confirmado: false
+    };
+  }
+  PLANNER_DATA[d][`${target}_recipe_id`] = null;
+
+  // Save changes to database for this day to clean the field in menu_planner
+  try {
+    const payload = {
+      ...PLANNER_DATA[d],
+      date: dateStr
+    };
+    const { error: dbErr } = await window.upsertPlannerDays([payload]);
+    if (dbErr) throw dbErr;
+    
+    if (window.addPlannerAuditLog) {
+      window.addPlannerAuditLog(`[BORRADO] Campo ${target}_recipe_id borrado en base de datos para la fecha ${dateStr}.`, 'success');
+    }
+  } catch(e) {
+    console.error('[clearPlannerRecipe] Error actualizando menu_planner:', e);
+  }
+
   renderPlannerTarget(target);
+  renderCalendar();
 }
 
 let _currentRecipeSelectorCat = '';
@@ -4274,6 +4283,78 @@ window.executePlannerReset = async function() {
         allDates.push(dateStr);
       }
     });
+
+    // 1. Identify all planned recipes in that range and their players to release reserved stock
+    const { data: dbMenus, error: fetchErr } = await window.supabase
+      .from('menu_planner')
+      .select('*')
+      .in('date', allDates);
+    
+    if (fetchErr) throw fetchErr;
+
+    const recipesToRelease = [];
+    if (dbMenus && dbMenus.length > 0) {
+      dbMenus.forEach(m => {
+        const lp = m.lunch_players || 0;
+        const dp = m.dinner_players || 0;
+        const bp = m.breakfast_players || lp || dp || 0;
+
+        if (m.breakfast_recipe_id && bp > 0) {
+          recipesToRelease.push({ recipeId: m.breakfast_recipe_id, players: bp });
+        }
+        if (m.lunch_recipe_id && lp > 0) {
+          recipesToRelease.push({ recipeId: m.lunch_recipe_id, players: lp });
+        }
+        if (m.lunch_side_recipe_id && lp > 0) {
+          recipesToRelease.push({ recipeId: m.lunch_side_recipe_id, players: lp });
+        }
+        if (m.dinner_recipe_id && dp > 0) {
+          recipesToRelease.push({ recipeId: m.dinner_recipe_id, players: dp });
+        }
+      });
+    }
+
+    // Calculate and subtract reserved stock from each ingredient masivamente
+    if (recipesToRelease.length > 0) {
+      const recipeIds = [...new Set(recipesToRelease.map(r => r.recipeId))];
+      const { data: recipeIngs, error: riErr } = await window.supabase
+        .from('recipe_ingredients')
+        .select('recipe_id, ingredient_id, quantity_per_portion')
+        .in('recipe_id', recipeIds);
+      if (riErr) throw riErr;
+
+      const ingredientDeductions = {};
+      recipesToRelease.forEach(item => {
+        const ings = (recipeIngs || []).filter(ri => ri.recipe_id === item.recipeId);
+        ings.forEach(ri => {
+          const deduction = (ri.quantity_per_portion || 0) * item.players;
+          if (deduction > 0) {
+            ingredientDeductions[ri.ingredient_id] = (ingredientDeductions[ri.ingredient_id] || 0) + deduction;
+          }
+        });
+      });
+
+      const ingredientIds = Object.keys(ingredientDeductions);
+      if (ingredientIds.length > 0) {
+        const { data: ingsData, error: ingErr } = await window.supabase
+          .from('ingredients')
+          .select('id, stock_reservado')
+          .in('id', ingredientIds);
+        if (ingErr) throw ingErr;
+
+        const updatePromises = ingsData.map(async (ing) => {
+          const toDeduct = ingredientDeductions[ing.id] || 0;
+          const currentReserved = Number(ing.stock_reservado) || 0;
+          const newReserved = Math.max(0, currentReserved - toDeduct);
+
+          return window.supabase
+            .from('ingredients')
+            .update({ stock_reservado: newReserved, updated_at: new Date().toISOString() })
+            .eq('id', ing.id);
+        });
+        await Promise.all(updatePromises);
+      }
+    }
     
     const baseUpdateObj = {
       breakfast_recipe_id: null,
@@ -4305,6 +4386,10 @@ window.executePlannerReset = async function() {
           PLANNER_DATA[day].lunch_recipe_id = null;
           PLANNER_DATA[day].lunch_side_recipe_id = null;
           PLANNER_DATA[day].dinner_recipe_id = null;
+          PLANNER_DATA[day].breakfast_players = 0;
+          PLANNER_DATA[day].lunch_players = 0;
+          PLANNER_DATA[day].dinner_players = 0;
+          PLANNER_DATA[day].confirmado = false;
         }
       }
     });
