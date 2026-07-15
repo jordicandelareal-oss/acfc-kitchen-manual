@@ -2698,54 +2698,71 @@ function renderInventory(items) {
       </tr>`;
   }).join('');
 
-  // ── Mobile stacked cards ───────────────────────────────────────────────
+  // ── Mobile collapsible accordion cards ────────────────────────────────
   if (mobileCards) {
-    mobileCards.innerHTML = items.map(item => {
+    mobileCards.innerHTML = items.map((item, idx) => {
       const isCritical = item.critical;
-      const statusColor = isCritical ? 'text-red-600 bg-red-50 border-red-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
-      const statusLabel = isCritical ? '⚠️ REORDENAR' : '✅ OK';
-      const imgHtml = item?.image_url
-        ? `<img src="${item.image_url}" class="w-10 h-10 rounded-lg object-cover border border-slate-100 flex-shrink-0" onerror="this.style.display='none'" />`
-        : `<div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-slate-400 text-base">image</span></div>`;
+      const dotColor = isCritical ? 'bg-red-500' : 'bg-emerald-500';
+      const statusLabel = isCritical ? '⚠️ Reordenar' : '✅ OK';
+      const statusTextColor = isCritical ? 'text-red-600' : 'text-emerald-600';
+      const accordionId = `inv-acc-${item.id}`;
       return `
-        <div class="border border-slate-100 rounded-xl p-4 bg-white shadow-sm active:bg-slate-50 transition-colors" onclick="openIngredientModal('${item.id}')">
-          <!-- Header: image + name + status pill -->
-          <div class="flex items-center gap-3 mb-3">
-            ${imgHtml}
-            <div class="flex-1 min-w-0">
-              <p class="font-bold text-slate-900 text-sm leading-tight truncate">${item?.name || 'Sin nombre'}</p>
-              ${item?.brand ? `<p class="text-[10px] text-slate-400 font-medium">${item.brand}</p>` : ''}
-              <span class="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusColor}">${statusLabel}</span>
-            </div>
-            <button onclick="event.stopPropagation();openIngredientModal('${item.id}')" class="p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
-              <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+        <div class="border ${isCritical ? 'border-red-200' : 'border-slate-100'} rounded-xl bg-white shadow-sm overflow-hidden">
+          <!-- Single-row header: status dot + name + edit + chevron -->
+          <button
+            class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-slate-50 transition-colors"
+            onclick="(function(btn){
+              const body = document.getElementById('${accordionId}');
+              const chevron = btn.querySelector('.planner-accordion-chevron');
+              const isOpen = body.classList.toggle('open');
+              chevron.classList.toggle('open', isOpen);
+            })(this)"
+          >
+            <span class="w-2 h-2 rounded-full flex-shrink-0 ${dotColor}"></span>
+            <span class="text-sm font-semibold text-slate-900 truncate flex-1 text-left">${item?.name || 'Sin nombre'}</span>
+            ${item?.brand ? `<span class="text-[10px] text-slate-400 hidden xs:inline truncate max-w-[70px]">${item.brand}</span>` : ''}
+            <span class="text-[10px] font-bold ${statusTextColor} flex-shrink-0">${item.stock_actual || 0} ${item.unit}</span>
+            <button
+              onclick="event.stopPropagation(); openIngredientModal('${item.id}')"
+              class="p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined" style="font-size:16px">edit</span>
             </button>
-          </div>
-          <!-- Data grid 2-col -->
-          <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-500" onclick="event.stopPropagation();">
-            <div class="bg-slate-50 rounded-lg p-2">
-              <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Stock actual</p>
-              <div class="flex items-center gap-1">
-                <input type="number" step="any" value="${item.stock_actual || 0}"
-                  oninput="updateLocalStockField('${item.id}', 'stock_actual', this.value)"
-                  class="w-16 text-sm font-bold text-slate-900 bg-transparent border-0 focus:ring-1 focus:ring-brand rounded focus:outline-none text-left p-0" />
-                <span class="text-slate-400 text-[10px]">${item.unit}</span>
+            <span class="material-symbols-outlined text-slate-400 planner-accordion-chevron flex-shrink-0" style="font-size:18px">expand_more</span>
+          </button>
+          <!-- Collapsible detail body -->
+          <div id="${accordionId}" class="planner-accordion-body">
+            <div class="px-4 pb-4 pt-3 border-t border-slate-100 space-y-3" onclick="event.stopPropagation()">
+              <!-- Detail grid 2-col -->
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-slate-50 rounded-lg p-2.5">
+                  <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-1">Stock actual</p>
+                  <div class="flex items-center gap-1">
+                    <input type="number" step="any" value="${item.stock_actual || 0}"
+                      oninput="updateLocalStockField('${item.id}', 'stock_actual', this.value)"
+                      class="w-16 text-sm font-bold text-slate-900 bg-transparent border-0 focus:ring-1 focus:ring-brand rounded focus:outline-none p-0" />
+                    <span class="text-slate-400">${item.unit}</span>
+                  </div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-2.5">
+                  <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-1">Categoría</p>
+                  <p class="font-semibold text-slate-700 truncate">${item.cat || '—'}</p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-2.5">
+                  <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-1">Mín / Máx</p>
+                  <p class="font-semibold text-slate-700">${item.stock_minimo || 0} / ${item.stock_maximo || 0} <span class="text-slate-400 font-normal">${item.unit}</span></p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-2.5">
+                  <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-1">Coste/kg</p>
+                  <p class="font-bold text-slate-900">${(Number(item.cost) || 0).toFixed(2)}€</p>
+                </div>
               </div>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-2">
-              <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Categoría</p>
-              <p class="font-semibold text-slate-700 truncate">${item.cat || '—'}</p>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-2">
-              <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Mínimo / Máximo</p>
-              <p class="font-semibold text-slate-700">${item.stock_minimo || 0} / ${item.stock_maximo || 0} <span class="text-slate-400 font-normal">${item.unit}</span></p>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-2">
-              <p class="text-[9px] uppercase tracking-wider font-bold text-slate-400 mb-0.5">Coste/kg</p>
-              <p class="font-bold text-slate-900">${(Number(item.cost) || 0).toFixed(2)}€</p>
+              ${item.supplier ? `<p class="text-[10px] text-slate-400 truncate">📦 ${item.supplier}</p>` : ''}
+              <button onclick="openIngredientModal('${item.id}')" class="w-full flex justify-center items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-brand-muted text-slate-600 hover:text-brand rounded-lg text-xs font-semibold transition-colors border border-slate-200 min-h-[40px]">
+                <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span> Ver ficha completa
+              </button>
             </div>
           </div>
-          ${item.supplier ? `<p class="text-[10px] text-slate-400 mt-2 truncate">📦 ${item.supplier}</p>` : ''}
         </div>`;
     }).join('');
   }
