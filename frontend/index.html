@@ -184,7 +184,7 @@
       playsinline
       webkit-playsinline="true"
       preload="auto"
-      class="w-full h-full object-fill"
+      class="w-full h-full object-cover"
     ></video>
   </div>
 
@@ -877,9 +877,9 @@
       
     </div>
     
-    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
-      <button onclick="closePlannerDayModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-      <button onclick="savePlannerDay()" id="planner-save-btn" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
+    <div class="sticky bottom-0 bg-white z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+      <button onclick="closePlannerDayModal()" class="px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors min-h-[48px] min-w-[100px]">Cancelar</button>
+      <button onclick="savePlannerDay()" id="planner-save-btn" class="px-6 py-3 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2 min-h-[48px] min-w-[120px] justify-center">
         <span class="material-symbols-outlined text-[18px] hidden" id="planner-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
         <span id="planner-save-text">Guardar Día</span>
       </button>
@@ -3499,31 +3499,31 @@ function renderCalendar() {
       const dayName = dayNames[dateObj.getDay()];
       
       mHtml += `
-      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative">
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative hover:border-brand/40 ${window.mobileSelectedMeal && window.mobileSelectedMeal.targetDay === d ? 'border-brand ring-1 ring-brand' : ''}" onclick="handleMobileDayTap(${d})">
         ${isToday ? '<span class="absolute top-3 right-3 w-2 h-2 rounded-full bg-brand"></span>' : ''}
         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">${dayName} ${d} de Julio</p>
         
         <div class="space-y-2 mb-4">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 p-1.5 rounded-lg border ${menu && menu.breakfast_recipe_id && window.mobileSelectedMeal && window.mobileSelectedMeal.day === d && window.mobileSelectedMeal.mealType === 'breakfast' ? 'border-brand bg-brand-muted/45' : 'border-transparent'} cursor-pointer" onclick="handleMobileMealTap(event, ${d}, 'breakfast', '${menu ? menu.breakfast_recipe_id || '' : ''}')">
             <span class="text-sm">☕</span>
             <span class="text-sm ${menu && menu.breakfast_recipe_id ? 'text-slate-800 font-semibold' : 'text-slate-400 italic'} truncate flex-1">${breakfastName}</span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 p-1.5 rounded-lg border ${menu && menu.lunch_recipe_id && window.mobileSelectedMeal && window.mobileSelectedMeal.day === d && window.mobileSelectedMeal.mealType === 'lunch' ? 'border-brand bg-brand-muted/45' : 'border-transparent'} cursor-pointer" onclick="handleMobileMealTap(event, ${d}, 'lunch', '${menu ? menu.lunch_recipe_id || '' : ''}')">
             <span class="text-sm">🌞</span>
             <span class="text-sm ${menu && menu.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'} truncate flex-1">${lunchName}</span>
           </div>
           ${menu && menu.lunch_side_recipe_id ? `
-          <div class="flex items-center gap-2 pl-4">
+          <div class="flex items-center gap-2 pl-4 p-1.5 rounded-lg border ${window.mobileSelectedMeal && window.mobileSelectedMeal.day === d && window.mobileSelectedMeal.mealType === 'lunch_side' ? 'border-emerald-500 bg-emerald-50' : 'border-transparent'} cursor-pointer" onclick="handleMobileMealTap(event, ${d}, 'lunch_side', '${menu.lunch_side_recipe_id || ''}')">
             <span class="text-xs">🥗</span>
             <span class="text-xs text-emerald-600 font-semibold truncate flex-1">${lunchSideName}</span>
           </div>` : ''}
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 p-1.5 rounded-lg border ${menu && menu.dinner_recipe_id && window.mobileSelectedMeal && window.mobileSelectedMeal.day === d && window.mobileSelectedMeal.mealType === 'dinner' ? 'border-brand bg-brand-muted/45' : 'border-transparent'} cursor-pointer" onclick="handleMobileMealTap(event, ${d}, 'dinner', '${menu ? menu.dinner_recipe_id || '' : ''}')">
             <span class="text-sm">🌙</span>
             <span class="text-sm ${menu && menu.dinner_recipe_id ? 'text-slate-600 font-semibold' : 'text-slate-400 italic'} truncate flex-1">${dinnerName}</span>
           </div>
         </div>
         
-        <button onclick="openPlannerDayModal(${d})" class="w-full flex justify-center items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold transition-colors border border-slate-200">
+        <button onclick="event.stopPropagation(); openPlannerDayModal(${d})" class="w-full flex justify-center items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-sm font-semibold transition-colors border border-slate-200 min-h-[48px]">
           <span class="material-symbols-outlined text-[16px]">edit</span> Editar Detalles
         </button>
       </div>`;
@@ -7647,6 +7647,7 @@ Object.defineProperty(window, 'PLANNER_DATA', {
     if (typeof origShowScreen === 'function') {
       origShowScreen(id);
     }
+    document.getElementById('mobile-nav')?.classList.add('hidden');
     if (id === 'recetas') {
       loadSupabaseRecipes();
     }
@@ -7974,6 +7975,84 @@ Object.defineProperty(window, 'PLANNER_DATA', {
     }
   }
   window.updateDashboardKPIs = updateDashboardKPIs;
+
+  // Mobile Tap selection fallback state
+  window.mobileSelectedMeal = null;
+
+  window.handleMobileMealTap = function(ev, day, mealType, recipeId) {
+    if (!recipeId) return;
+    ev.stopPropagation();
+
+    if (window.mobileSelectedMeal && window.mobileSelectedMeal.day === day && window.mobileSelectedMeal.mealType === mealType) {
+      window.mobileSelectedMeal = null;
+      toast('Selección cancelada');
+    } else {
+      window.mobileSelectedMeal = { day, mealType, recipeId };
+      toast('Plato seleccionado. Toca en otro día para moverlo allí.');
+    }
+
+    if (typeof renderCalendar === 'function') renderCalendar();
+  };
+
+  window.handleMobileDayTap = async function(targetDay) {
+    if (!window.mobileSelectedMeal) return;
+    const { day: sourceDay, mealType: sourceMealType, recipeId } = window.mobileSelectedMeal;
+
+    if (sourceDay === targetDay) return;
+
+    try {
+      toast('Asignando plato...');
+
+      const sourceDayNum = parseInt(sourceDay);
+      const sourceDateStr = `2026-07-${String(sourceDayNum).padStart(2, '0')}`;
+      const sourceExisting = PLANNER_DATA[sourceDayNum] || {};
+      const sourcePayload = {
+        ...sourceExisting,
+        date: sourceDateStr,
+        [sourceMealType + '_recipe_id']: null
+      };
+
+      const targetDayNum = parseInt(targetDay);
+      const targetDateStr = `2026-07-${String(targetDayNum).padStart(2, '0')}`;
+      const targetExisting = PLANNER_DATA[targetDayNum] || {
+        breakfast_recipe_id: null,
+        lunch_recipe_id: null,
+        dinner_recipe_id: null,
+        lunch_players: 0,
+        lunch_halal: 0,
+        lunch_kosher: 0,
+        lunch_vegan: 0,
+        lunch_allergies: '',
+        dinner_players: 0,
+        dinner_halal: 0,
+        dinner_kosher: 0,
+        dinner_vegan: 0,
+        dinner_allergies: '',
+        confirmado: false
+      };
+
+      const targetPayload = {
+        ...targetExisting,
+        date: targetDateStr,
+        [sourceMealType + '_recipe_id']: recipeId
+      };
+
+      const { error } = await window.upsertPlannerDays([sourcePayload, targetPayload]);
+      if (error) throw error;
+
+      PLANNER_DATA[sourceDayNum] = sourcePayload;
+      PLANNER_DATA[targetDayNum] = targetPayload;
+
+      window.mobileSelectedMeal = null;
+      toast('✅ Plato movido con éxito');
+
+      if (typeof renderCalendar === 'function') renderCalendar();
+      if (typeof updateDashboardKPIs === 'function') updateDashboardKPIs();
+    } catch (err) {
+      console.error('Error moving meal on mobile:', err);
+      toast('❌ Error: ' + err.message);
+    }
+  };
 
   loadSupabaseInventory();
 </script>
