@@ -2729,38 +2729,105 @@ function renderInventory(items) {
       </tr>`;
   }).join('');
 
-  // ── Mobile: ultra-compact single-row list ─────────────────────────────
+  // ── Mobile: compact row + inline expandable detail ────────────────────
   if (mobileCards) {
-    mobileCards.innerHTML = `<div class="divide-y divide-slate-100 rounded-xl overflow-hidden">` +
+    mobileCards.innerHTML = `<div class="divide-y divide-slate-100 rounded-xl overflow-hidden border border-slate-100">` +
       items.map(item => {
-        const stockVal  = Number(item.stock_actual) || 0;
-        const isCritical = item.critical || stockVal <= 0;
+        const stockVal   = Number(item.stock_actual) || 0;
         const stockColor = stockVal <= 0 ? 'text-red-500' : 'text-slate-700';
-        const catLabel  = (item.subcategory || item.cat || '').toUpperCase().slice(0, 12);
+        const catLabel   = (item.subcategory || item.cat || '').toUpperCase().slice(0, 14);
+        const detailId   = `inv-detail-${item.id}`;
+        const chevronId  = `inv-chev-${item.id}`;
+
+        // Calculated net cost (cost / (1 - merma/100))
+        const merma    = Number(item.merma) || 0;
+        const rawCost  = Number(item.cost) || 0;
+        const netCost  = merma < 100 ? rawCost / (1 - merma / 100) : rawCost;
 
         return `
-          <div class="flex items-center justify-between py-2.5 px-3 bg-white gap-2">
-            <!-- LEFT: name + category -->
-            <div class="flex flex-col min-w-0 flex-1">
-              <span class="font-medium text-slate-800 text-sm truncate leading-tight">${item?.name || 'Sin nombre'}</span>
-              ${catLabel ? `<span class="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">${catLabel}</span>` : ''}
+          <div class="bg-white">
+            <!-- ── Compact row ── -->
+            <div class="flex items-center py-2.5 px-3 gap-2">
+              <!-- LEFT: name + category (tap to expand) -->
+              <div class="flex flex-col min-w-0 flex-1 cursor-pointer"
+                onclick="(function(){
+                  const d=document.getElementById('${detailId}');
+                  const c=document.getElementById('${chevronId}');
+                  const open=d.classList.toggle('open');
+                  c.classList.toggle('rotate-180', open);
+                })()">
+                <span class="font-medium text-slate-800 text-sm truncate leading-tight">${item?.name || 'Sin nombre'}</span>
+                ${catLabel ? `<span class="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">${catLabel}</span>` : ''}
+              </div>
+              <!-- CENTER: stock + unit -->
+              <div class="flex items-baseline gap-1 flex-shrink-0 cursor-pointer"
+                onclick="(function(){
+                  const d=document.getElementById('${detailId}');
+                  const c=document.getElementById('${chevronId}');
+                  const open=d.classList.toggle('open');
+                  c.classList.toggle('rotate-180', open);
+                })()">
+                <span class="text-xs font-semibold ${stockColor}">${stockVal}</span>
+                <span class="text-xs text-slate-400">${item.unit || ''}</span>
+              </div>
+              <!-- RIGHT: chevron + edit -->
+              <div class="flex items-center gap-0.5 flex-shrink-0">
+                <!-- Chevron (expand toggle) -->
+                <button
+                  id="${chevronId}"
+                  onclick="(function(){
+                    const d=document.getElementById('${detailId}');
+                    const open=d.classList.toggle('open');
+                    this.classList.toggle('rotate-180', open);
+                  }).call(this)"
+                  class="p-1.5 text-slate-400 hover:text-slate-600 transition-transform duration-200 flex items-center justify-center"
+                  style="min-width:32px;min-height:36px;"
+                >
+                  <span class="material-symbols-outlined" style="font-size:16px">expand_more</span>
+                </button>
+                <!-- Edit (opens modal — stops propagation) -->
+                <button
+                  onclick="event.stopPropagation(); openIngredientModal('${item.id}')"
+                  class="p-1.5 text-indigo-600 hover:text-indigo-900 transition-colors flex items-center justify-center"
+                  style="min-width:32px;min-height:36px;"
+                >
+                  <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+                </button>
+              </div>
             </div>
-            <!-- CENTER-RIGHT: stock + unit -->
-            <div class="flex items-baseline gap-1 flex-shrink-0 ml-2">
-              <span class="text-xs font-semibold ${stockColor}">${stockVal}</span>
-              <span class="text-xs text-slate-400">${item.unit || ''}</span>
+            <!-- ── Inline expandable detail ── -->
+            <div id="${detailId}" class="planner-accordion-body">
+              <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 px-3 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-600">
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Proveedor</p>
+                  <p class="font-medium text-slate-700 truncate">${item.supplier || '—'}</p>
+                </div>
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Marca / Ref.</p>
+                  <p class="font-medium text-slate-700 truncate">${item.brand || '—'}</p>
+                </div>
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Merma</p>
+                  <p class="font-medium text-slate-700">${merma > 0 ? merma + '%' : '—'}</p>
+                </div>
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / ${item.unit || 'u'}</p>
+                  <p class="font-bold text-slate-900">${netCost.toFixed(2)}€</p>
+                </div>
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Stock mín / máx</p>
+                  <p class="font-medium text-slate-700">${item.stock_minimo || 0} / ${item.stock_maximo || 0} <span class="text-slate-400">${item.unit || ''}</span></p>
+                </div>
+                <div>
+                  <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste bruto / ${item.unit || 'u'}</p>
+                  <p class="font-medium text-slate-700">${rawCost.toFixed(2)}€</p>
+                </div>
+              </div>
             </div>
-            <!-- FAR RIGHT: edit button -->
-            <button
-              onclick="openIngredientModal('${item.id}')"
-              class="p-2 text-indigo-600 hover:text-indigo-900 flex-shrink-0 transition-colors"
-              style="min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;"
-            >
-              <span class="material-symbols-outlined" style="font-size:18px">edit</span>
-            </button>
           </div>`;
       }).join('') + `</div>`;
   }
+
 }
 
 
