@@ -47,10 +47,10 @@ BEGIN
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
     (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
-    COALESCE(ri.tipo_corte, 'Entera'),
+    COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * 20, -- Desayuno fijo 20 pax
-    r.name || ' (Desayuno)',
-    'Desayuno'
+    (r.name || ' (Desayuno)')::text,
+    'Desayuno'::text
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.breakfast_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -62,10 +62,10 @@ BEGIN
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
     (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
-    COALESCE(ri.tipo_corte, 'Entera'),
+    COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.lunch_players,
-    r.name || ' (Almuerzo)',
-    'Almuerzo'
+    (r.name || ' (Almuerzo)')::text,
+    'Almuerzo'::text
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.lunch_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -78,10 +78,10 @@ BEGIN
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
     (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
-    COALESCE(ri.tipo_corte, 'Entera'),
+    COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.lunch_players,
-    r.name || ' (Guarnición)',
-    'Guarnición'
+    (r.name || ' (Guarnición)')::text,
+    'Guarnición'::text
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.lunch_side_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -94,10 +94,10 @@ BEGIN
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
     (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
-    COALESCE(ri.tipo_corte, 'Entera'),
+    COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.dinner_players,
-    r.name || ' (Cena)',
-    'Cena'
+    (r.name || ' (Cena)')::text,
+    'Cena'::text
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.dinner_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -113,10 +113,10 @@ BEGIN
     ORDER BY tn.ing_id, tn.id
   LOOP
     fila_id := temp_row.id;
-    nombre_ingrediente := temp_row.ing_name;
-    proveedor := 'Carnicería El Cairo';
-    corte := temp_row.corte;
-    cantidad_necesaria := temp_row.qty;
+    nombre_ingrediente := temp_row.ing_name::varchar;
+    proveedor := 'Carnicería El Cairo'::varchar;
+    corte := temp_row.corte::varchar;
+    cantidad_necesaria := temp_row.qty::numeric;
 
     -- Obtener o inicializar el stock en el mapa en memoria
     IF NOT cairo_stock_map ? temp_row.ing_id::text THEN
@@ -131,8 +131,8 @@ BEGIN
     -- Actualizar mapa con el stock restante
     cairo_stock_map := cairo_stock_map || jsonb_build_object(temp_row.ing_id::text, current_cairo_stock);
 
-    a_comprar := GREATEST(0, cantidad_necesaria - descontado);
-    destinations := temp_row.dest;
+    a_comprar := GREATEST(0, cantidad_necesaria - descontado)::numeric;
+    destinations := temp_row.dest::text;
 
     RETURN NEXT;
   END LOOP;
@@ -145,14 +145,14 @@ BEGIN
     GROUP BY tn.ing_id, tn.ing_name, tn.supp_name
   LOOP
     fila_id := temp_row.first_id;
-    nombre_ingrediente := temp_row.ing_name;
-    proveedor := COALESCE(temp_row.supp_name, 'Sin proveedor asignado');
-    corte := '';
-    cantidad_necesaria := temp_row.total_qty;
+    nombre_ingrediente := temp_row.ing_name::varchar;
+    proveedor := COALESCE(temp_row.supp_name, 'Sin proveedor asignado')::varchar;
+    corte := ''::varchar;
+    cantidad_necesaria := temp_row.total_qty::numeric;
 
     SELECT COALESCE(current_stock, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
-    a_comprar := GREATEST(0, cantidad_necesaria - db_stock);
-    destinations := temp_row.all_dests;
+    a_comprar := GREATEST(0, cantidad_necesaria - db_stock)::numeric;
+    destinations := temp_row.all_dests::text;
 
     RETURN NEXT;
   END LOOP;
