@@ -51,6 +51,7 @@ function AuditConsole({ logs, onClear }) {
 // PlannerTab Component
 export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
+  const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [loading, setLoading] = useState(true);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
   const [logs, setLogs] = useState([
@@ -249,6 +250,7 @@ export default function PlannerTab({ recipes = [] }) {
     try {
       // Get user settings
       const settings = PLANNER_RULES.getSettings();
+      console.log('Aplicando regla de guarnición:', settings['menu_setting_incluir_guarniciones']);
       
       const upserts = [];
       selectedWeeks.forEach(week => {
@@ -256,14 +258,13 @@ export default function PlannerTab({ recipes = [] }) {
         for (let offset = 0; offset < 7; offset++) {
           const day = startDay + offset;
           
-          // Determine if day falls on weekend (Jul 2026 starts on Wednesday, so Sat=4, Sun=5, etc. of the week)
-          // Simplified check: weekend is Saturday and Sunday
-          const isWeekend = (offset === 5 || offset === 6); // Sat=5, Sun=6 relative to week Mon-Sun
+          // Determine if day falls on weekend
+          const isWeekend = (offset === 5 || offset === 6);
           
           if (day <= 31) {
             // Apply business rules to filter available recipes for this specific day
-            const filteredMain = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend);
-            const filteredSide = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category === 'Acompañamiento'), settings, isWeekend);
+            const filteredMain = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend, 'lunch');
+            const filteredSide = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category === 'Acompañamiento'), settings, isWeekend, 'lunch_side');
             
             const lunchRecipe = filteredMain.length > 0 
               ? filteredMain[Math.floor(Math.random() * filteredMain.length)]
@@ -271,25 +272,18 @@ export default function PlannerTab({ recipes = [] }) {
               
             const randLunch = lunchRecipe?.id || null;
               
-            const randSide = filteredSide.length > 0 
+            // Inyectar guarnición si la regla está activa
+            const randSide = (settings['menu_setting_incluir_guarniciones'] && filteredSide.length > 0)
               ? filteredSide[Math.floor(Math.random() * filteredSide.length)]?.id 
               : null;
               
-            // Pick a dinner recipe and validate it against the lunch choice
+            // Pick a dinner recipe and validate it against the lunch choice using business rules
             let randDinner = null;
-            if (filteredMain.length > 0) {
-              // Try up to 10 times to find a recipe that passes the nutritional rules
-              for (let attempt = 0; attempt < 10; attempt++) {
-                const candidate = filteredMain[Math.floor(Math.random() * filteredMain.length)];
-                if (PLANNER_RULES.validarPlato(candidate, 'dinner', lunchRecipe)) {
-                  randDinner = candidate.id;
-                  break;
-                }
-              }
-              // Fallback if no recipe passes
-              if (!randDinner) {
-                randDinner = filteredMain[0]?.id || null;
-              }
+            const filteredDinner = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend, 'dinner', lunchRecipe);
+            if (filteredDinner.length > 0) {
+              randDinner = filteredDinner[Math.floor(Math.random() * filteredDinner.length)]?.id || null;
+            } else {
+              randDinner = recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
             }
 
             upserts.push({
@@ -393,11 +387,11 @@ export default function PlannerTab({ recipes = [] }) {
   return (
     <div className="w-full flex flex-col gap-5">
       
-      {/* ── TOOLBAR PLANIFICADOR ── */}
-      <div className="flex flex-wrap justify-between items-center gap-4">
+      {/* ── TOOLBAR PLANIFICADOR (STICKY TOP FIXED BAR) ── */}
+      <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur py-3 flex flex-wrap justify-between items-center gap-4 border-b border-slate-200/60">
         <div>
           <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Planificador Mensual</h1>
-          <p className="text-sm text-slate-500 mt-1">Julio 2026 — Menú diario almuerzo + cena</p>
+          <p className="text-xs text-slate-500 mt-0.5">Julio 2026 — Menú diario almuerzo + cena</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           
@@ -762,7 +756,8 @@ export default function PlannerTab({ recipes = [] }) {
       <PlannerSettingsModal 
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
-        onSave={() => {
+        onSave={(newSettings) => {
+          setPlannerSettings(newSettings);
           addLog('Ajustes del generador guardados. Regenerando caché de reglas...', 'success');
         }}
       />

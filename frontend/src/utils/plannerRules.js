@@ -1,54 +1,33 @@
 /**
  * Reglas de negocio y nutricionales para la generación automática de menús.
- * Contiene metadatos ricos para el mapeo dinámico en la interfaz de usuario.
  */
 export const PLANNER_RULES = {
-  // Reglas fijas del sistema (inmutables por el usuario)
-  sistema: [
+  // Reglas del planificador (configurables por el usuario y persistidas en localStorage)
+  usuario: [
     {
-      key: 'no_paella_noche',
+      key: 'menu_setting_no_paella_noche',
       label: 'Prohibir Paella por la noche',
       desc: 'Evita planificar recetas que contengan la palabra "Paella" en las cenas.',
-      type: 'fixed_boolean',
-      value: true,
-      section: 'sistema'
+      type: 'boolean',
+      defaultValue: true,
+      section: 'personalizable'
     },
     {
-      key: 'no_repetir_carbohidratos',
+      key: 'menu_setting_no_repetir_carbohidratos',
       label: 'Evitar repetir Carbohidratos',
       desc: 'Evita planificar recetas del tipo "Pasta" o "Arroz" tanto en el almuerzo como en la cena del mismo día.',
-      type: 'fixed_boolean',
-      value: true,
-      section: 'sistema'
+      type: 'boolean',
+      defaultValue: true,
+      section: 'personalizable'
     },
     {
-      key: 'incluir_guarniciones',
-      label: 'Inclusión de Guarniciones',
-      desc: 'Asigna automáticamente un plato de categoría "Acompañamiento" a los almuerzos.',
-      type: 'fixed_boolean',
-      value: true,
-      section: 'sistema'
+      key: 'menu_setting_incluir_guarniciones',
+      label: 'Asignar Guarniciones Automáticas',
+      desc: 'Asigna automáticamente un plato de acompañamiento (ensalada, etc.) a los almuerzos.',
+      type: 'boolean',
+      defaultValue: true,
+      section: 'personalizable'
     },
-    {
-      key: 'maxCarneRojaSemana',
-      label: 'Límite de Carne Roja',
-      desc: 'Máximo recomendado de raciones de carne roja por semana.',
-      type: 'number',
-      value: 2,
-      section: 'sistema'
-    },
-    {
-      key: 'maxPastaSemana',
-      label: 'Límite de Platos de Pasta',
-      desc: 'Máximo recomendado de platos de pasta por semana.',
-      type: 'number',
-      value: 2,
-      section: 'sistema'
-    }
-  ],
-
-  // Reglas configurables por el usuario (mutables y persistidas en localStorage)
-  usuario: [
     {
       key: 'menu_setting_incluir_especiales',
       label: 'Incluir recetas Especiales',
@@ -73,7 +52,7 @@ export const PLANNER_RULES = {
     this.usuario.forEach(rule => {
       const stored = localStorage.getItem(rule.key);
       if (stored !== null) {
-        settings[rule.key] = rule.type === 'boolean' ? stored === 'true' : Number(stored);
+        settings[rule.key] = stored === 'true';
       } else {
         settings[rule.key] = rule.defaultValue;
       }
@@ -81,12 +60,16 @@ export const PLANNER_RULES = {
     return settings;
   },
 
-  // Algoritmo de filtrado y selección inteligente de recetas basado en reglas nutricionales
-  filtrarRecetas(recipes, settings, isWeekend = false) {
-    const incluirEspeciales = settings['menu_setting_incluir_especiales'];
-    const menuSencilloFDS = settings['menu_setting_sencillo_fds'];
-    
+  // Motor unificado de reglas de negocio
+  applyBusinessRules(recipes, rules, isWeekend = false, mealType = 'lunch', lunchRecipe = null) {
+    const incluirEspeciales = rules['menu_setting_incluir_especiales'];
+    const menuSencilloFDS = rules['menu_setting_sencillo_fds'];
+    const noPaellaNoche = rules['menu_setting_no_paella_noche'];
+    const noRepetirCarbohidratos = rules['menu_setting_no_repetir_carbohidratos'];
+
     return recipes.filter(recipe => {
+      const name = (recipe.name || '').toLowerCase();
+
       // 1. Regla de Especiales
       if (recipe.category === 'Especiales' && !incluirEspeciales) {
         return false;
@@ -98,30 +81,22 @@ export const PLANNER_RULES = {
         if (tiempo > 30) return false;
       }
 
-      return true;
-    });
-  },
-
-  // Validador de consistencia de plato individual
-  validarPlato(receta, mealType, almuerzoAsignado = null) {
-    if (!receta) return true;
-    const name = (receta.name || '').toLowerCase();
-    
-    // Regla: Prohibir Paella por la noche
-    if (mealType === 'dinner' && name.includes('paella')) {
-      return false;
-    }
-
-    // Regla: Evitar repetir carbohidratos/pasta el mismo día
-    if (mealType === 'dinner' && almuerzoAsignado) {
-      const almuerzoName = (almuerzoAsignado.name || '').toLowerCase();
-      const esPastaAlmuerzo = almuerzoName.includes('pasta') || almuerzoName.includes('tallarines') || almuerzoName.includes('macarrones') || almuerzoName.includes('arroz') || almuerzoName.includes('paella');
-      const esPastaCena = name.includes('pasta') || name.includes('tallarines') || name.includes('macarrones') || name.includes('arroz') || name.includes('paella');
-      if (esPastaAlmuerzo && esPastaCena) {
+      // 3. Regla de Paella de Noche
+      if (mealType === 'dinner' && noPaellaNoche && name.includes('paella')) {
         return false;
       }
-    }
 
-    return true;
+      // 4. Regla de No Repetir Carbohidratos (Pasta/Arroz)
+      if (mealType === 'dinner' && noRepetirCarbohidratos && lunchRecipe) {
+        const lunchName = (lunchRecipe.name || '').toLowerCase();
+        const esCarbLunch = lunchName.includes('pasta') || lunchName.includes('tallarines') || lunchName.includes('macarrones') || lunchName.includes('arroz') || lunchName.includes('paella');
+        const esCarbDinner = name.includes('pasta') || name.includes('tallarines') || name.includes('macarrones') || name.includes('arroz') || name.includes('paella');
+        if (esCarbLunch && esCarbDinner) {
+          return false;
+        }
+      }
+
+      return true;
+    });
   }
 };
