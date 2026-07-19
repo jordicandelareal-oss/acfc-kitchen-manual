@@ -52,19 +52,13 @@ export default function RecipesTab() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    let active = true;
-    const checkAndLoad = () => {
-      if (window.supabase) {
-        if (active) loadAllData();
-        window.refreshReactRecipes = loadAllData;
-        window.loadSupabaseRecipes = loadAllData;
-      } else {
-        setTimeout(checkAndLoad, 100);
-      }
-    };
-    checkAndLoad();
+    console.log('RecipesTab: Iniciando carga...');
+    loadAllData();
+    
+    window.refreshReactRecipes = loadAllData;
+    window.loadSupabaseRecipes = loadAllData;
+    
     return () => {
-      active = false;
       window.refreshReactRecipes = null;
       window.loadSupabaseRecipes = null;
     };
@@ -99,11 +93,23 @@ export default function RecipesTab() {
       console.log('[RECIPES DEBUG] Fetching recipes from API...');
       let recs = [];
       const { data: relationalData, error: relationalError } = await fetchRecipesWithIngredients();
+      
+      console.log('RecipesTab: Datos recibidos de Supabase (Relational):', relationalData);
+      
       if (!relationalError && relationalData) {
         recs = relationalData;
       } else {
+        if (relationalError) {
+          console.error('RecipesTab: Error en carga (Relational):', relationalError);
+        }
         console.warn('[RECIPES DEBUG] Relational fetch failed, falling back to flat fetch. Error:', relationalError);
-        const { data: flatData } = await fetchRecipes();
+        const { data: flatData, error: flatError } = await fetchRecipes();
+        
+        console.log('RecipesTab: Datos recibidos de Supabase (Flat fallback):', flatData);
+        if (flatError) {
+          console.error('RecipesTab: Error en carga (Flat fallback):', flatError);
+        }
+        
         recs = flatData || [];
       }
       
@@ -112,6 +118,7 @@ export default function RecipesTab() {
       window.ALL_RECIPES = recs;
       console.log('[RECIPES DEBUG] Succeeded loading', recs.length, 'recipes.');
     } catch (err) {
+      console.error('RecipesTab: Error en carga (Exception):', err);
       console.error('[RECIPES DEBUG] Error loading recipes tab data:', err);
     } finally {
       setLoading(false);
