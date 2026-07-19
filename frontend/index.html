@@ -6402,6 +6402,40 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
     }
   };
 
+  window.syncSlider = function() {
+    const wasteInput = document.getElementById('ing-waste');
+    const wasteSlider = document.getElementById('ing-waste-slider');
+    if (wasteInput && wasteSlider) {
+      wasteSlider.value = Math.min(99, Math.max(0, parseInt(wasteInput.value) || 0));
+    }
+  };
+
+  window.calculateNetCost = function() {
+    if (!window.mathUtils) return;
+    const price = parseFloat(document.getElementById('ing-purchase-price')?.value) || 0;
+    const format = parseFloat(document.getElementById('ing-format-gr')?.value) || 0;
+    const scenario = document.getElementById('ing-output-scenario')?.value || 'KG_LT';
+    const waste = parseFloat(document.getElementById('ing-waste')?.value) || 0;
+    const processType = document.getElementById('ing-process-type')?.value || 'MERMA';
+
+    const baseCost = window.mathUtils.calcularCosteBase(price, format, scenario);
+    const netCost = window.mathUtils.calcularCosteNeto(baseCost, waste, processType);
+
+    const costEl = document.getElementById('ing-calculated-cost');
+    if (costEl) {
+      costEl.textContent = `${netCost.toFixed(2)} €`;
+    }
+    
+    const formulaEl = document.getElementById('ing-cost-formula');
+    if (formulaEl) {
+      if (scenario === 'KG_LT') {
+        formulaEl.textContent = `Base: €${baseCost.toFixed(2)}/kg · Neto (con ${waste}% ${processType}): €${netCost.toFixed(2)}/kg`;
+      } else {
+        formulaEl.textContent = `Base: €${baseCost.toFixed(2)}/u · Neto (con ${waste}% ${processType}): €${netCost.toFixed(2)}/u`;
+      }
+    }
+  };
+
   loadSupabaseInventory();
 </script>
 
