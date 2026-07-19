@@ -339,6 +339,10 @@ export const guardarYConfirmarMenu = async (menuDays) => {
   return supabase.rpc('guardar_y_confirmar_menu', { p_menu_days: menuDays });
 };
 
+export const guardarMenuYReservarStock = async (menuDays) => {
+  return supabase.rpc('guardar_menu_y_reservar_stock', { p_menu_days: menuDays });
+};
+
 export const liberarStockReservado = async (recipeId, comensales) => {
   return supabase.rpc('liberar_stock_reservado', { p_recipe_id: recipeId, p_comensales: comensales });
 };

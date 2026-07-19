@@ -228,7 +228,7 @@ export default function PlannerTab({ recipes = [] }) {
       
       console.log('Depurando objeto a guardar:', payload);
       
-      const { error } = await api.upsertPlannerDays([payload]);
+      const { error } = await api.guardarMenuYReservarStock([payload]);
       if (error) throw error;
       
       addLog(`Día ${selectedDay} guardado con éxito`, 'success');
@@ -395,7 +395,7 @@ export default function PlannerTab({ recipes = [] }) {
         }
       });
 
-      const { error } = await api.upsertPlannerDays(upserts);
+      const { error } = await api.guardarMenuYReservarStock(upserts);
       if (error) throw error;
       
       addLog(`Menú semanal autogenerado para semanas ${selectedWeeks.join(', ')}`, 'success');
