@@ -3,8 +3,7 @@ import useRecipeCalculations, { calculateRecipe } from '../hooks/useRecipeCalcul
 import { fetchRecipesWithIngredients, fetchRecipes, fetchRecipeCategories, fetchIngredients } from '../api';
 import { supabase } from '../supabaseClient';
 
-export default function RecipesTab() {
-  const [recipes, setRecipes] = useState([]);
+export default function RecipesTab({ recipes = [], reloadRecipes }) {
   const [recipeCategories, setRecipeCategories] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,34 +88,14 @@ export default function RecipesTab() {
       setRecipeCategories(cats);
       window.RECIPE_CATEGORIES = cats;
 
-      // Fetch Recipes
-      console.log('[RECIPES DEBUG] Fetching recipes from API...');
-      let recs = [];
-      const { data: relationalData, error: relationalError } = await fetchRecipesWithIngredients();
-      
-      console.log('RecipesTab: Datos recibidos de Supabase (Relational):', relationalData);
-      
-      if (!relationalError && relationalData) {
-        recs = relationalData;
-      } else {
-        if (relationalError) {
-          console.error('RecipesTab: Error en carga (Relational):', relationalError);
-        }
-        console.warn('[RECIPES DEBUG] Relational fetch failed, falling back to flat fetch. Error:', relationalError);
-        const { data: flatData, error: flatError } = await fetchRecipes();
-        
-        console.log('RecipesTab: Datos recibidos de Supabase (Flat fallback):', flatData);
-        if (flatError) {
-          console.error('RecipesTab: Error en carga (Flat fallback):', flatError);
-        }
-        
-        recs = flatData || [];
+      // Fetch Recipes from global state or reload if needed
+      console.log('[RECIPES DEBUG] Using shared global recipes...', recipes.length, 'recipes loaded.');
+      if (recipes.length === 0 && typeof reloadRecipes === 'function') {
+        await reloadRecipes();
       }
       
-      setRecipes(recs);
-      window.RECIPES = recs;
-      window.ALL_RECIPES = recs;
-      console.log('[RECIPES DEBUG] Succeeded loading', recs.length, 'recipes.');
+      window.RECIPES = recipes;
+      window.ALL_RECIPES = recipes;
     } catch (err) {
       console.error('RecipesTab: Error en carga (Exception):', err);
       console.error('[RECIPES DEBUG] Error loading recipes tab data:', err);

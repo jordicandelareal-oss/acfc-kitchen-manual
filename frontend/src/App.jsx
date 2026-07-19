@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Bell, Search, Filter, Tag,
   Euro, Truck, ChevronDown, ChevronUp,
 } from 'lucide-react';
-import { fetchData, saveData, fetchDashboardStats, fetchInsumos } from './api';
+import { fetchData, saveData, fetchDashboardStats, fetchInsumos, fetchRecipesWithIngredients, fetchRecipes } from './api';
 import SplashScreen from './SplashScreen';
 import './index.css';
 import * as mathUtils from './utils/mathUtils';
@@ -478,6 +478,31 @@ function App() {
   const [saveStatus, setSaveStatus] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newModalOpen, setNewModalOpen] = useState(false);
+  const [globalRecipes, setGlobalRecipes] = useState([]);
+
+  // Load recipes globally on startup
+  const loadGlobalRecipes = useCallback(async () => {
+    try {
+      const { data, error } = await fetchRecipesWithIngredients();
+      if (!error && data) {
+        setGlobalRecipes(data);
+        window.ALL_RECIPES = data;
+        window.RECIPES = data;
+      } else {
+        const { data: flatData } = await fetchRecipes();
+        const recs = flatData || [];
+        setGlobalRecipes(recs);
+        window.ALL_RECIPES = recs;
+        window.RECIPES = recs;
+      }
+    } catch (e) {
+      console.error('Error loading global recipes:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadGlobalRecipes();
+  }, [loadGlobalRecipes]);
 
   // Interoperabilidad con código legacy del index.html
   useEffect(() => {
@@ -633,9 +658,9 @@ function App() {
       <main className="content">
         {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} />}
         {activeTab === 'inventory' && <InventoryTab />}
-        {activeTab === 'recipes' && <RecipesTab />}
+        {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} />}
         {activeTab === 'suppliers' && <SuppliersTab />}
-        {activeTab === 'planner' && <PlannerTab />}
+        {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} />}
       </main>
 
       {/* Mobile Footer Tab Bar */}

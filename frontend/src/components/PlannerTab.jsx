@@ -47,7 +47,7 @@ function AuditConsole({ logs, onClear }) {
 }
 
 // PlannerTab Component
-export default function PlannerTab() {
+export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
@@ -202,7 +202,6 @@ export default function PlannerTab() {
   };
 
   // Recipes lookup helper
-  const recipes = window.ALL_RECIPES || [];
   const getRecipeName = (id, fallback = 'Sin asignar') => {
     if (!id) return fallback;
     const r = recipes.find(rec => rec.id === id);
@@ -211,6 +210,12 @@ export default function PlannerTab() {
 
   // Auto-generate weekly planner
   const handleGenerateWeekly = async () => {
+    if (recipes.length === 0) {
+      console.warn('PlannerTab: Intento de generación semanal fallido. El array de recetas globales está vacío.');
+      addLog('⚠️ No hay recetas globales cargadas para autogenerar el menú', 'warn');
+      return;
+    }
+    
     if (selectedWeeks.length === 0) {
       addLog('⚠️ Selecciona al menos una semana antes de generar', 'warn');
       return;
