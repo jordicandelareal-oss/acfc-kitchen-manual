@@ -347,6 +347,51 @@ export default function PlannerTab({ recipes = [] }) {
     }
   };
 
+  // ── Auto-suggest a side dish when the lunch recipe changes ────────────────
+  const autoSuggestSide = (lunchRecipeId) => {
+    const sideRecipes = recipes.filter(r => r.category === 'Acompañamiento');
+    if (!lunchRecipeId || sideRecipes.length === 0) return;
+
+    const lunchRecipe = recipes.find(r => r.id === lunchRecipeId);
+    if (!lunchRecipe) return;
+
+    const name = (lunchRecipe.name || '').toLowerCase();
+    const cat  = (lunchRecipe.category || '').toLowerCase();
+    const sub  = (lunchRecipe.subcategory || '').toLowerCase();
+
+    // Priority rules (first match wins)
+    const rules = [
+      // Pasta/Arroz/Paella → ensalada verde
+      { test: () => name.includes('pasta') || name.includes('macarr') || name.includes('tallar') || name.includes('arroz') || name.includes('paella'),
+        keyword: 'ensalada' },
+      // Carne roja → patatas o puré
+      { test: () => cat === 'carne' || sub.includes('carne') || name.includes('estofado') || name.includes('asado'),
+        keyword: 'patata' },
+      // Pescado → ensalada o verdura
+      { test: () => cat === 'pescado' || sub.includes('pescado') || name.includes('merluza') || name.includes('salmón') || name.includes('bacalao'),
+        keyword: 'ensalada' },
+      // Legumbres → ensalada
+      { test: () => name.includes('lenteja') || name.includes('garbanzo') || name.includes('judía') || name.includes('habas'),
+        keyword: 'ensalada' },
+    ];
+
+    let suggested = null;
+    for (const rule of rules) {
+      if (rule.test()) {
+        suggested = sideRecipes.find(r => (r.name || '').toLowerCase().includes(rule.keyword));
+        if (suggested) break;
+      }
+    }
+
+    // Fallback: pick the first available side dish
+    if (!suggested) suggested = sideRecipes[0];
+
+    if (suggested) {
+      console.log(`[Planificador] Guarnición auto-sugerida: "${suggested.name}" para plato "${lunchRecipe.name}"`);
+      setDayForm(prev => ({ ...prev, lunch_side_recipe_id: suggested.id }));
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-5">
       
@@ -538,7 +583,14 @@ export default function PlannerTab({ recipes = [] }) {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">🌞 Almuerzo (Plato Principal)</label>
                 <select 
                   value={dayForm.lunch_recipe_id} 
-                  onChange={e => setDayForm(prev => ({ ...prev, lunch_recipe_id: e.target.value }))}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setDayForm(prev => ({ ...prev, lunch_recipe_id: val }));
+                    // Auto-suggest matching side dish unless one is already set
+                    if (!dayForm.lunch_side_recipe_id) {
+                      autoSuggestSide(val);
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
                   <option value="">Selecciona una receta...</option>
@@ -548,19 +600,27 @@ export default function PlannerTab({ recipes = [] }) {
                 </select>
               </div>
 
-              {/* Acompañamiento Select */}
+              {/* Acompañamiento Select — auto-suggested, manually overridable */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">🥗 Acompañamiento (Guarnición)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">🥗 Acompañamiento (Guarnición)</label>
+                  {dayForm.lunch_side_recipe_id && (
+                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      ✨ Auto-sugerida
+                    </span>
+                  )}
+                </div>
                 <select 
                   value={dayForm.lunch_side_recipe_id} 
                   onChange={e => setDayForm(prev => ({ ...prev, lunch_side_recipe_id: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
-                  <option value="">Selecciona una guarnición...</option>
+                  <option value="">Sin guarnición</option>
                   {recipes.filter(r => r.category === 'Acompañamiento').map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
+                <p className="text-[10px] text-slate-400 mt-1 italic">Se sugiere automáticamente según el plato principal. Puedes cambiarla.</p>
               </div>
 
               {/* Cena Select */}
