@@ -8,7 +8,7 @@ const SUPPLIER_COLORS = {
 };
 
 function getSupplierColors(name) {
-  if (name.toLowerCase().includes('cairo')) return SUPPLIER_COLORS['Carnicería El Cairo'];
+  if (name && name.toLowerCase().includes('cairo')) return SUPPLIER_COLORS['Carnicería El Cairo'];
   return SUPPLIER_COLORS.default;
 }
 
@@ -38,11 +38,11 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  // Group items by supplier from RPC results
+  // Group items by supplier using the exact column 'proveedor'
   const listaPorProveedor = React.useMemo(() => {
     const grouped = {};
     rawList.forEach(item => {
-      const provName = item.supplier_name || 'Sin proveedor asignado';
+      const provName = item.proveedor || 'Sin proveedor asignado';
       if (!grouped[provName]) grouped[provName] = [];
       grouped[provName].push(item);
     });
@@ -63,15 +63,31 @@ export default function ShoppingListModal({ isOpen, onClose }) {
   const totalProviders = Object.keys(listaPorProveedor).length;
   const totalItems = rawList.length;
 
+  // Infiere la unidad de medida según el nombre del ingrediente
+  const inferUnit = (name = '') => {
+    const n = name.toLowerCase();
+    if (n.includes('aceite') || n.includes('leche') || n.includes('zumo') || n.includes('vinagre') || n.includes('caldo') || n.includes('vino')) {
+      return 'ml';
+    }
+    if (n.includes('huevo') || n.includes('unidad') || n.includes('pan') || n.includes('lata') || n.includes('tortilla')) {
+      return 'ud';
+    }
+    return 'g';
+  };
+
   const handleCopy = () => {
     const lines = [];
     Object.entries(listaPorProveedor).forEach(([prov, items]) => {
       lines.push(`\n=== ${prov.toUpperCase()} ===`);
       items.forEach(item => {
-        const qty = item.is_el_cairo
-          ? `${Number(item.quantity_to_buy / 1000).toFixed(2)} kg`
-          : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
-        lines.push(`  - ${item.ingredient_name}: ${qty}`);
+        const isElCairo = prov.toLowerCase().includes('cairo');
+        const unit = inferUnit(item.nombre_ingrediente);
+        
+        const qty = isElCairo
+          ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg`
+          : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
+          
+        lines.push(`  - ${item.nombre_ingrediente}: ${qty}`);
       });
     });
     navigator.clipboard.writeText(lines.join('\n'));
@@ -82,16 +98,21 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     const items = listaPorProveedor[provName] || [];
     if (items.length === 0) return;
 
-    const phone = items[0]?.supplier_phone || '+34600000000';
-    const email = items[0]?.supplier_email || 'pedidos@proveedor.com';
+    // Obtener detalles mock/por defecto si no vienen del join
+    const phone = '+34600000000';
+    const email = 'pedidos@proveedor.com';
 
     // Generar cuerpo del mensaje
     const header = `📋 *PEDIDO DE COMPRA ACFC KITCHEN*\nProveedor: ${provName}\nFecha: ${new Date().toLocaleDateString()}\n\n*Productos a solicitar:*`;
     const lines = items.map(item => {
-      const qty = item.is_el_cairo
-        ? `${Number(item.quantity_to_buy / 1000).toFixed(2)} kg`
-        : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
-      return `• ${item.ingredient_name}: *${qty}*`;
+      const isElCairo = provName.toLowerCase().includes('cairo');
+      const unit = inferUnit(item.nombre_ingrediente);
+      
+      const qty = isElCairo
+        ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg`
+        : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
+        
+      return `• ${item.nombre_ingrediente}: *${qty}*`;
     });
     const messageText = `${header}\n${lines.join('\n')}\n\nPor favor confirmar recepción.`;
 
@@ -168,7 +189,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
               const colors = getSupplierColors(provName);
               const isOpen_ = !collapsed[provName];
               const isElCairo = provName.toLowerCase().includes('cairo');
-              const hasItemsToBuy = items.some(i => Number(i.quantity_to_buy) > 0);
+              const hasItemsToBuy = items.some(i => Number(i.a_comprar) > 0);
 
               return (
                 <div key={provName} className={`border ${colors.border} rounded-xl overflow-hidden shadow-sm`}>
@@ -230,25 +251,25 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                           {items.map((item, idx) => {
-                            const unit = (item.unit || 'Gr').toLowerCase();
+                            const unit = inferUnit(item.nombre_ingrediente);
                             
-                            const reqQty = (unit === 'g' || unit === 'gr')
-                              ? `${(Number(item.quantity_required) / 1000).toFixed(2)} kg`
-                              : `${Number(item.quantity_required).toFixed(1)} ${item.unit}`;
+                            const reqQty = isElCairo
+                              ? `${(Number(item.cantidad_necesaria) / 1000).toFixed(2)} kg`
+                              : (unit === 'g' ? `${(Number(item.cantidad_necesaria) / 1000).toFixed(2)} kg` : `${Number(item.cantidad_necesaria).toFixed(0)} ${unit}`);
 
-                            const buyQty = (unit === 'g' || unit === 'gr')
-                              ? `${(Number(item.quantity_to_buy) / 1000).toFixed(2)} kg`
-                              : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
+                            const buyQty = isElCairo
+                              ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg`
+                              : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
 
                             return (
                               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-4 py-2.5 font-semibold text-slate-800">
-                                  {item.ingredient_name}
+                                  {item.nombre_ingrediente}
                                 </td>
                                 {isElCairo && (
                                   <td className="px-3 py-2.5 text-center">
                                     <span className="px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 rounded border border-red-100">
-                                      {item.tipo_corte || 'Entera'}
+                                      {item.corte || 'Entera'}
                                     </span>
                                   </td>
                                 )}
@@ -256,7 +277,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                                   {reqQty}
                                 </td>
                                 <td className="px-3 py-2.5 text-right font-extrabold text-slate-900">
-                                  {Number(item.quantity_to_buy) > 0 ? (
+                                  {Number(item.a_comprar) > 0 ? (
                                     <span className="text-red-600 font-bold">{buyQty}</span>
                                   ) : (
                                     <span className="text-emerald-600 font-medium">✓ En stock</span>
