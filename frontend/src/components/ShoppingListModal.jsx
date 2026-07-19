@@ -38,20 +38,20 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  // Group items by supplier using the exact column 'proveedor'
+  // Group items by supplier using reduce() based on the supplier column 'proveedor'
   const listaPorProveedor = React.useMemo(() => {
-    const grouped = {};
-    rawList.forEach(item => {
+    const grouped = rawList.reduce((acc, item) => {
       const provName = item.proveedor || 'Sin proveedor asignado';
-      if (!grouped[provName]) grouped[provName] = [];
-      grouped[provName].push(item);
-    });
+      if (!acc[provName]) acc[provName] = [];
+      acc[provName].push(item);
+      return acc;
+    }, {});
 
     // Sort: El Cairo first, then alphabetical, then "Sin proveedor" last
     const sorted = {};
     const keys = Object.keys(grouped).sort((a, b) => {
-      if (a.toLowerCase().includes('cairo')) return -1;
-      if (b.toLowerCase().includes('cairo')) return 1;
+      if (a === 'Carnicería El Cairo') return -1;
+      if (b === 'Carnicería El Cairo') return 1;
       if (a === 'Sin proveedor asignado') return 1;
       if (b === 'Sin proveedor asignado') return -1;
       return a.localeCompare(b);
@@ -188,7 +188,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
             Object.entries(listaPorProveedor).map(([provName, items]) => {
               const colors = getSupplierColors(provName);
               const isOpen_ = !collapsed[provName];
-              const isElCairo = provName.toLowerCase().includes('cairo');
+              const isElCairo = provName === 'Carnicería El Cairo';
               const hasItemsToBuy = items.some(i => Number(i.a_comprar) > 0);
 
               return (
