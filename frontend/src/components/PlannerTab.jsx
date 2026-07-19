@@ -221,21 +221,25 @@ export default function PlannerTab() {
   const handleWeekToggle = (w) =>
     setSelectedWeeks(prev => prev.includes(w) ? prev.filter(x => x !== w) : [...prev, w]);
 
-  // After mounting, patch renderCalendar to keep React in sync
+  // Load and render planner data upon mount
   useEffect(() => {
-    const origRender = window.renderCalendar;
-    window.renderCalendar = function (...args) {
-      if (origRender) origRender(...args);
+    if (typeof window.fetchPlannerData === 'function') {
+      window.fetchPlannerData();
+    } else {
+      if (typeof window.renderCalendar === 'function') window.renderCalendar();
+    }
+    
+    window.refreshReactPlanner = () => {
+      if (typeof window.fetchPlannerData === 'function') window.fetchPlannerData();
     };
-    window.refreshReactPlanner = () => {};
-
-    // Trigger first render now that DOM containers exist
-    if (origRender) origRender();
 
     return () => {
-      if (origRender) window.renderCalendar = origRender;
+      window.refreshReactPlanner = null;
     };
   }, []);
+
+  // Diagnostic log requested before return
+  console.log('PlannerTab: Estado actual de datos:', window.PLANNER_DATA);
 
   const e = React.createElement;
   return e('div', { className: 'w-full flex flex-col gap-4' },

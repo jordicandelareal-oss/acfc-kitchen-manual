@@ -8,9 +8,10 @@ if (typeof window !== 'undefined') {
   window.RECIPES = window.RECIPES || [];
   window.ALL_RECIPES = window.ALL_RECIPES || [];
   window.RECIPE_CATEGORIES = window.RECIPE_CATEGORIES || [];
-  window.PLANNER_DATA = window.PLANNER_DATA || [];
+  window.PLANNER_DATA = window.PLANNER_DATA || {};
   window.PLANNER_LOADING = false;
   window.SUPPLIERS = window.SUPPLIERS || [];
+  window.activeMobileDay = new Date().getDate();
 }
 
 // ── AUDITORÍA Y CARGA DE RECETAS EN REACT ────────────────────────────────────
@@ -43,8 +44,105 @@ export async function loadSupabaseRecipes() {
   return window.ALL_RECIPES;
 }
 
-// Inyección global de utilidades básicas
+// ── CARGA Y TRANSFORMACIÓN DE DATOS DEL PLANIFICADOR ─────────────────────────
+export async function fetchPlannerData() {
+  window.PLANNER_LOADING = true;
+  if (typeof window.renderCalendar === 'function') window.renderCalendar();
+
+  try {
+    const { data, error } = await api.fetchPlannerDataDb();
+    if (error) throw error;
+
+    // Transform array of database rows into day-indexed object (PLANNER_DATA[day])
+    const plannerMap = {};
+    if (data) {
+      data.forEach(row => {
+        if (row.planning_date) {
+          const day = new Date(row.planning_date).getDate();
+          plannerMap[day] = row;
+        }
+      });
+    }
+    window.PLANNER_DATA = plannerMap;
+    console.log('PlannerTab: Estado actual de datos:', window.PLANNER_DATA);
+  } catch (err) {
+    console.error('Error loading planner data:', err);
+  } finally {
+    window.PLANNER_LOADING = false;
+    if (typeof window.renderCalendar === 'function') window.renderCalendar();
+  }
+}
+
+// ── DIBUJADO DEL CALENDARIO (MIGRADO DE INDEX.HTML) ─────────────────────────
+export function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return; // Guard if element is not rendered yet
+
+  const daysInMonth = 31; // Julio
+  const today = new Date().getDate();
+  const recipes = window.ALL_RECIPES || [];
+
+  const getName = (id, fallback) => {
+    if (!id) return fallback;
+    const r = recipes.find(rec => rec.id === id);
+    return r ? r.name : fallback;
+  };
+
+  let html = '';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today;
+    const menu = window.PLANNER_DATA[d] || null;
+
+    const breakfastName = getName(menu?.breakfast_recipe_id, 'Café / Zumo');
+    const lunchName = getName(menu?.lunch_recipe_id, 'Sin asignar');
+    const lunchSideName = getName(menu?.lunch_side_recipe_id, '');
+    const dinnerName = getName(menu?.dinner_recipe_id, 'Sin asignar');
+
+    const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+
+    html += `
+      <div class="card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
+        isToday 
+          ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
+          : hasMeal 
+            ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
+            : 'bg-white hover:border-slate-300'
+      }">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}">${d}</span>
+          ${isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-brand"></span>' : ''}
+        </div>
+
+        <div class="mt-2 space-y-1 flex-grow">
+          <!-- Almuerzo -->
+          <div class="text-[10px] truncate leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}">
+            🌞 ${lunchName}
+          </div>
+          <!-- Acompañamiento -->
+          ${lunchSideName ? `
+          <div class="text-[9px] truncate leading-normal text-emerald-600 font-medium pl-2">
+            🥗 ${lunchSideName}
+          </div>` : ''}
+          <!-- Cena -->
+          <div class="text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}">
+            🌙 ${dinnerName}
+          </div>
+        </div>
+
+        <div class="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
+          <span>👥 ${menu?.lunch_players || 0}</span>
+          <button onclick="if(window.openPlannerDayModal) window.openPlannerDayModal(${d})" class="text-brand hover:underline font-bold transition-all">Editar</button>
+        </div>
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+}
+
+// Inyección global de utilidades
 if (typeof window !== 'undefined') {
   window.loadSupabaseRecipes = loadSupabaseRecipes;
+  window.fetchPlannerData = fetchPlannerData;
+  window.renderCalendar = renderCalendar;
   window.mathUtils = mathUtils;
 }
