@@ -10,6 +10,12 @@ import SplashScreen from './SplashScreen';
 import './index.css';
 import * as mathUtils from './utils/mathUtils';
 
+import InventoryTab from './components/InventoryTab';
+import RecipesTab from './components/RecipesTab';
+import SuppliersTab from './components/SuppliersTab';
+import PlannerTab from './components/PlannerTab';
+
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n, dec = 4) => mathUtils.fmt(n, dec);
 const fmtKg = (n) => mathUtils.fmtKg(n);
@@ -470,9 +476,35 @@ function App() {
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Interoperabilidad con código legacy del index.html
+  useEffect(() => {
+    window.showScreen = (id) => {
+      if (id === 'recetas') {
+        setActiveTab('recipes');
+      } else if (id === 'proveedores') {
+        setActiveTab('suppliers');
+      } else if (id === 'inventory') {
+        setActiveTab('inventory');
+      } else if (id === 'planner') {
+        setActiveTab('planner');
+      } else if (id === 'recipes') {
+        setActiveTab('recipes');
+      } else {
+        setActiveTab(id);
+      }
+      setMobileMenuOpen(false);
+    };
+
+    // Forzar renderizado inicial en window si es necesario
+    if (typeof window.updateDashboardKPIs === 'function') {
+      window.updateDashboardKPIs();
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
-    if (activeTab === 'dashboard' || activeTab === 'insumos') return;
+    if (activeTab === 'dashboard' || activeTab === 'inventory' || activeTab === 'recipes' || activeTab === 'suppliers' || activeTab === 'planner') return;
     setLoading(true);
     try {
       const res = await fetchData(activeTab, month);
@@ -494,10 +526,11 @@ function App() {
   }, [loadData]);
 
   const tabs = [
-    { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Inicio' },
-    { id: 'menus',     icon: <Utensils size={18} />,        label: 'Menús'  },
-    { id: 'compras',   icon: <ShoppingBag size={18} />,     label: 'Compras'},
-    { id: 'insumos',   icon: <Package size={18} />,         label: 'Insumos'},
+    { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+    { id: 'inventory', icon: <Package size={18} />,         label: 'Inventario' },
+    { id: 'recipes',   icon: <Utensils size={18} />,        label: 'Recetas' },
+    { id: 'suppliers', icon: <Truck size={18} />,           label: 'Proveedores' },
+    { id: 'planner',   icon: <ShoppingCart size={18} />,     label: 'Planificador' },
   ];
 
   return (
@@ -511,44 +544,95 @@ function App() {
         />
       )}
       <div className="app-container">
-      <header className="header">
-        <div className="header-inner">
-          <div>
-            <h1 className="header-title">ACFC Kitchen</h1>
-            <p className="header-subtitle">Gestión Gastronómica</p>
-          </div>
-          {activeTab !== 'dashboard' && activeTab !== 'insumos' && (
-            <button onClick={loadData} className="refresh-btn" title="Actualizar datos">
-              <RefreshCw size={18} className={loading ? 'spin' : ''} />
+      {/* ── NAVBAR REACT MIGRADA DESDE HTML ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200" style={{ boxShadow: '0 1px 8px rgba(15,23,42,.06)' }}>
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-[68px] flex items-center justify-between gap-4">
+          
+          {/* Left: Logo + hamburger */}
+          <div className="flex items-center gap-3">
+            <button 
+              id="hamburger-btn" 
+              onClick={() => setMobileMenuOpen(o => !o)} 
+              className="md:hidden flex items-center justify-center p-2 rounded-lg text-slate-500 hover:bg-slate-50 transition-colors" 
+              aria-label="Abrir menú"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 22 }}>menu</span>
             </button>
-          )}
+            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+              <div className="w-9 h-9 rounded-xl bg-brand-muted flex items-center justify-center overflow-hidden">
+                <img 
+                  src="logo.png" 
+                  alt="ACFC Logo" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.target.outerHTML = '<span class="material-symbols-outlined" style="color:#4f46e5;font-size:22px">restaurant</span>'; }}
+                />
+              </div>
+              <span className="font-display font-bold text-slate-900 text-[17px] tracking-tight" style={{ fontFamily: 'Outfit' }}>ACFC Kitchen</span>
+              <span className="hidden sm:inline-block badge badge-indigo ml-1">Pro</span>
+            </div>
+          </div>
+
+          {/* Center: Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1">
+            {tabs.map(tab => (
+              <a 
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)} 
+                className={`nav-link cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id ? 'active bg-brand/10 text-brand' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                {tab.icon}
+                {tab.label}
+              </a>
+            ))}
+          </nav>
+
+          {/* Right: actions */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => { if (typeof window.openNewModal === 'function') window.openNewModal(); }} className="flex items-center gap-1.5 bg-brand text-white font-semibold text-sm px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors shadow-sm" style={{ fontFamily: 'Inter' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+              <span className="hidden sm:inline">Nuevo</span>
+            </button>
+            <button onClick={() => { if (typeof window.openNotificationsModal === 'function') window.openNotificationsModal(); }} className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Notificaciones">
+              <span className="material-symbols-outlined" style={{ fontSize: 22 }}>notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full pulse-red"></span>
+            </button>
+            <button onClick={() => { if (typeof window.openMenuSettingsModal === 'function') window.openMenuSettingsModal(); }} className="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors hidden sm:flex" aria-label="Ajustes">
+              <span className="material-symbols-outlined" style={{ fontSize: 22 }}>settings</span>
+            </button>
+            <div onClick={() => { if (typeof window.openProfileCjModal === 'function') window.openProfileCjModal(); }} className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-sm cursor-pointer" title="Chef Jefe">CJ</div>
+          </div>
         </div>
-        {saveStatus && <div className="save-toast">{saveStatus}</div>}
+
+        {/* Mobile nav */}
+        {mobileMenuOpen && (
+          <div id="mobile-nav" className="md:hidden border-t border-slate-100 bg-white pb-3">
+            <div className="px-4 pt-2 space-y-1">
+              {tabs.map(tab => (
+                <a 
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }} 
+                  className={`nav-link w-full cursor-pointer flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id ? 'active bg-brand/10 text-brand' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
+      {/* ── MAIN CONTENT CON PESTAÑAS REACT MODULARES MIGRADAS ── */}
       <main className="content">
         {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} />}
-        {activeTab === 'menus'     && <MenusTab data={data} loading={loading} />}
-        {activeTab === 'compras'   && (
-          <ComprasTab
-            data={data} loading={loading} month={month}
-            onMonthChange={m => setMonth(m)}
-          />
-        )}
-        {activeTab === 'insumos' && (
-          <InsumosTab
-            loading={loading}
-            onUpdate={async (id, fields) => {
-              setSaveStatus('Guardando...');
-              const res = await saveData('insumos', id, fields);
-              setSaveStatus(res.success ? '✅ Guardado' : '❌ Error');
-              setTimeout(() => setSaveStatus(''), 2000);
-            }}
-          />
-        )}
+        {activeTab === 'inventory' && <InventoryTab />}
+        {activeTab === 'recipes' && <RecipesTab />}
+        {activeTab === 'suppliers' && <SuppliersTab />}
+        {activeTab === 'planner' && <PlannerTab />}
       </main>
 
-      <nav className="tabs-nav">
+      {/* Mobile Footer Tab Bar */}
+      <nav className="tabs-nav md:hidden">
         {tabs.map(({ id, icon, label }) => (
           <button
             key={id}
