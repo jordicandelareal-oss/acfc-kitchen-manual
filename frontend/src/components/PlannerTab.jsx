@@ -282,8 +282,8 @@ export default function PlannerTab({ recipes = [] }) {
     }
     addLog(`Generando menú automático para semanas: ${selectedWeeks.join(', ')}...`, 'info');
     try {
-      // Get user settings
-      const settings = PLANNER_RULES.getSettings();
+      // Read active settings directly from React state to guarantee synchronization
+      const settings = plannerSettings;
       console.log('Aplicando regla de guarnición:', settings['menu_setting_incluir_guarniciones']);
       
       const upserts = [];
@@ -294,47 +294,79 @@ export default function PlannerTab({ recipes = [] }) {
         const startDay = (week - 1) * 7 + 1;
         for (let offset = 0; offset < 7; offset++) {
           const day = startDay + offset;
-          
-          // Determine if day falls on weekend
           const isWeekend = (offset === 5 || offset === 6);
           
           if (day <= 31) {
-            // Apply business rules with recent recipe list to avoid repetition within 5 days
-            const filteredMain = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'lunch', null, recentRecipeIds);
-            const filteredSide = PLANNER_RULES.applyBusinessRules(sideRecipes, settings, isWeekend, 'lunch_side', null, recentRecipeIds);
-            
-            const lunchRecipe = filteredMain.length > 0 
-              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]
-              : mainRecipes[0] || null;
-              
+            // ── EVALUACIÓN PASO A PASO: ALMUERZO ──
+            let lunchRecipe = null;
+            const lunchFailures = [];
+
+            for (const candidate of mainRecipes) {
+              const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch');
+              if (check.valid) {
+                lunchRecipe = candidate;
+                break;
+              } else {
+                lunchFailures.push({ name: candidate.name, reason: check.reason });
+              }
+            }
+
+            if (!lunchRecipe) {
+              console.error(`[Generador] No se encontró plato principal válido para almuerzo el día ${day}. Fallas registradas:`, lunchFailures);
+              lunchRecipe = mainRecipes[0] || null; // Fallback
+            }
+
             const randLunch = lunchRecipe?.id || null;
             if (randLunch) {
               recentRecipeIds.push(randLunch);
-              console.log('Generando para:', day, 'Plato (Almuerzo):', lunchRecipe?.name, 'Categoría detectada:', lunchRecipe?.category);
+              console.log(`Generando para día ${day} (Almuerzo): "${lunchRecipe?.name}" | Categoría: ${lunchRecipe?.category}`);
             }
-              
-            // Inyectar guarnición si la regla está activa
-            const randSide = (settings['menu_setting_incluir_guarniciones'] && filteredSide.length > 0)
-              ? filteredSide[Math.floor(Math.random() * filteredSide.length)]?.id 
-              : null;
-            if (randSide) {
-              recentRecipeIds.push(randSide);
+
+            // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
+            let randSide = null;
+            if (settings['menu_setting_incluir_guarniciones']) {
+              const sideFailures = [];
+              for (const candidate of sideRecipes) {
+                const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch_side');
+                if (check.valid) {
+                  randSide = candidate.id;
+                  break;
+                } else {
+                  sideFailures.push({ name: candidate.name, reason: check.reason });
+                }
+              }
+              if (!randSide && sideRecipes.length > 0) {
+                console.warn(`[Generador] No se encontró guarnición válida para día ${day}. Fallas:`, sideFailures);
+                randSide = sideRecipes[0]?.id || null; // Fallback
+              }
+              if (randSide) {
+                recentRecipeIds.push(randSide);
+              }
             }
-              
-            // Pick a dinner recipe and validate it against the lunch choice and rotation rules
-            let randDinner = null;
-            const filteredDinner = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'dinner', lunchRecipe, recentRecipeIds);
-            if (filteredDinner.length > 0) {
-              const dinnerRecipe = filteredDinner[Math.floor(Math.random() * filteredDinner.length)];
-              randDinner = dinnerRecipe?.id || null;
-              console.log('Generando para:', day, 'Plato (Cena):', dinnerRecipe?.name, 'Categoría detectada:', dinnerRecipe?.category);
-            } else {
-              const dinnerRecipe = mainRecipes[0] || null;
-              randDinner = dinnerRecipe?.id || null;
-              console.log('Generando para (Fallback):', day, 'Plato (Cena):', dinnerRecipe?.name, 'Categoría detectada:', dinnerRecipe?.category);
+
+            // ── EVALUACIÓN PASO A PASO: CENA ──
+            let dinnerRecipe = null;
+            const dinnerFailures = [];
+
+            for (const candidate of mainRecipes) {
+              const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'dinner', lunchRecipe);
+              if (check.valid) {
+                dinnerRecipe = candidate;
+                break;
+              } else {
+                dinnerFailures.push({ name: candidate.name, reason: check.reason });
+              }
             }
+
+            if (!dinnerRecipe) {
+              console.error(`[Generador] No se encontró plato válido para cena el día ${day}. Fallas registradas:`, dinnerFailures);
+              dinnerRecipe = mainRecipes[0] || null; // Fallback
+            }
+
+            const randDinner = dinnerRecipe?.id || null;
             if (randDinner) {
               recentRecipeIds.push(randDinner);
+              console.log(`Generando para día ${day} (Cena): "${dinnerRecipe?.name}" | Categoría: ${dinnerRecipe?.category}`);
             }
 
             // Mantener la cola de rotación en los últimos 10 platos (aprox. 5 días de almuerzo y cena)
