@@ -347,6 +347,10 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
   return supabase.rpc('eliminar_menu_y_liberar_stock', { p_dates: datesArray });
 };
 
+export const generarListaComprasOptimizada = async () => {
+  return supabase.rpc('generar_lista_compras_optimizada');
+};
+
 export const liberarStockReservado = async (recipeId, comensales) => {
   return supabase.rpc('liberar_stock_reservado', { p_recipe_id: recipeId, p_comensales: comensales });
 };

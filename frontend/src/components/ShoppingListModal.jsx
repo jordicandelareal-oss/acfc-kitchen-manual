@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { X, ShoppingCart, Copy, Printer, Package, ChevronDown, ChevronRight, MessageSquare, Mail } from 'lucide-react';
-import { agruparInsumos } from '../utils/mathUtils';
+import React, { useState, useEffect } from 'react';
+import { X, ShoppingCart, Copy, Printer, Package, ChevronDown, ChevronRight, MessageSquare, Mail, Loader2 } from 'lucide-react';
+import { generarListaComprasOptimizada } from '../api';
 
-// Colour palette for supplier sections
 const SUPPLIER_COLORS = {
   'Carnicería El Cairo': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700' },
   default:              { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', badge: 'bg-slate-100 text-slate-600' }
@@ -13,72 +12,37 @@ function getSupplierColors(name) {
   return SUPPLIER_COLORS.default;
 }
 
-export default function ShoppingListModal({ isOpen, onClose, plannerData, recipes, inventory = [] }) {
+export default function ShoppingListModal({ isOpen, onClose }) {
   const [collapsed, setCollapsed] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [rawList, setRawList] = useState([]);
 
-  // Build listaPorProveedor from plannerData + recipe ingredients
-  const listaPorProveedor = useMemo(() => {
-    if (!isOpen || !plannerData) return {};
-
-    const activeMeals = [];
-    Object.entries(plannerData).forEach(([dayStr, menu]) => {
-      const day = parseInt(dayStr);
-      const addMeal = (recipeId, players, label) => {
-        if (!recipeId || players <= 0) return;
-        const recipe = recipes.find(r => r.id === recipeId);
-        if (!recipe) return;
-        activeMeals.push({
-          recipeName: recipe.name,
-          mealLabel: label,
-          day,
-          players,
-          recipe_ingredients: recipe.recipe_ingredients || []
+  // Fetch the calculated list from database via RPC
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      setError(null);
+      generarListaComprasOptimizada()
+        .then(({ data, error: rpcError }) => {
+          if (rpcError) throw rpcError;
+          setRawList(data || []);
+        })
+        .catch(err => {
+          console.error('Error al generar lista de compras:', err);
+          setError(err.message || 'Error inesperado al cargar.');
+        })
+        .finally(() => {
+          setLoading(false);
         });
-      };
-      addMeal(menu.breakfast_recipe_id, 20, 'Desayuno');
-      addMeal(menu.lunch_recipe_id,     menu.lunch_players  || 0, 'Almuerzo');
-      addMeal(menu.lunch_side_recipe_id, menu.lunch_players || 0, 'Guarnición');
-      addMeal(menu.dinner_recipe_id,    menu.dinner_players || 0, 'Cena');
-    });
+    }
+  }, [isOpen]);
 
-    const needs = agruparInsumos(activeMeals);
-
-    // Group into { 'Carnicería El Cairo': [...], 'Otros proveedores': [...] }
+  // Group items by supplier from RPC results
+  const listaPorProveedor = React.useMemo(() => {
     const grouped = {};
-    Object.values(needs).forEach(item => {
-      const provName = item.isElCairo
-        ? 'Carnicería El Cairo'
-        : (item.supplierName && item.supplierName !== 'Sin Proveedor' ? item.supplierName : 'Sin proveedor asignado');
-
-      // ── FASE DE DESCUENTO INDIVIDUAL DE STOCK POR BANDEJAS (El Cairo) ──
-      if (item.isElCairo) {
-        // Encontrar stock actual en el inventario de Supabase
-        const dbIng = inventory.find(x => x.id === item.ingredientId);
-        let stockRestante = Number(dbIng?.stock_actual || 0);
-        let totalComprarGramos = 0;
-
-        (item.mealBreakdown || []).forEach(meal => {
-          const needed = Number(meal.needed) || 0;
-          const descontado = Math.min(needed, stockRestante);
-          stockRestante -= descontado;
-
-          const comprarParaEstePlato = Math.max(0, needed - descontado);
-          totalComprarGramos += comprarParaEstePlato;
-
-          if (comprarParaEstePlato > 0) {
-            console.log(`[LOG] Pedido El Cairo: Plato ${meal.label || 'Principal'} | Corte ${item.tipoCorte || 'Entera'} | Qty ${(comprarParaEstePlato / 1000).toFixed(2)} kg`);
-          }
-        });
-
-        // Actualizar la cantidad consolidada final a comprar con el cálculo por bandejas
-        item.quantityToBuy = totalComprarGramos;
-      } else {
-        // Para el resto de proveedores, restamos el stock de forma global simple
-        const dbIng = inventory.find(x => x.id === item.ingredientId);
-        const stockActual = Number(dbIng?.stock_actual || 0);
-        item.quantityToBuy = Math.max(0, item.quantity - stockActual);
-      }
-
+    rawList.forEach(item => {
+      const provName = item.supplier_name || 'Sin proveedor asignado';
       if (!grouped[provName]) grouped[provName] = [];
       grouped[provName].push(item);
     });
@@ -94,43 +58,40 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
     });
     keys.forEach(k => { sorted[k] = grouped[k]; });
     return sorted;
-  }, [isOpen, plannerData, recipes, inventory]);
+  }, [rawList]);
 
   const totalProviders = Object.keys(listaPorProveedor).length;
-  const totalItems = Object.values(listaPorProveedor).reduce((s, arr) => s + arr.length, 0);
+  const totalItems = rawList.length;
 
   const handleCopy = () => {
     const lines = [];
     Object.entries(listaPorProveedor).forEach(([prov, items]) => {
       lines.push(`\n=== ${prov.toUpperCase()} ===`);
       items.forEach(item => {
-        const qty = item.isElCairo
-          ? `${(item.quantityToBuy / 1000).toFixed(2)} kg`
-          : `${item.quantityToBuy.toFixed(1)} ${item.unit}`;
-        lines.push(`  - ${item.name}: ${qty}`);
+        const qty = item.is_el_cairo
+          ? `${Number(item.quantity_to_buy / 1000).toFixed(2)} kg`
+          : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
+        lines.push(`  - ${item.ingredient_name}: ${qty}`);
       });
     });
     navigator.clipboard.writeText(lines.join('\n'));
     alert('📋 Lista de compras copiada al portapapeles.');
   };
 
-  // ── MÓDULO DE COMUNICACIÓN CON PROVEEDORES ──
   const handleSendSupplier = (provName, method) => {
     const items = listaPorProveedor[provName] || [];
     if (items.length === 0) return;
 
-    // Obtener detalles del proveedor del primer ítem (si existen)
-    const supplierObj = items[0]?.supplierObj;
-    const phone = supplierObj?.phone || '+34600000000';
-    const email = supplierObj?.email || 'pedidos@proveedor.com';
+    const phone = items[0]?.supplier_phone || '+34600000000';
+    const email = items[0]?.supplier_email || 'pedidos@proveedor.com';
 
-    // Generar el cuerpo del mensaje
+    // Generar cuerpo del mensaje
     const header = `📋 *PEDIDO DE COMPRA ACFC KITCHEN*\nProveedor: ${provName}\nFecha: ${new Date().toLocaleDateString()}\n\n*Productos a solicitar:*`;
     const lines = items.map(item => {
-      const qty = item.isElCairo
-        ? `${(item.quantityToBuy / 1000).toFixed(2)} kg`
-        : `${item.quantityToBuy.toFixed(1)} ${item.unit}`;
-      return `• ${item.name}: *${qty}*`;
+      const qty = item.is_el_cairo
+        ? `${Number(item.quantity_to_buy / 1000).toFixed(2)} kg`
+        : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
+      return `• ${item.ingredient_name}: *${qty}*`;
     });
     const messageText = `${header}\n${lines.join('\n')}\n\nPor favor confirmar recepción.`;
 
@@ -168,13 +129,15 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
               </h3>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Consolidado e insumos agrupados por proveedor (Cálculo por bandejas El Cairo activo)
+              Consolidado e insumos calculados en Supabase (`generar_lista_compras_optimizada`)
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              {totalItems} ingredientes · {totalProviders} proveedores
-            </span>
+            {!loading && (
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                {totalItems} ingredientes · {totalProviders} proveedores
+              </span>
+            )}
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
@@ -186,7 +149,16 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
 
         {/* ── Content ── */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
-          {totalItems === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <Loader2 className="text-brand animate-spin" size={32} />
+              <span className="text-xs text-slate-400 font-semibold">Calculando compras en Supabase...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-16 text-red-500 text-xs font-semibold">
+              ⚠️ {error}
+            </div>
+          ) : totalItems === 0 ? (
             <p className="text-sm text-slate-400 text-center py-16 italic">
               No hay ingredientes para la planificación actual.<br />
               <span className="text-xs">Genera un menú primero.</span>
@@ -196,7 +168,7 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
               const colors = getSupplierColors(provName);
               const isOpen_ = !collapsed[provName];
               const isElCairo = provName.toLowerCase().includes('cairo');
-              const hasItemsToBuy = items.some(i => i.quantityToBuy > 0);
+              const hasItemsToBuy = items.some(i => Number(i.quantity_to_buy) > 0);
 
               return (
                 <div key={provName} className={`border ${colors.border} rounded-xl overflow-hidden shadow-sm`}>
@@ -259,25 +231,24 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
                         <tbody className="divide-y divide-slate-50">
                           {items.map((item, idx) => {
                             const unit = (item.unit || 'Gr').toLowerCase();
-                            const isCairo = provName.toLowerCase().includes('cairo');
                             
                             const reqQty = (unit === 'g' || unit === 'gr')
-                              ? `${(item.quantity / 1000).toFixed(2)} kg`
-                              : `${item.quantity.toFixed(1)} ${item.unit}`;
+                              ? `${(Number(item.quantity_required) / 1000).toFixed(2)} kg`
+                              : `${Number(item.quantity_required).toFixed(1)} ${item.unit}`;
 
                             const buyQty = (unit === 'g' || unit === 'gr')
-                              ? `${(item.quantityToBuy / 1000).toFixed(2)} kg`
-                              : `${item.quantityToBuy.toFixed(1)} ${item.unit}`;
+                              ? `${(Number(item.quantity_to_buy) / 1000).toFixed(2)} kg`
+                              : `${Number(item.quantity_to_buy).toFixed(1)} ${item.unit}`;
 
                             return (
                               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-4 py-2.5 font-semibold text-slate-800">
-                                  {item.ingName || item.name}
+                                  {item.ingredient_name}
                                 </td>
-                                {isCairo && (
+                                {isElCairo && (
                                   <td className="px-3 py-2.5 text-center">
                                     <span className="px-2 py-0.5 text-[10px] font-bold bg-red-50 text-red-600 rounded border border-red-100">
-                                      {item.tipoCorte || 'Entera'}
+                                      {item.tipo_corte || 'Entera'}
                                     </span>
                                   </td>
                                 )}
@@ -285,7 +256,7 @@ export default function ShoppingListModal({ isOpen, onClose, plannerData, recipe
                                   {reqQty}
                                 </td>
                                 <td className="px-3 py-2.5 text-right font-extrabold text-slate-900">
-                                  {item.quantityToBuy > 0 ? (
+                                  {Number(item.quantity_to_buy) > 0 ? (
                                     <span className="text-red-600 font-bold">{buyQty}</span>
                                   ) : (
                                     <span className="text-emerald-600 font-medium">✓ En stock</span>
