@@ -281,283 +281,7 @@
 <div id="root"></div>
 
 <!-- ── MODAL: NUEVO REGISTRO ────────────────────────────────────── -->
-<div id="modal-new" class="modal-overlay" onclick="if(event.target===this)closeNewModal()">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-5">
-      <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Crear nuevo elemento</h3>
-      <button onclick="closeNewModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    <p class="text-sm text-slate-500 mb-5">¿Qué tipo de recurso deseas añadir al sistema?</p>
-    <div class="grid grid-cols-2 gap-3">
-      <button onclick="closeNewModal();showScreen('inventory');toast('🥦 Añade un ingrediente en la sección Inventario')"
-        class="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-brand hover:bg-brand-muted transition-all group">
-        <span class="material-symbols-outlined text-3xl text-brand">inventory_2</span>
-        <span class="text-sm font-semibold text-slate-700 group-hover:text-brand">Ingrediente</span>
-      </button>
-      <button onclick="closeNewModal();showScreen('recetas');toast('📋 Añade una receta en Escandallos')"
-        class="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-brand hover:bg-brand-muted transition-all group">
-        <span class="material-symbols-outlined text-3xl text-brand">receipt_long</span>
-        <span class="text-sm font-semibold text-slate-700 group-hover:text-brand">Receta</span>
-      </button>
-      <button onclick="closeNewModal();showScreen('proveedores');toast('🚚 Añade un proveedor en el directorio')"
-        class="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-success hover:bg-success-light transition-all group">
-        <span class="material-symbols-outlined text-3xl text-success">local_shipping</span>
-        <span class="text-sm font-semibold text-slate-700 group-hover:text-success">Proveedor</span>
-      </button>
-      <button onclick="closeNewModal();showScreen('planner');toast('📅 Planifica el menú en el Planificador')"
-        class="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-warn hover:bg-warn-light transition-all group">
-        <span class="material-symbols-outlined text-3xl text-warn">calendar_month</span>
-        <span class="text-sm font-semibold text-slate-700 group-hover:text-warn">Menú del día</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: GESTIÓN DE CATEGORÍAS ──────────────────────────────────── -->
-<div id="modal-cat-manager" class="modal-overlay" onclick="if(event.target===this)closeCatManager()">
-  <div class="modal-box" style="max-width:700px;max-height:85vh;display:flex;flex-direction:column;">
-    <div class="flex justify-between items-center mb-5 flex-shrink-0">
-      <div>
-        <h3 class="text-lg font-bold text-slate-900" style="font-family:Outfit">Gestionar Categorías</h3>
-        <p class="text-xs text-slate-400 mt-0.5">Los cambios se reflejan de inmediato en los filtros y formularios</p>
-      </div>
-      <button onclick="closeCatManager()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-
-    <!-- Two-panel layout -->
-    <div class="flex gap-4 flex-1 min-h-0 overflow-hidden">
-
-      <!-- LEFT: Categories list -->
-      <div class="w-2/5 flex flex-col border border-slate-200 rounded-xl overflow-hidden flex-shrink-0">
-        <div class="px-3 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Categorías</span>
-          <button onclick="startAddCategory()" class="p-1 rounded-lg text-brand hover:bg-brand-muted transition-colors" title="Nueva categoría">
-            <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-          </button>
-        </div>
-        <!-- Add category inline form -->
-        <div id="cat-add-form" class="hidden px-3 py-2 border-b border-slate-100 bg-brand-muted/10">
-          <div class="flex gap-2">
-            <input id="cat-new-name" type="text" placeholder="Nombre categoría..." maxlength="60"
-              class="flex-1 text-sm px-2 py-1.5 border border-brand rounded-lg outline-none focus:ring-1 focus:ring-brand"
-              onkeydown="if(event.key==='Enter')saveNewCategory();if(event.key==='Escape')cancelAddCategory()"/>
-            <button onclick="saveNewCategory()" class="px-2 py-1 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">OK</button>
-            <button onclick="cancelAddCategory()" class="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 hover:bg-slate-50 transition-colors">✕</button>
-          </div>
-        </div>
-        <div id="cat-list" class="flex-1 overflow-y-auto divide-y divide-slate-50"></div>
-      </div>
-
-      <!-- RIGHT: Subcategories for selected category -->
-      <div class="flex-1 flex flex-col border border-slate-200 rounded-xl overflow-hidden">
-        <div class="px-3 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">
-            Subcategorías de: <span id="subcat-panel-title" class="text-brand normal-case">—</span>
-          </span>
-          <button onclick="startAddSubcategory()" id="subcat-add-btn" class="p-1 rounded-lg text-brand hover:bg-brand-muted transition-colors hidden" title="Nueva subcategoría">
-            <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-          </button>
-        </div>
-        <!-- Add subcategory inline form -->
-        <div id="subcat-add-form" class="hidden px-3 py-2 border-b border-slate-100 bg-brand-muted/10">
-          <div class="flex gap-2">
-            <input id="subcat-new-name" type="text" placeholder="Nombre subcategoría..." maxlength="80"
-              class="flex-1 text-sm px-2 py-1.5 border border-brand rounded-lg outline-none focus:ring-1 focus:ring-brand"
-              onkeydown="if(event.key==='Enter')saveNewSubcategory();if(event.key==='Escape')cancelAddSubcategory()"/>
-            <button onclick="saveNewSubcategory()" class="px-2 py-1 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition-colors">OK</button>
-            <button onclick="cancelAddSubcategory()" class="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 hover:bg-slate-50 transition-colors">✕</button>
-          </div>
-        </div>
-        <div id="subcat-list" class="flex-1 overflow-y-auto divide-y divide-slate-50">
-          <p class="text-sm text-slate-400 text-center py-10">Selecciona una categoría para ver sus subcategorías</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-4 flex-shrink-0 flex justify-end">
-      <button onclick="closeCatManager()" class="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL: EDITAR INGREDIENTE ────────────────────────────────────── -->
-<div id="modal-ingredient" class="modal-overlay" onclick="if(event.target===this)closeIngredientModal()">
-  <div class="modal-box max-h-[90vh] flex flex-col" style="max-width: 600px;">
-    <div class="flex justify-between items-center mb-5 flex-shrink-0">
-      <h3 id="modal-ingredient-title" class="text-lg font-bold text-slate-900" style="font-family:Outfit">Editar Ingrediente</h3>
-      <button onclick="closeIngredientModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    
-    <div class="space-y-4 overflow-y-auto flex-1 pr-2">
-      <input type="hidden" id="ing-id" />
-      
-      <!-- Basic Data -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del Ingrediente</label>
-          <input type="text" id="ing-name" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Marca</label>
-          <input type="text" id="ing-brand" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Categoría</label>
-          <input type="text" id="ing-category" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Subcategoría</label>
-          <input type="text" id="ing-subcategory" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-        </div>
-      </div>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Proveedor</label>
-          <select id="ing-provider" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white">
-            <option value="Sin proveedor">Cargando proveedores...</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Ref. Proveedor</label>
-          <input type="text" id="ing-provider-ref" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" />
-        </div>
-      </div>
-
-      <!-- Costs and Format -->
-      <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Formato compra (gr/ml/ud)</label>
-          <input type="number" id="ing-format-gr" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: 1000" oninput="calculateNetCost()" />
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Precio compra (€)</label>
-          <input type="number" id="ing-purchase-price" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand" placeholder="Ej: 12.50" oninput="calculateNetCost()" />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Escenario salida</label>
-          <select id="ing-output-scenario" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" onchange="calculateNetCost()">
-            <option value="KG_LT">Por KG/LT</option>
-            <option value="UNIDADES">Por Unidades</option>
-          </select>
-        </div>
-        <div class="flex flex-col">
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Foto del Insumo</label>
-          <div class="flex gap-3 items-center">
-            <input type="hidden" id="ing-image-input" />
-            <label class="flex-grow flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 border-dashed rounded-lg cursor-pointer hover:border-brand hover:bg-brand-muted/20 transition-all text-xs font-semibold text-slate-600">
-              <span class="material-symbols-outlined text-sm">cloud_upload</span>
-              <span id="ing-upload-btn-text">Subir imagen</span>
-              <input type="file" id="ing-file-input" accept="image/*" class="hidden" onchange="handleIngredientImageUpload(this)" />
-            </label>
-            <div id="ing-image-preview-container" class="w-10 h-10 border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 flex items-center justify-center relative">
-              <img id="ing-image-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('ing-image-preview-placeholder').classList.remove('hidden');" />
-              <span id="ing-image-preview-placeholder" class="material-symbols-outlined text-slate-400 text-lg">image</span>
-              <div id="ing-upload-spinner" class="absolute inset-0 bg-white/80 hidden items-center justify-center">
-                <span class="material-symbols-outlined text-brand text-lg animate-spin">progress_activity</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">Precio base /KG</label>
-          <div class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 font-mono" id="ing-base-price-display">—</div>
-        </div>
-      </div>
-
-      <!-- Control de Stock -->
-      <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
-        <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Control de Stock</span>
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Actual</label>
-            <input type="number" id="ing-stock-actual" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 500" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Mínimo</label>
-            <input type="number" id="ing-stock-minimo" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 100" />
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Stock Máximo</label>
-            <input type="number" id="ing-stock-maximo" step="0.01" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white" placeholder="Ej: 2000" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Bidirectional process control -->
-      <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
-        <!-- Toggle MERMA / HIDRATACION -->
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Tipo de proceso</span>
-          <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-semibold">
-            <button id="btn-merma" onclick="setProcessType('MERMA')" 
-              class="px-3 py-1.5 bg-brand text-white transition-all">
-              🧄 Merma
-            </button>
-            <button id="btn-hidratacion" onclick="setProcessType('HIDRATACION')" 
-              class="px-3 py-1.5 bg-white text-slate-500 transition-all">
-              💧 Hidratación
-            </button>
-          </div>
-        </div>
-
-        <!-- Explanation badge -->
-        <p id="ing-process-desc" class="text-[11px] text-slate-500 italic">
-          🧄 <strong>Merma</strong>: El producto pierde peso durante el proceso (limpieza, cocción, deshuesado). El coste/kg sube.
-        </p>
-
-        <!-- Slider row -->
-        <div class="space-y-2">
-          <div class="flex justify-between items-center">
-            <label class="text-xs font-semibold" id="ing-waste-label">Merma (%)</label>
-            <div class="flex items-center gap-1">
-              <input type="number" id="ing-waste" value="0" min="0" max="999" 
-                class="w-16 px-2 py-1 border border-brand-muted bg-white text-brand rounded-lg text-sm font-bold text-center outline-none focus:border-brand" 
-                oninput="syncSlider(); calculateNetCost()" />
-              <span class="text-xs text-slate-400">%</span>
-            </div>
-          </div>
-          <input type="range" id="ing-waste-slider" min="0" max="99" value="0" 
-            class="w-full accent-brand" 
-            oninput="document.getElementById('ing-waste').value=this.value; calculateNetCost()" />
-          <div class="flex justify-between text-[10px] text-slate-400">
-            <span>0%</span>
-            <span id="ing-slider-max-label">99%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Calculated Result -->
-      <div class="mt-2 p-4 rounded-xl border-2 border-brand/20 bg-brand-muted/10 flex justify-between items-center">
-        <div>
-          <span class="block text-xs font-semibold text-slate-500">Coste Neto / KG</span>
-          <span class="block text-[11px] text-slate-400 font-mono mt-0.5" id="ing-cost-formula">—</span>
-        </div>
-        <div class="text-right">
-          <div class="text-2xl font-bold text-brand font-mono" id="ing-calculated-cost">0.00 €</div>
-          <div class="text-[10px] text-slate-400" id="ing-cost-label">por kg neto</div>
-        </div>
-      </div>
-      
-    </div>
-    
-    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 bg-white flex-shrink-0">
-      <button onclick="closeIngredientModal()" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-      <button id="ing-save-btn" onclick="saveIngredient()" class="px-6 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all flex items-center gap-2">
-        <span class="material-symbols-outlined text-[18px] hidden" id="ing-save-spinner" style="animation: spin 1s linear infinite;">progress_activity</span>
-        <span id="ing-save-text">Guardar</span>
-      </button>
-    </div>
-  </div>
-</div>
+<!-- ── LEGACY MODALS REMOVED (new, cat-manager, and ingredient are React-controlled) ── -->
 
 
 
@@ -4512,30 +4236,18 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
 
   // ── INIT ──────────────────────────────────────────────────────────
   async function init() {
-    initDashboard();
-    renderInventory(INVENTORY);
-    renderRecipes();
     loadSupabaseRecipes().catch(e => console.error("Error loading recipes on init", e));
     
-    // Fetch planner data with loading state and skeleton loader
+    // Fetch planner data
     PLANNER_LOADING = true;
-    renderCalendar();
     fetchPlannerData().then(() => {
       PLANNER_LOADING = false;
-      renderCalendar();
     }).catch(err => {
       console.error('Planner init error:', err);
       PLANNER_LOADING = false;
-      renderCalendar();
     });
     
-    // Suppliers: load asynchronously — never blocks the app
-    fetchAndRenderSuppliers().catch(err => console.error('Suppliers init error:', err));
-    
-    // Initialize selectedWeeks
-    if (window.updateSelectedWeeks) {
-      window.updateSelectedWeeks();
-    }
+    // Legacy async loads removed, managed in React now
   }
   
   init();
@@ -4634,19 +4346,6 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
       RECIPE_CATEGORIES = [];
     }
 
-    // Populate category filters and select options in modals
-    const filterSelect = document.getElementById('recipe-family-filter');
-    const modalSelect  = document.getElementById('recipe-category-select');
-    if (filterSelect) {
-      const currentCategory = filterSelect.value;
-      filterSelect.innerHTML = '<option value="">Todas las familias</option>' +
-        RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-      filterSelect.value = currentCategory;
-    }
-    if (modalSelect) {
-      modalSelect.innerHTML = RECIPE_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    }
-
     // ── STEP 2: Load recipes — try relational first, flat fallback ──
     let recs = null;
     try {
@@ -4665,14 +4364,12 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
         if (flatErr) {
           console.error('❌ Flat fetch also failed:', flatErr.message);
           toast('❌ No se pudieron cargar las recetas: ' + flatErr.message);
-          _renderSidebarDebug('Error al conectar con la BBDD');
           return;
         }
         recs = flatData;
         console.log('✅ Flat fallback fetch succeeded:', recs?.length, 'recipes');
       } catch (flatException) {
         console.error('❌ Unexpected flat fetch exception:', flatException);
-        _renderSidebarDebug('Error inesperado al cargar recetas');
         return;
       }
     }
@@ -4685,14 +4382,7 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
 
     console.log(`✅ loadSupabaseRecipes: ${ALL_RECIPES.length} recetas cargadas, ${RECIPE_CATEGORIES.length} categorías`);
 
-    filterRecipes();
     if (typeof updateDashboardKPIs === 'function') updateDashboardKPIs();
-    // Use requestAnimationFrame to guarantee DOM is ready before rendering sidebar
-    requestAnimationFrame(() => {
-      if (typeof renderRecipeSelectorCategories === 'function') renderRecipeSelectorCategories();
-      if (typeof applyRecipeSelectorFilters === 'function') applyRecipeSelectorFilters();
-      if (typeof renderCalendar === 'function') renderCalendar();
-    });
   }
 
   // ── Debug helper: show message inside sidebar grid ──────────────

@@ -50,13 +50,22 @@ export default function RecipesTab() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    loadAllData();
-    
-    // Register global trigger so planner or sidebar can reload us
-    window.refreshReactRecipes = loadAllData;
-    
-    // Hook loadSupabaseRecipes to React refresh
-    window.loadSupabaseRecipes = loadAllData;
+    let active = true;
+    const checkAndLoad = () => {
+      if (window.supabase) {
+        if (active) loadAllData();
+        window.refreshReactRecipes = loadAllData;
+        window.loadSupabaseRecipes = loadAllData;
+      } else {
+        setTimeout(checkAndLoad, 100);
+      }
+    };
+    checkAndLoad();
+    return () => {
+      active = false;
+      window.refreshReactRecipes = null;
+      window.loadSupabaseRecipes = null;
+    };
   }, []);
 
   const loadAllData = async () => {

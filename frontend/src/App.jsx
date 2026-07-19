@@ -477,6 +477,7 @@ function App() {
   const [loading,    setLoading]    = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [newModalOpen, setNewModalOpen] = useState(false);
 
   // Interoperabilidad con código legacy del index.html
   useEffect(() => {
@@ -497,10 +498,18 @@ function App() {
       setMobileMenuOpen(false);
     };
 
+    window.openNewModal = () => setNewModalOpen(true);
+    window.closeNewModal = () => setNewModalOpen(false);
+
     // Forzar renderizado inicial en window si es necesario
     if (typeof window.updateDashboardKPIs === 'function') {
       window.updateDashboardKPIs();
     }
+
+    return () => {
+      window.openNewModal = null;
+      window.closeNewModal = null;
+    };
   }, []);
 
   const loadData = useCallback(async () => {
@@ -588,7 +597,7 @@ function App() {
 
           {/* Right: actions */}
           <div className="flex items-center gap-2">
-            <button onClick={() => { if (typeof window.openNewModal === 'function') window.openNewModal(); }} className="flex items-center gap-1.5 bg-brand text-white font-semibold text-sm px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors shadow-sm" style={{ fontFamily: 'Inter' }}>
+            <button onClick={() => setNewModalOpen(true)} className="flex items-center gap-1.5 bg-brand text-white font-semibold text-sm px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors shadow-sm" style={{ fontFamily: 'Inter' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
               <span className="hidden sm:inline">Nuevo</span>
             </button>
@@ -644,6 +653,51 @@ function App() {
           </button>
         ))}
       </nav>
+
+      {/* ── MODAL: NUEVO REGISTRO EN REACT ── */}
+      {newModalOpen && (
+        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setNewModalOpen(false); }}>
+          <div className="modal-box">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Crear nuevo elemento</h3>
+              <button onClick={() => setNewModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">¿Qué tipo de recurso deseas añadir al sistema?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => { setNewModalOpen(false); setActiveTab('inventory'); if (typeof window.toast === 'function') window.toast('🥦 Añade un ingrediente en la sección Inventario'); }}
+                className="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-brand hover:bg-brand-muted transition-all group"
+              >
+                <span className="material-symbols-outlined text-3xl text-brand">inventory_2</span>
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-brand">Ingrediente</span>
+              </button>
+              <button 
+                onClick={() => { setNewModalOpen(false); setActiveTab('recipes'); if (typeof window.toast === 'function') window.toast('📋 Añade una receta en Escandallos'); }}
+                className="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-brand hover:bg-brand-muted transition-all group"
+              >
+                <span className="material-symbols-outlined text-3xl text-brand">receipt_long</span>
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-brand">Receta</span>
+              </button>
+              <button 
+                onClick={() => { setNewModalOpen(false); setActiveTab('suppliers'); if (typeof window.toast === 'function') window.toast('🚚 Añade un proveedor en el directorio'); }}
+                className="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-success hover:bg-success-light transition-all group"
+              >
+                <span className="material-symbols-outlined text-3xl text-success">local_shipping</span>
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-success">Proveedor</span>
+              </button>
+              <button 
+                onClick={() => { setNewModalOpen(false); setActiveTab('planner'); if (typeof window.toast === 'function') window.toast('📅 Planifica el menú en el Planificador'); }}
+                className="flex flex-col items-center gap-2 p-5 border border-slate-200 rounded-xl hover:border-warn hover:bg-warn-light transition-all group"
+              >
+                <span className="material-symbols-outlined text-3xl text-warn">calendar_month</span>
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-warn">Menú del día</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
