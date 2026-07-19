@@ -139,7 +139,7 @@ BEGIN
 
   -- ── FLUJO B: RESTO DE PROVEEDORES (CONSOLIDADO POR INGREDIENTE MEDIANTE GROUP BY) ──
   FOR temp_row IN 
-    SELECT MIN(tn.id) as first_id, tn.ing_id, tn.ing_name, tn.supp_name, SUM(tn.qty) as total_qty, string_agg(distinct tn.dest, ', ') as all_dests
+    SELECT MIN(tn.id::text)::uuid as first_id, tn.ing_id, tn.ing_name, tn.supp_name, SUM(tn.qty) as total_qty, string_agg(distinct tn.dest, ', ') as all_dests
     FROM temp_needs tn
     WHERE tn.is_cairo = false
     GROUP BY tn.ing_id, tn.ing_name, tn.supp_name
