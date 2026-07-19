@@ -42,23 +42,22 @@ export default function ShoppingListModal({ isOpen, onClose }) {
   // Consolidating only non-El Cairo items by ingredient name
   const listaPorProveedor = React.useMemo(() => {
     const grouped = rawList.reduce((acc, item) => {
-      const provName = item.proveedor || 'Sin proveedor asignado';
+      const provName = (item.proveedor || 'Sin proveedor asignado').trim();
       if (!acc[provName]) acc[provName] = [];
 
       if (provName === 'Carnicería El Cairo') {
-        // No agrupar por nombre_ingrediente. Mostrar cada fila individualmente.
-        acc[provName].push(item);
+        // No agrupar por nombre_ingrediente. Mostrar cada fila individualmente (clonando el objeto).
+        acc[provName].push({ ...item });
       } else {
         // Buscar si ya existe este ingrediente para consolidar
         const existing = acc[provName].find(i => i.nombre_ingrediente === item.nombre_ingrediente);
         if (existing) {
           existing.cantidad_necesaria = Number(existing.cantidad_necesaria) + Number(item.cantidad_necesaria);
           existing.a_comprar = Number(existing.a_comprar) + Number(item.a_comprar);
-          // Concatenar destinos únicos
-          const destSet = new Set([
-            ...existing.destinations.split(', ').map(d => d.trim()),
-            ...item.destinations.split(', ').map(d => d.trim())
-          ]);
+          // Concatenar destinos únicos si existen
+          const currentDests = existing.destinations ? existing.destinations.split(', ').map(d => d.trim()) : [];
+          const itemDests = item.destinations ? item.destinations.split(', ').map(d => d.trim()) : [];
+          const destSet = new Set([...currentDests, ...itemDests]);
           existing.destinations = Array.from(destSet).join(', ');
         } else {
           // Copiar el objeto para no mutar el estado original
