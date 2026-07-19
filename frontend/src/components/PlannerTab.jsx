@@ -287,6 +287,9 @@ export default function PlannerTab({ recipes = [] }) {
       console.log('Aplicando regla de guarnición:', settings['menu_setting_incluir_guarniciones']);
       
       const upserts = [];
+      // Cola histórica de recetas asignadas recientemente para rotación (historial de últimos 5 días = 10 comidas)
+      let recentRecipeIds = [];
+
       selectedWeeks.forEach(week => {
         const startDay = (week - 1) * 7 + 1;
         for (let offset = 0; offset < 7; offset++) {
@@ -296,28 +299,42 @@ export default function PlannerTab({ recipes = [] }) {
           const isWeekend = (offset === 5 || offset === 6);
           
           if (day <= 31) {
-            // Apply business rules to filter available recipes for this specific day
-            const filteredMain = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'lunch');
-            const filteredSide = PLANNER_RULES.applyBusinessRules(sideRecipes, settings, isWeekend, 'lunch_side');
+            // Apply business rules with recent recipe list to avoid repetition within 5 days
+            const filteredMain = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'lunch', null, recentRecipeIds);
+            const filteredSide = PLANNER_RULES.applyBusinessRules(sideRecipes, settings, isWeekend, 'lunch_side', null, recentRecipeIds);
             
             const lunchRecipe = filteredMain.length > 0 
               ? filteredMain[Math.floor(Math.random() * filteredMain.length)]
               : mainRecipes[0] || null;
               
             const randLunch = lunchRecipe?.id || null;
+            if (randLunch) {
+              recentRecipeIds.push(randLunch);
+            }
               
             // Inyectar guarnición si la regla está activa
             const randSide = (settings['menu_setting_incluir_guarniciones'] && filteredSide.length > 0)
               ? filteredSide[Math.floor(Math.random() * filteredSide.length)]?.id 
               : null;
+            if (randSide) {
+              recentRecipeIds.push(randSide);
+            }
               
-            // Pick a dinner recipe and validate it against the lunch choice using business rules
+            // Pick a dinner recipe and validate it against the lunch choice and rotation rules
             let randDinner = null;
-            const filteredDinner = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'dinner', lunchRecipe);
+            const filteredDinner = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'dinner', lunchRecipe, recentRecipeIds);
             if (filteredDinner.length > 0) {
               randDinner = filteredDinner[Math.floor(Math.random() * filteredDinner.length)]?.id || null;
             } else {
               randDinner = mainRecipes[0]?.id || null;
+            }
+            if (randDinner) {
+              recentRecipeIds.push(randDinner);
+            }
+
+            // Mantener la cola de rotación en los últimos 10 platos (aprox. 5 días de almuerzo y cena)
+            if (recentRecipeIds.length > 10) {
+              recentRecipeIds = recentRecipeIds.slice(-10);
             }
 
             upserts.push({

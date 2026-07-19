@@ -61,7 +61,7 @@ export const PLANNER_RULES = {
   },
 
   // Motor unificado de reglas de negocio
-  applyBusinessRules(recipes, rules, isWeekend = false, mealType = 'lunch', lunchRecipe = null) {
+  applyBusinessRules(recipes, rules, isWeekend = false, mealType = 'lunch', lunchRecipe = null, recentRecipeIds = []) {
     const incluirEspeciales = rules['menu_setting_incluir_especiales'];
     const menuSencilloFDS = rules['menu_setting_sencillo_fds'];
     const noPaellaNoche = rules['menu_setting_no_paella_noche'];
@@ -69,6 +69,7 @@ export const PLANNER_RULES = {
 
     return recipes.filter(recipe => {
       const name = (recipe.name || '').toLowerCase();
+      const cat = (recipe.category || '').toLowerCase();
 
       // 1. Regla de Especiales
       if (recipe.category === 'Especiales' && !incluirEspeciales) {
@@ -81,9 +82,15 @@ export const PLANNER_RULES = {
         if (tiempo > 30) return false;
       }
 
-      // 3. Regla de Paella de Noche
-      if (mealType === 'dinner' && noPaellaNoche && name.includes('paella')) {
-        return false;
+      // 3. Regla de Paella / Guisos de Noche (Cenas ligeras)
+      if (mealType === 'dinner') {
+        if (noPaellaNoche && name.includes('paella')) {
+          return false;
+        }
+        // Excluir guisos pesados y asados pesados por la noche
+        if (name.includes('guiso') || name.includes('estofado') || name.includes('fabada') || name.includes('cocido')) {
+          return false;
+        }
       }
 
       // 4. Regla de No Repetir Carbohidratos (Pasta/Arroz)
@@ -94,6 +101,11 @@ export const PLANNER_RULES = {
         if (esCarbLunch && esCarbDinner) {
           return false;
         }
+      }
+
+      // 5. Regla de los 4-5 Días (Rotación Estricta de Platos)
+      if (recentRecipeIds && recentRecipeIds.includes(recipe.id)) {
+        return false;
       }
 
       return true;
