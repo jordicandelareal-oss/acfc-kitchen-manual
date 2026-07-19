@@ -6,6 +6,30 @@ export const PLANNER_RULES = {
   // Reglas fijas del sistema (inmutables por el usuario)
   sistema: [
     {
+      key: 'no_paella_noche',
+      label: 'Prohibir Paella por la noche',
+      desc: 'Evita planificar recetas que contengan la palabra "Paella" en las cenas.',
+      type: 'fixed_boolean',
+      value: true,
+      section: 'sistema'
+    },
+    {
+      key: 'no_repetir_carbohidratos',
+      label: 'Evitar repetir Carbohidratos',
+      desc: 'Evita planificar recetas del tipo "Pasta" o "Arroz" tanto en el almuerzo como en la cena del mismo día.',
+      type: 'fixed_boolean',
+      value: true,
+      section: 'sistema'
+    },
+    {
+      key: 'incluir_guarniciones',
+      label: 'Inclusión de Guarniciones',
+      desc: 'Asigna automáticamente un plato de categoría "Acompañamiento" a los almuerzos.',
+      type: 'fixed_boolean',
+      value: true,
+      section: 'sistema'
+    },
+    {
       key: 'maxCarneRojaSemana',
       label: 'Límite de Carne Roja',
       desc: 'Máximo recomendado de raciones de carne roja por semana.',
@@ -19,22 +43,6 @@ export const PLANNER_RULES = {
       desc: 'Máximo recomendado de platos de pasta por semana.',
       type: 'number',
       value: 2,
-      section: 'sistema'
-    },
-    {
-      key: 'minLegumbresSemana',
-      label: 'Mínimo de Legumbres',
-      desc: 'Mínimo recomendado de raciones de legumbres por semana.',
-      type: 'number',
-      value: 1,
-      section: 'sistema'
-    },
-    {
-      key: 'minPescadoSemana',
-      label: 'Mínimo de Pescado/Marisco',
-      desc: 'Mínimo recomendado de raciones de pescado o marisco a la semana.',
-      type: 'number',
-      value: 1,
       section: 'sistema'
     }
   ],
@@ -55,22 +63,6 @@ export const PLANNER_RULES = {
       desc: 'Filtra y selecciona solo platos de preparación rápida (< 30 min) para sábados y domingos.',
       type: 'boolean',
       defaultValue: false,
-      section: 'personalizable'
-    },
-    {
-      key: 'menu_setting_max_carne_roja_user',
-      label: 'Límite personalizado Carne Roja',
-      desc: 'Sobrescribe el límite semanal de carne roja en el generador.',
-      type: 'number',
-      defaultValue: 2,
-      section: 'personalizable'
-    },
-    {
-      key: 'menu_setting_max_pasta_user',
-      label: 'Límite personalizado de Pasta',
-      desc: 'Sobrescribe el límite semanal de platos de pasta en el generador.',
-      type: 'number',
-      defaultValue: 2,
       section: 'personalizable'
     }
   ],
@@ -108,5 +100,28 @@ export const PLANNER_RULES = {
 
       return true;
     });
+  },
+
+  // Validador de consistencia de plato individual
+  validarPlato(receta, mealType, almuerzoAsignado = null) {
+    if (!receta) return true;
+    const name = (receta.name || '').toLowerCase();
+    
+    // Regla: Prohibir Paella por la noche
+    if (mealType === 'dinner' && name.includes('paella')) {
+      return false;
+    }
+
+    // Regla: Evitar repetir carbohidratos/pasta el mismo día
+    if (mealType === 'dinner' && almuerzoAsignado) {
+      const almuerzoName = (almuerzoAsignado.name || '').toLowerCase();
+      const esPastaAlmuerzo = almuerzoName.includes('pasta') || almuerzoName.includes('tallarines') || almuerzoName.includes('macarrones') || almuerzoName.includes('arroz') || almuerzoName.includes('paella');
+      const esPastaCena = name.includes('pasta') || name.includes('tallarines') || name.includes('macarrones') || name.includes('arroz') || name.includes('paella');
+      if (esPastaAlmuerzo && esPastaCena) {
+        return false;
+      }
+    }
+
+    return true;
   }
 };

@@ -72,7 +72,7 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
                     <span className="text-[10px] text-slate-400 mt-0.5">{rule.desc}</span>
                   </div>
                   <span className="px-2.5 py-1 bg-slate-100 text-slate-600 font-bold text-xs rounded-lg flex-shrink-0">
-                    {rule.value} / sem
+                    {rule.type === 'fixed_boolean' ? 'Activo ✅' : `${rule.value} / sem`}
                   </span>
                 </div>
               ))}

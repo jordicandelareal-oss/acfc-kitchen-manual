@@ -265,17 +265,32 @@ export default function PlannerTab({ recipes = [] }) {
             const filteredMain = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend);
             const filteredSide = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category === 'Acompañamiento'), settings, isWeekend);
             
-            const randLunch = filteredMain.length > 0 
-              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]?.id 
-              : recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
+            const lunchRecipe = filteredMain.length > 0 
+              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]
+              : recipes.filter(r => r.category !== 'Acompañamiento')[0] || null;
+              
+            const randLunch = lunchRecipe?.id || null;
               
             const randSide = filteredSide.length > 0 
               ? filteredSide[Math.floor(Math.random() * filteredSide.length)]?.id 
               : null;
               
-            const randDinner = filteredMain.length > 0 
-              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]?.id 
-              : recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
+            // Pick a dinner recipe and validate it against the lunch choice
+            let randDinner = null;
+            if (filteredMain.length > 0) {
+              // Try up to 10 times to find a recipe that passes the nutritional rules
+              for (let attempt = 0; attempt < 10; attempt++) {
+                const candidate = filteredMain[Math.floor(Math.random() * filteredMain.length)];
+                if (PLANNER_RULES.validarPlato(candidate, 'dinner', lunchRecipe)) {
+                  randDinner = candidate.id;
+                  break;
+                }
+              }
+              // Fallback if no recipe passes
+              if (!randDinner) {
+                randDinner = filteredMain[0]?.id || null;
+              }
+            }
 
             upserts.push({
               date: `2026-07-${String(day).padStart(2, '0')}`,
