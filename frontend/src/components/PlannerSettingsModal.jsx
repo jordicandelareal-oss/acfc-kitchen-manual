@@ -1,27 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { X, Settings, ShieldCheck, HelpCircle } from 'lucide-react';
+import { PLANNER_RULES } from '../utils/plannerRules';
 
 export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
-  const [incluirEspeciales, setIncluirEspeciales] = useState(false);
-  const [menuSencilloFDS, setMenuSencilloFDS] = useState(false);
-  const [maxCarneRoja, setMaxCarneRoja] = useState(2);
-  const [maxPasta, setMaxPasta] = useState(2);
+  // Store user-defined editable settings in local state
+  const [editableSettings, setEditableSettings] = useState({});
 
-  // Load preferences from localStorage upon opening
+  // Sync state with localStorage and rules schema when opened
   useEffect(() => {
     if (isOpen) {
-      setIncluirEspeciales(localStorage.getItem('menu_setting_incluir_especiales') === 'true');
-      setMenuSencilloFDS(localStorage.getItem('menu_setting_sencillo_fds') === 'true');
-      setMaxCarneRoja(Number(localStorage.getItem('menu_setting_max_carne_roja')) || 2);
-      setMaxPasta(Number(localStorage.getItem('menu_setting_max_pasta')) || 2);
+      const activeValues = {};
+      PLANNER_RULES.usuario.forEach(rule => {
+        const stored = localStorage.getItem(rule.key);
+        if (stored !== null) {
+          activeValues[rule.key] = rule.type === 'boolean' ? stored === 'true' : Number(stored);
+        } else {
+          activeValues[rule.key] = rule.defaultValue;
+        }
+      });
+      setEditableSettings(activeValues);
     }
   }, [isOpen]);
 
+  const handleChange = (key, value) => {
+    setEditableSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
   const handleSave = () => {
-    localStorage.setItem('menu_setting_incluir_especiales', incluirEspeciales);
-    localStorage.setItem('menu_setting_sencillo_fds', menuSencilloFDS);
-    localStorage.setItem('menu_setting_max_carne_roja', maxCarneRoja);
-    localStorage.setItem('menu_setting_max_pasta', maxPasta);
+    Object.entries(editableSettings).forEach(([key, val]) => {
+      localStorage.setItem(key, val);
+    });
     
     if (onSave) onSave();
     onClose();
@@ -31,10 +42,11 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
 
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-box max-w-md">
+      <div className="modal-box max-w-lg max-h-[85vh] flex flex-col">
+        {/* Header */}
         <div className="flex justify-between items-center mb-5 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Settings className="text-brand" size={20} />
+            <Settings className="text-brand animate-spin-slow" size={22} />
             <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Ajustes del Generador</h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
@@ -42,73 +54,85 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
           </button>
         </div>
 
-        <div className="space-y-5">
-          {/* Toggle: Incluir Platos Especiales */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100 gap-3">
-            <div className="flex flex-col pr-2">
-              <span className="text-xs font-semibold text-slate-700">Incluir platos 'Especiales'</span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Permite platos de categoría premium (ej. marisco) en la autogeneración.</span>
+        {/* Content body */}
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2 pb-4">
+          
+          {/* SECCIÓN 1: Reglas de Configuración Fija */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+            <div className="bg-slate-50 border-b border-slate-100 font-semibold p-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-emerald-500" /> Configuración Fija (Nutricional)
+              </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input 
-                type="checkbox" 
-                checked={incluirEspeciales}
-                onChange={(e) => setIncluirEspeciales(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-            </label>
+            <div className="p-3 divide-y divide-slate-100">
+              {PLANNER_RULES.sistema.map(rule => (
+                <div key={rule.key} className="py-2.5 flex justify-between items-start gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-slate-700">{rule.label}</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">{rule.desc}</span>
+                  </div>
+                  <span className="px-2.5 py-1 bg-slate-100 text-slate-600 font-bold text-xs rounded-lg flex-shrink-0">
+                    {rule.value} / sem
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Toggle: Menús Sencillos FDS */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100 gap-3">
-            <div className="flex flex-col pr-2">
-              <span className="text-xs font-semibold text-slate-700">Menús sencillos fin de semana</span>
-              <span className="text-[10px] text-slate-400 mt-0.5">Filtra platos rápidos de cocinar (&lt; 30 min) para sábados y domingos.</span>
+          {/* SECCIÓN 2: Reglas Personalizables */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+            <div className="bg-slate-50 border-b border-slate-100 font-semibold p-3">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                ⚙️ Reglas Personalizables (Ajustes de Usuario)
+              </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-              <input 
-                type="checkbox" 
-                checked={menuSencilloFDS}
-                onChange={(e) => setMenuSencilloFDS(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-            </label>
-          </div>
+            <div className="p-4 space-y-4">
+              {PLANNER_RULES.usuario.map(rule => {
+                const currentValue = editableSettings[rule.key];
+                
+                return (
+                  <div key={rule.key} className="flex justify-between items-center gap-4 py-2 border-b border-slate-50 last:border-b-0">
+                    <div className="flex flex-col flex-grow">
+                      <span className="text-xs font-semibold text-slate-700">{rule.label}</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">{rule.desc}</span>
+                    </div>
 
-          {/* Límites de carne roja y pasta */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Restricciones Nutricionales</h4>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-600 font-semibold">Máx Carne Roja / semana</span>
-              <input 
-                type="number" 
-                value={maxCarneRoja}
-                onChange={(e) => setMaxCarneRoja(Number(e.target.value) || 2)}
-                className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none text-center bg-white"
-                min="0"
-                max="7"
-              />
-            </div>
+                    <div className="flex-shrink-0">
+                      {/* RENDER BOOLEAN (TOGGLE SWITCH) */}
+                      {rule.type === 'boolean' && (
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={!!currentValue}
+                            onChange={(e) => handleChange(rule.key, e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+                        </label>
+                      )}
 
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-600 font-semibold">Máx Pasta / semana</span>
-              <input 
-                type="number" 
-                value={maxPasta}
-                onChange={(e) => setMaxPasta(Number(e.target.value) || 2)}
-                className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none text-center bg-white"
-                min="0"
-                max="7"
-              />
+                      {/* RENDER NUMBER (INPUT BOX) */}
+                      {rule.type === 'number' && (
+                        <input 
+                          type="number" 
+                          value={currentValue !== undefined ? currentValue : rule.defaultValue}
+                          onChange={(e) => handleChange(rule.key, Number(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-xs outline-none text-center bg-white"
+                          min="0"
+                          max="7"
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
         </div>
 
-        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+        {/* Footer */}
+        <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
           <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
             Cancelar
           </button>
