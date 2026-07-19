@@ -460,8 +460,62 @@ export default function PlannerTab({ recipes = [] }) {
             ))}
           </div>
 
-          {/* Desktop Days Grid */}
-          <div className="hidden md:grid grid-cols-7 gap-2" id="cal-grid" />
+          {/* Desktop Days Grid - React Pure Rendering */}
+          <div className="hidden md:grid grid-cols-7 gap-2">
+            {Array.from({ length: 31 }, (_, i) => {
+              const d = i + 1;
+              const isToday = d === new Date().getDate();
+              const menu = plannerData[d] || null;
+
+              const lunchName = getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
+              const lunchSideName = getRecipeName(menu?.lunch_side_recipe_id, '');
+              const dinnerName = getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
+
+              const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+
+              return (
+                <div 
+                  key={d}
+                  className={`card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
+                    isToday 
+                      ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
+                      : hasMeal 
+                        ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
+                        : 'bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
+                    {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                  </div>
+
+                  <div className="mt-2 space-y-1 flex-grow">
+                    <div className={`text-[10px] truncate leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
+                      🌞 {lunchName}
+                    </div>
+                    {lunchSideName && (
+                      <div className="text-[9px] truncate leading-normal text-emerald-600 font-medium pl-2">
+                        🥗 {lunchSideName}
+                      </div>
+                    )}
+                    <div className={`text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}`}>
+                      🌙 {dinnerName}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
+                    <span>👥 {menu?.lunch_players || 0}</span>
+                    <button 
+                      onClick={() => openDayEditor(d)} 
+                      className="text-brand hover:underline font-bold transition-all cursor-pointer"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Audit Diagnostics Console */}
