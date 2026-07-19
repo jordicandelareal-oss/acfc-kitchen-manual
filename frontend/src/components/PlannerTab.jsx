@@ -49,6 +49,13 @@ function AuditConsole({ logs, onClear }) {
   );
 }
 
+// Nombre(s) de categoría que Supabase usa para las guarniciones/acompañamientos
+const SIDE_CATEGORIES = ['acompañamiento', 'acompanamiento', 'guarnicion', 'guarnición', 'guarniciones', 'ensalada', 'side'];
+const isSideRecipe = (r) => {
+  const cat = (r.category || '').toLowerCase().trim();
+  return SIDE_CATEGORIES.some(s => cat.includes(s));
+};
+
 // PlannerTab Component
 export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
@@ -59,6 +66,21 @@ export default function PlannerTab({ recipes = [] }) {
   const [logs, setLogs] = useState([
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
   ]);
+
+  // ── Derived recipe arrays (single source of truth for filtering) ──
+  const sideRecipes = useMemo(() => recipes.filter(isSideRecipe), [recipes]);
+  const mainRecipes = useMemo(() => recipes.filter(r => !isSideRecipe(r)), [recipes]);
+
+  // Diagnostic: log unique categories on first recipe load
+  const diagRef = React.useRef(false);
+  useMemo(() => {
+    if (recipes.length > 0 && !diagRef.current) {
+      diagRef.current = true;
+      const cats = [...new Set(recipes.map(r => r.category).filter(Boolean))].sort();
+      console.log('[PlannerTab] Categorías únicas en recetas:', cats);
+      console.log(`[PlannerTab] Platos principales: ${mainRecipes.length} | Guarniciones: ${sideRecipes.length}`);
+    }
+  }, [recipes, mainRecipes, sideRecipes]);
 
   // Modals
   const [dayModalOpen, setDayModalOpen] = useState(false);
@@ -275,12 +297,12 @@ export default function PlannerTab({ recipes = [] }) {
           
           if (day <= 31) {
             // Apply business rules to filter available recipes for this specific day
-            const filteredMain = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend, 'lunch');
-            const filteredSide = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category === 'Acompañamiento'), settings, isWeekend, 'lunch_side');
+            const filteredMain = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'lunch');
+            const filteredSide = PLANNER_RULES.applyBusinessRules(sideRecipes, settings, isWeekend, 'lunch_side');
             
             const lunchRecipe = filteredMain.length > 0 
               ? filteredMain[Math.floor(Math.random() * filteredMain.length)]
-              : recipes.filter(r => r.category !== 'Acompañamiento')[0] || null;
+              : mainRecipes[0] || null;
               
             const randLunch = lunchRecipe?.id || null;
               
@@ -291,11 +313,11 @@ export default function PlannerTab({ recipes = [] }) {
               
             // Pick a dinner recipe and validate it against the lunch choice using business rules
             let randDinner = null;
-            const filteredDinner = PLANNER_RULES.applyBusinessRules(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend, 'dinner', lunchRecipe);
+            const filteredDinner = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'dinner', lunchRecipe);
             if (filteredDinner.length > 0) {
               randDinner = filteredDinner[Math.floor(Math.random() * filteredDinner.length)]?.id || null;
             } else {
-              randDinner = recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
+              randDinner = mainRecipes[0]?.id || null;
             }
 
             upserts.push({
@@ -349,7 +371,6 @@ export default function PlannerTab({ recipes = [] }) {
 
   // ── Auto-suggest a side dish when the lunch recipe changes ────────────────
   const autoSuggestSide = (lunchRecipeId) => {
-    const sideRecipes = recipes.filter(r => r.category === 'Acompañamiento');
     if (!lunchRecipeId || sideRecipes.length === 0) return;
 
     const lunchRecipe = recipes.find(r => r.id === lunchRecipeId);
@@ -594,7 +615,7 @@ export default function PlannerTab({ recipes = [] }) {
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
                   <option value="">Selecciona una receta...</option>
-                  {recipes.filter(r => r.category !== 'Acompañamiento').map(r => (
+                  {mainRecipes.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
@@ -616,9 +637,13 @@ export default function PlannerTab({ recipes = [] }) {
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
                   <option value="">Sin guarnición</option>
-                  {recipes.filter(r => r.category === 'Acompañamiento').map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
+                  {sideRecipes.length === 0 ? (
+                    <option disabled value="">⚠️ Sin guarniciones en Supabase</option>
+                  ) : (
+                    sideRecipes.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))
+                  )}
                 </select>
                 <p className="text-[10px] text-slate-400 mt-1 italic">Se sugiere automáticamente según el plato principal. Puedes cambiarla.</p>
               </div>
@@ -632,7 +657,7 @@ export default function PlannerTab({ recipes = [] }) {
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
                   <option value="">Selecciona una receta...</option>
-                  {recipes.filter(r => r.category !== 'Acompañamiento').map(r => (
+                  {mainRecipes.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
