@@ -283,7 +283,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                               : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
 
                             return (
-                              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                              <tr key={item.fila_id || idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-4 py-2.5 font-semibold text-slate-800">
                                   {item.nombre_ingrediente}
                                 </td>
