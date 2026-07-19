@@ -158,15 +158,37 @@ export default function PlannerTab({ recipes = [] }) {
     }
   };
 
+  const sanitizeRecipeId = (id) => {
+    if (!id || String(id).trim() === '') return null;
+    const exists = recipes.some(r => r.id === id);
+    return exists ? id : null;
+  };
+
   const handleSaveDay = async () => {
     if (!selectedDay) return;
     addLog(`Guardando día ${selectedDay} de Julio...`, 'info');
     try {
       const formattedDate = `2026-07-${String(selectedDay).padStart(2, '0')}`;
+      
       const payload = {
         date: formattedDate,
-        ...dayForm
+        breakfast_recipe_id: sanitizeRecipeId(dayForm.breakfast_recipe_id),
+        lunch_recipe_id: sanitizeRecipeId(dayForm.lunch_recipe_id),
+        lunch_side_recipe_id: sanitizeRecipeId(dayForm.lunch_side_recipe_id),
+        dinner_recipe_id: sanitizeRecipeId(dayForm.dinner_recipe_id),
+        lunch_players: Number(dayForm.lunch_players) || 0,
+        lunch_halal: Number(dayForm.lunch_halal) || 0,
+        lunch_kosher: Number(dayForm.lunch_kosher) || 0,
+        lunch_vegan: Number(dayForm.lunch_vegan) || 0,
+        lunch_allergies: dayForm.lunch_allergies || '',
+        dinner_players: Number(dayForm.dinner_players) || 0,
+        dinner_halal: Number(dayForm.dinner_halal) || 0,
+        dinner_kosher: Number(dayForm.dinner_kosher) || 0,
+        dinner_vegan: Number(dayForm.dinner_vegan) || 0,
+        dinner_allergies: dayForm.dinner_allergies || ''
       };
+      
+      console.log('Depurando objeto a guardar:', payload);
       
       const { error } = await api.upsertPlannerDays([payload]);
       if (error) throw error;
@@ -243,7 +265,7 @@ export default function PlannerTab({ recipes = [] }) {
 
             upserts.push({
               date: `2026-07-${String(day).padStart(2, '0')}`,
-              breakfast_recipe_id: 'd9b736b4-2db2-4809-913a-c80f4f81c944', // Café con leche default
+              breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
               lunch_recipe_id: randLunch,
               lunch_side_recipe_id: randSide,
               dinner_recipe_id: randDinner,
