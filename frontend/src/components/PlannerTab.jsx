@@ -3,6 +3,7 @@ import * as api from '../api';
 import * as mathUtils from '../utils/mathUtils';
 import { PLANNER_RULES } from '../utils/plannerRules';
 import PlannerSettingsModal from './PlannerSettingsModal';
+import ShoppingListModal from './ShoppingListModal';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
   Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle 
@@ -52,6 +53,7 @@ function AuditConsole({ logs, onClear }) {
 export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
   const [logs, setLogs] = useState([
@@ -91,14 +93,19 @@ export default function PlannerTab({ recipes = [] }) {
   // Fetch Planner Data
   const loadData = useCallback(async () => {
     setLoading(true);
-    addLog('Cargando planificación desde Supabase...', 'info');
+    addLog('Cargando planificación e inventario desde Supabase...', 'info');
     try {
-      const { data, error } = await api.fetchPlannerDataDb();
-      if (error) throw error;
+      const [plannerRes, ingredientsRes] = await Promise.all([
+        api.fetchPlannerDataDb(),
+        api.fetchIngredients()
+      ]);
+
+      if (plannerRes.error) throw plannerRes.error;
+      if (ingredientsRes.error) throw ingredientsRes.error;
       
       const plannerMap = {};
-      if (data) {
-        data.forEach(row => {
+      if (plannerRes.data) {
+        plannerRes.data.forEach(row => {
           if (row.date) {
             const day = new Date(row.date).getDate();
             plannerMap[day] = row;
@@ -107,9 +114,14 @@ export default function PlannerTab({ recipes = [] }) {
       }
       setPlannerData(plannerMap);
       window.PLANNER_DATA = plannerMap;
-      addLog(`Planificación cargada: ${data?.length || 0} registros encontrados`, 'success');
+      
+      const invData = ingredientsRes.data || [];
+      setInventory(invData);
+      window.INVENTORY = invData;
+
+      addLog(`Planificación e inventario cargados con éxito`, 'success');
     } catch (e) {
-      addLog(`Error al cargar planificación: ${e.message}`, 'error');
+      addLog(`Error al cargar datos desde Supabase: ${e.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -334,55 +346,6 @@ export default function PlannerTab({ recipes = [] }) {
       addLog(`Error al guardar y confirmar stock: ${e.message}`, 'error');
     }
   };
-
-  // Compile Shopping List based on planner meals and ingredients
-  const shoppingList = useMemo(() => {
-    const list = {};
-    Object.values(plannerData).forEach(day => {
-      const playerCounts = {
-        breakfast: 20, // default
-        lunch: day.lunch_players || 0,
-        dinner: day.dinner_players || 0
-      };
-
-      const checkAndAdd = (recipeId, mealsCount) => {
-        if (!recipeId) return;
-        const recipe = recipes.find(r => r.id === recipeId);
-        if (recipe && recipe.recipe_ingredients) {
-          recipe.recipe_ingredients.forEach(ri => {
-            const ingId = ri.ingredient_id;
-            const ing = (window.INVENTORY || []).find(x => x.id === ingId) || ri.ingredients;
-            if (ing) {
-              const baseQty = Number(ri.quantity) || 0; // quantity per player
-              const totalNeeded = baseQty * mealsCount;
-              if (list[ing.id]) {
-                list[ing.id].needed += totalNeeded;
-              } else {
-                list[ing.id] = {
-                  id: ing.id,
-                  name: ing.name,
-                  unit: ing.unit || 'g',
-                  stock: ing.stock_actual || 0,
-                  needed: totalNeeded
-                };
-              }
-            }
-          });
-        }
-      };
-
-      checkAndAdd(day.breakfast_recipe_id, playerCounts.breakfast);
-      checkAndAdd(day.lunch_recipe_id, playerCounts.lunch);
-      checkAndAdd(day.lunch_side_recipe_id, playerCounts.lunch);
-      checkAndAdd(day.dinner_recipe_id, playerCounts.dinner);
-    });
-
-    return Object.values(list).map(item => {
-      const remaining = item.stock - item.needed;
-      item.toBuy = remaining < 0 ? Math.abs(remaining) : 0;
-      return item;
-    });
-  }, [plannerData, recipes]);
 
   return (
     <div className="w-full flex flex-col gap-5">
@@ -703,54 +666,14 @@ export default function PlannerTab({ recipes = [] }) {
         </div>
       )}
 
-      {/* ── MODAL: LISTA DE COMPRAS (REACT) ── */}
-      {shoppingModalOpen && (
-        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setShoppingModalOpen(false); }}>
-          <div className="modal-box max-w-2xl max-h-[85vh] flex flex-col">
-            <div className="flex justify-between items-center mb-5 flex-shrink-0">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Lista de Compras Consolidada</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Insumos necesarios calculados para las recetas planificadas</p>
-              </div>
-              <button onClick={() => setShoppingModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex-grow overflow-y-auto divide-y divide-slate-100 pr-2">
-              {shoppingList.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-10">No hay ingredientes requeridos para la planificación actual.</p>
-              ) : (
-                shoppingList.map(item => (
-                  <div key={item.id} className="py-3 flex justify-between items-center">
-                    <div>
-                      <span className="font-semibold text-slate-800 text-sm">{item.name}</span>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        Stock actual: {item.stock} {item.unit} | Requerido: {item.needed.toFixed(1)} {item.unit}
-                      </div>
-                    </div>
-                    {item.toBuy > 0 ? (
-                      <span className="px-3 py-1 bg-red-50 text-red-600 border border-red-200 font-bold text-xs rounded-lg">
-                        Comprar: {item.toBuy.toFixed(1)} {item.unit}
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-green-50 text-green-600 border border-green-200 font-bold text-xs rounded-lg">
-                        Suficiente
-                      </span>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end flex-shrink-0">
-              <button onClick={() => setShoppingModalOpen(false)} className="px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── MODAL: LISTA DE COMPRAS (REACT MODULAR) ── */}
+      <ShoppingListModal 
+        isOpen={shoppingModalOpen}
+        onClose={() => setShoppingModalOpen(false)}
+        plannerData={plannerData}
+        recipes={recipes}
+        inventory={inventory}
+      />
       
       {/* ── MODAL: AJUSTES GENERACIÓN (REACT) ── */}
       <PlannerSettingsModal 
