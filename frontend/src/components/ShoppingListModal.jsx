@@ -38,34 +38,44 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
-  // Group items by supplier using reduce() based on the supplier column 'proveedor'
-  // Consolidating only non-El Cairo items by ingredient name
+  // Separar y procesar listas de compras con lógica aislada
   const listaPorProveedor = React.useMemo(() => {
-    const grouped = rawList.reduce((acc, item) => {
-      const provName = (item.proveedor || 'Sin proveedor asignado').trim();
-      if (!acc[provName]) acc[provName] = [];
+    // 1. Aislamos los ítems de Carnicería El Cairo sin aplicar ninguna reducción/agrupación por nombre
+    const listaCairo = rawList
+      .filter(item => (item.proveedor || '').trim() === 'Carnicería El Cairo')
+      .map(item => ({ ...item }));
 
-      if (provName === 'Carnicería El Cairo') {
-        // No agrupar por nombre_ingrediente. Mostrar cada fila individualmente (clonando el objeto).
-        acc[provName].push({ ...item });
+    // 2. Aislamos los ítems del resto de proveedores
+    const listaGranelRaw = rawList.filter(item => (item.proveedor || '').trim() !== 'Carnicería El Cairo');
+
+    // 3. Consolidamos los ítems a granel por nombre_ingrediente
+    const listaGranelConsolidada = listaGranelRaw.reduce((acc, item) => {
+      const existing = acc.find(i => i.nombre_ingrediente === item.nombre_ingrediente && i.proveedor === item.proveedor);
+      if (existing) {
+        existing.cantidad_necesaria = Number(existing.cantidad_necesaria) + Number(item.cantidad_necesaria);
+        existing.a_comprar = Number(existing.a_comprar) + Number(item.a_comprar);
+        const currentDests = existing.destinations ? existing.destinations.split(', ').map(d => d.trim()) : [];
+        const itemDests = item.destinations ? item.destinations.split(', ').map(d => d.trim()) : [];
+        const destSet = new Set([...currentDests, ...itemDests]);
+        existing.destinations = Array.from(destSet).join(', ');
       } else {
-        // Buscar si ya existe este ingrediente para consolidar
-        const existing = acc[provName].find(i => i.nombre_ingrediente === item.nombre_ingrediente);
-        if (existing) {
-          existing.cantidad_necesaria = Number(existing.cantidad_necesaria) + Number(item.cantidad_necesaria);
-          existing.a_comprar = Number(existing.a_comprar) + Number(item.a_comprar);
-          // Concatenar destinos únicos si existen
-          const currentDests = existing.destinations ? existing.destinations.split(', ').map(d => d.trim()) : [];
-          const itemDests = item.destinations ? item.destinations.split(', ').map(d => d.trim()) : [];
-          const destSet = new Set([...currentDests, ...itemDests]);
-          existing.destinations = Array.from(destSet).join(', ');
-        } else {
-          // Copiar el objeto para no mutar el estado original
-          acc[provName].push({ ...item });
-        }
+        acc.push({ ...item });
       }
       return acc;
-    }, {});
+    }, []);
+
+    // 4. Agrupar el resultado final por nombre de proveedor para el renderizado
+    const grouped = {};
+    
+    if (listaCairo.length > 0) {
+      grouped['Carnicería El Cairo'] = listaCairo;
+    }
+
+    listaGranelConsolidada.forEach(item => {
+      const provName = item.proveedor || 'Sin proveedor asignado';
+      if (!grouped[provName]) grouped[provName] = [];
+      grouped[provName].push(item);
+    });
 
     // Sort: El Cairo first, then alphabetical, then "Sin proveedor" last
     const sorted = {};
