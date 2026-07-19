@@ -139,3 +139,19 @@ export function agruparInsumos(meals) {
   
   return needs;
 }
+
+/**
+ * Formateadores de moneda y unidades.
+ */
+export function fmt(n, dec = 4) {
+  return n != null && !isNaN(n) ? `€${Number(n).toFixed(dec)}` : '—';
+}
+
+export function fmtKg(n) {
+  return n != null && !isNaN(n) ? `€${Number(n).toFixed(2)}/kg` : null;
+}
+
+export function fmtU(n) {
+  return n != null && !isNaN(n) ? `€${Number(n).toFixed(2)}/u` : null;
+}
+

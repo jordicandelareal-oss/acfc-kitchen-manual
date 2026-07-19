@@ -8,16 +8,13 @@ import {
 import { fetchData, saveData, fetchDashboardStats, fetchInsumos } from './api';
 import SplashScreen from './SplashScreen';
 import './index.css';
+import * as mathUtils from './utils/mathUtils';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const fmt = (n, dec = 4) =>
-  n != null && !isNaN(n) ? `€${Number(n).toFixed(dec)}` : '—';
+const fmt = (n, dec = 4) => mathUtils.fmt(n, dec);
+const fmtKg = (n) => mathUtils.fmtKg(n);
+const fmtU = (n) => mathUtils.fmtU(n);
 
-const fmtKg = (n) =>
-  n != null && !isNaN(n) ? `€${Number(n).toFixed(2)}/kg` : null;
-
-const fmtU = (n) =>
-  n != null && !isNaN(n) ? `€${Number(n).toFixed(2)}/u` : null;
 
 // ─── Badge de stock ───────────────────────────────────────────────────────────
 const StockBadge = ({ qty, min }) => {
