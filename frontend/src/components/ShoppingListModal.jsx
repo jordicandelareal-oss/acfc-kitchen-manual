@@ -275,6 +275,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                           <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             <th className="px-4 py-2">Ingrediente</th>
                             {isElCairo && <th className="px-3 py-2 text-center">Corte</th>}
+                            <th className="px-3 py-2 text-right">Stock</th>
                             <th className="px-3 py-2 text-right">Cantidad Requerida</th>
                             <th className="px-3 py-2 text-right">A Comprar (Neto)</th>
                           </tr>
@@ -291,6 +292,11 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                               ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg`
                               : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
 
+                            const currentStockVal = Number(item.stock_actual) || 0;
+                            const stockQty = (unit === 'g' || unit === 'gr' || !unit)
+                              ? `${(currentStockVal / 1000).toFixed(2)} kg`
+                              : `${currentStockVal.toFixed(0)} ${unit}`;
+
                             return (
                               <tr key={item.fila_id || idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="px-4 py-2.5 font-semibold text-slate-800">
@@ -303,6 +309,9 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                                     </span>
                                   </td>
                                 )}
+                                <td className="px-3 py-2.5 text-right font-medium text-slate-600">
+                                  {stockQty}
+                                </td>
                                 <td className="px-3 py-2.5 text-right text-slate-500 font-medium">
                                   {reqQty}
                                 </td>

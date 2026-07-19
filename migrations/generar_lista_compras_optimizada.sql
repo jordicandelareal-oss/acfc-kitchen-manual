@@ -10,6 +10,7 @@ RETURNS TABLE (
   corte varchar,
   cantidad_necesaria numeric,
   a_comprar numeric,
+  stock_actual numeric,
   destinations text
 )
 LANGUAGE plpgsql
@@ -131,6 +132,9 @@ BEGIN
     -- Actualizar mapa con el stock restante
     cairo_stock_map := cairo_stock_map || jsonb_build_object(temp_row.ing_id::text, current_cairo_stock);
 
+    -- El stock de base de datos se expone de forma directa para el reporte
+    SELECT COALESCE(stock_actual, 0) INTO stock_actual FROM public.ingredients WHERE id = temp_row.ing_id;
+
     a_comprar := GREATEST(0, cantidad_necesaria - descontado)::numeric;
     destinations := temp_row.dest::text;
 
@@ -151,6 +155,7 @@ BEGIN
     cantidad_necesaria := temp_row.total_qty::numeric;
 
     SELECT COALESCE(stock_actual, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
+    stock_actual := db_stock::numeric;
     a_comprar := GREATEST(0, cantidad_necesaria - db_stock)::numeric;
     destinations := temp_row.all_dests::text;
 
