@@ -310,6 +310,7 @@ export default function PlannerTab({ recipes = [] }) {
             const randLunch = lunchRecipe?.id || null;
             if (randLunch) {
               recentRecipeIds.push(randLunch);
+              console.log('Generando para:', day, 'Plato (Almuerzo):', lunchRecipe?.name, 'Categoría detectada:', lunchRecipe?.category);
             }
               
             // Inyectar guarnición si la regla está activa
@@ -324,9 +325,13 @@ export default function PlannerTab({ recipes = [] }) {
             let randDinner = null;
             const filteredDinner = PLANNER_RULES.applyBusinessRules(mainRecipes, settings, isWeekend, 'dinner', lunchRecipe, recentRecipeIds);
             if (filteredDinner.length > 0) {
-              randDinner = filteredDinner[Math.floor(Math.random() * filteredDinner.length)]?.id || null;
+              const dinnerRecipe = filteredDinner[Math.floor(Math.random() * filteredDinner.length)];
+              randDinner = dinnerRecipe?.id || null;
+              console.log('Generando para:', day, 'Plato (Cena):', dinnerRecipe?.name, 'Categoría detectada:', dinnerRecipe?.category);
             } else {
-              randDinner = mainRecipes[0]?.id || null;
+              const dinnerRecipe = mainRecipes[0] || null;
+              randDinner = dinnerRecipe?.id || null;
+              console.log('Generando para (Fallback):', day, 'Plato (Cena):', dinnerRecipe?.name, 'Categoría detectada:', dinnerRecipe?.category);
             }
             if (randDinner) {
               recentRecipeIds.push(randDinner);

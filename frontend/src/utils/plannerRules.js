@@ -95,9 +95,10 @@ export const PLANNER_RULES = {
 
       // 4. Regla de No Repetir Carbohidratos (Pasta/Arroz)
       if (mealType === 'dinner' && noRepetirCarbohidratos && lunchRecipe) {
-        const lunchName = (lunchRecipe.name || '').toLowerCase();
-        const esCarbLunch = lunchName.includes('pasta') || lunchName.includes('tallarines') || lunchName.includes('macarrones') || lunchName.includes('arroz') || lunchName.includes('paella');
-        const esCarbDinner = name.includes('pasta') || name.includes('tallarines') || name.includes('macarrones') || name.includes('arroz') || name.includes('paella');
+        const carbCategories = ['pasta', 'pastas', 'arroz', 'arroces'];
+        const lunchCat = (lunchRecipe.category || '').toLowerCase().trim();
+        const esCarbLunch = carbCategories.includes(lunchCat);
+        const esCarbDinner = carbCategories.includes(cat.trim());
         if (esCarbLunch && esCarbDinner) {
           return false;
         }
