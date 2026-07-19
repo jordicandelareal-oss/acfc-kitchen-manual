@@ -5274,18 +5274,8 @@ Object.defineProperty(window, 'PLANNER_LOADING', {
       let highCostCount = 0;
       
       RECIPES.forEach(r => {
-        let rCost = 0;
-        (r.recipe_ingredients || []).forEach(ri => {
-          const ing = ri.ingredients || {};
-          const qty = Number(ri.quantity_per_portion) || 0;
-          const unit = ri.unit || 'Gr';
-          const uLower = unit.toLowerCase();
-          if (uLower === 'gr' || uLower === 'ml' || uLower === 'g') {
-            rCost += (qty / 1000) * Number(ing.calculated_net_cost_kg || 0);
-          } else {
-            rCost += qty * Number(ing.precio_por_u || ing.precio_mas_bajo || 0);
-          }
-        });
+        // Lógica delegada a mathUtils.js para evitar duplicidades
+        let rCost = window.mathUtils ? window.mathUtils.calcularCostePlato(r.recipe_ingredients) : 0;
         sumCost += rCost;
         if (rCost > 10) highCostCount++;
       });
