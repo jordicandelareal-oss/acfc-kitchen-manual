@@ -171,24 +171,9 @@ export default function PlannerTab({ recipes = [] }) {
       for (let i = 1; i <= 31; i++) {
         allDates.push(`2026-07-${String(i).padStart(2, '0')}`);
       }
-      const { error } = await api.resetPlannerDates(allDates, {
-        breakfast_recipe_id: null,
-        lunch_recipe_id: null,
-        lunch_side_recipe_id: null,
-        dinner_recipe_id: null,
-        lunch_players: 0,
-        lunch_halal: 0,
-        lunch_kosher: 0,
-        lunch_vegan: 0,
-        lunch_allergies: '',
-        dinner_players: 0,
-        dinner_halal: 0,
-        dinner_kosher: 0,
-        dinner_vegan: 0,
-        dinner_allergies: ''
-      });
+      const { error } = await api.eliminarMenuYLiberarStock(allDates);
       if (error) throw error;
-      addLog('Planificador reseteado con éxito en la base de datos', 'success');
+      addLog('Planificador reseteado y stock liberado con éxito en la base de datos', 'success');
       setResetModalOpen(false);
       loadData();
     } catch (e) {
