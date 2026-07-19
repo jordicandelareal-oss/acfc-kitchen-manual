@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as api from '../api';
 import * as mathUtils from '../utils/mathUtils';
 import { PLANNER_RULES } from '../utils/plannerRules';
+import PlannerSettingsModal from './PlannerSettingsModal';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
   Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle 
@@ -61,6 +62,7 @@ export default function PlannerTab({ recipes = [] }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Day Form State
   const [dayForm, setDayForm] = useState({
@@ -436,6 +438,15 @@ export default function PlannerTab({ recipes = [] }) {
             <span>Lista compra</span>
           </button>
 
+          {/* Settings button */}
+          <button 
+            onClick={() => setSettingsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-all whitespace-nowrap"
+          >
+            <Settings size={14} />
+            <span>Ajustes Menú</span>
+          </button>
+
           {/* Month Navigator */}
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             <button className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500">
@@ -731,6 +742,15 @@ export default function PlannerTab({ recipes = [] }) {
           </div>
         </div>
       )}
+      
+      {/* ── MODAL: AJUSTES GENERACIÓN (REACT) ── */}
+      <PlannerSettingsModal 
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        onSave={() => {
+          addLog('Ajustes del generador guardados. Regenerando caché de reglas...', 'success');
+        }}
+      />
 
     </div>
   );
