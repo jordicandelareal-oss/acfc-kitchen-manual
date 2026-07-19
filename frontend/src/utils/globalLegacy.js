@@ -57,8 +57,8 @@ export async function fetchPlannerData() {
     const plannerMap = {};
     if (data) {
       data.forEach(row => {
-        if (row.planning_date) {
-          const day = new Date(row.planning_date).getDate();
+        if (row.date) {
+          const day = new Date(row.date).getDate();
           plannerMap[day] = row;
         }
       });

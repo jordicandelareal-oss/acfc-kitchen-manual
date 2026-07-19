@@ -95,8 +95,8 @@ export default function PlannerTab({ recipes = [] }) {
       const plannerMap = {};
       if (data) {
         data.forEach(row => {
-          if (row.planning_date) {
-            const day = new Date(row.planning_date).getDate();
+          if (row.date) {
+            const day = new Date(row.date).getDate();
             plannerMap[day] = row;
           }
         });
@@ -164,7 +164,7 @@ export default function PlannerTab({ recipes = [] }) {
     try {
       const formattedDate = `2026-07-${String(selectedDay).padStart(2, '0')}`;
       const payload = {
-        planning_date: formattedDate,
+        date: formattedDate,
         ...dayForm
       };
       
@@ -242,7 +242,7 @@ export default function PlannerTab({ recipes = [] }) {
             const randDinner = mainRecipes[Math.floor(Math.random() * mainRecipes.length)]?.id || null;
 
             upserts.push({
-              planning_date: `2026-07-${String(day).padStart(2, '0')}`,
+              date: `2026-07-${String(day).padStart(2, '0')}`,
               breakfast_recipe_id: 'd9b736b4-2db2-4809-913a-c80f4f81c944', // Café con leche default
               lunch_recipe_id: randLunch,
               lunch_side_recipe_id: randSide,
