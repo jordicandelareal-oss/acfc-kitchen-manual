@@ -825,6 +825,14 @@
   import * as api from './src/api.js';
   import * as mathUtils from './src/utils/mathUtils.js';
 
+  // Safe fallback globals for React components compatibility
+  window.INVENTORY = [];
+  window.RECIPES = [];
+  window.ALL_RECIPES = [];
+  window.RECIPE_CATEGORIES = [];
+  window.PLANNER_DATA = [];
+  window.PLANNER_LOADING = false;
+  window.SUPPLIERS = [];
   window.supabase = supabase;
   window.mathUtils = mathUtils;
   window.fetchSuppliers = api.fetchSuppliers;
@@ -2195,6 +2203,8 @@
     }
   };
 
+  // window.syncSlider and window.calculateNetCost commented for security (React controls this now)
+  /*
   window.syncSlider = function() {
     const wasteInput = document.getElementById('ing-waste');
     const wasteSlider = document.getElementById('ing-waste-slider');
@@ -2228,6 +2238,7 @@
       }
     }
   };
+  */
   // loadSupabaseInventory();
 </script>
 

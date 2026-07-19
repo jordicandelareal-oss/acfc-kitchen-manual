@@ -123,9 +123,7 @@ export default function InventoryTab() {
       window.INVENTORY = mapped;
       setError(null);
 
-      if (typeof window.updateDashboardKPIs === 'function') {
-        window.updateDashboardKPIs();
-      }
+      // Legacy updateDashboardKPIs removed
     } catch (err) {
       console.error('Error loading inventory in React:', err);
       setError(err.message || 'Error al conectar con Supabase');

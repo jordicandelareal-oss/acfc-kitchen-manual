@@ -502,9 +502,7 @@ function App() {
     window.closeNewModal = () => setNewModalOpen(false);
 
     // Forzar renderizado inicial en window si es necesario
-    if (typeof window.updateDashboardKPIs === 'function') {
-      window.updateDashboardKPIs();
-    }
+    // Legacy updateDashboardKPIs removed
 
     return () => {
       window.openNewModal = null;
