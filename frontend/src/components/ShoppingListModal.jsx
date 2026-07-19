@@ -275,7 +275,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                           <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             <th className="px-4 py-2">Ingrediente</th>
                             {isElCairo && <th className="px-3 py-2 text-center">Corte</th>}
-                            <th className="px-3 py-2 text-right">Stock</th>
+                            <th className="px-3 py-2 text-right">Stock*</th>
                             <th className="px-3 py-2 text-right">Cantidad Requerida</th>
                             <th className="px-3 py-2 text-right">A Comprar (Neto)</th>
                           </tr>
@@ -327,6 +327,9 @@ export default function ShoppingListModal({ isOpen, onClose }) {
                           })}
                         </tbody>
                       </table>
+                      <div className="px-4 py-2 bg-slate-50 text-[10px] text-slate-500 border-t border-slate-100">
+                        * Representa el stock físico total disponible en el inventario antes de descontar los consumos.
+                      </div>
                     </div>
                   )}
                 </div>
