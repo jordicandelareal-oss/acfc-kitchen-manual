@@ -1,3 +1,6 @@
+-- Eliminar la función previa para poder redefinir el tipo de retorno
+DROP FUNCTION IF EXISTS public.generar_lista_compras_optimizada();
+
 -- Función RPC mejorada para cálculo de compras del lado del servidor sin agrupaciones para El Cairo
 CREATE OR REPLACE FUNCTION public.generar_lista_compras_optimizada()
 RETURNS TABLE (
