@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import useRecipeCalculations, { calculateRecipe } from '../hooks/useRecipeCalculations';
+import { fetchRecipesWithIngredients, fetchRecipes, fetchRecipeCategories, fetchIngredients } from '../api';
+import { supabase } from '../supabaseClient';
 
 export default function RecipesTab() {
   const [recipes, setRecipes] = useState([]);
@@ -71,46 +73,46 @@ export default function RecipesTab() {
   const loadAllData = async () => {
     setLoading(true);
     try {
+      // Diagnostic Session logs
+      if (supabase) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('[RECIPES DEBUG] Active Session User:', sessionData?.session?.user || 'No logged user / Anon');
+      }
+      console.log('[RECIPES DEBUG] Loading inventory directly from API...');
+      
       // Load inventory
       let inv = window.INVENTORY || [];
-      if (inv.length === 0 && window.supabase) {
-        const { data } = await window.supabase.from('ingredients').select('*');
+      if (inv.length === 0) {
+        const { data } = await fetchIngredients();
         inv = data || [];
       }
       setInventory(inv);
 
       // Fetch Categories
-      let cats = [];
-      if (window.fetchRecipeCategories) {
-        const { data } = await window.fetchRecipeCategories();
-        cats = data || [];
-      }
+      console.log('[RECIPES DEBUG] Fetching categories directly from API...');
+      const { data: catData } = await fetchRecipeCategories();
+      const cats = catData || [];
       setRecipeCategories(cats);
-      
-      // Update global variable for compatibility
       window.RECIPE_CATEGORIES = cats;
 
       // Fetch Recipes
+      console.log('[RECIPES DEBUG] Fetching recipes from API...');
       let recs = [];
-      if (window.fetchRecipesWithIngredients) {
-        const { data, error } = await window.fetchRecipesWithIngredients();
-        if (!error && data) {
-          recs = data;
-        } else if (window.fetchRecipes) {
-          const { data: flatData } = await window.fetchRecipes();
-          recs = flatData || [];
-        }
+      const { data: relationalData, error: relationalError } = await fetchRecipesWithIngredients();
+      if (!relationalError && relationalData) {
+        recs = relationalData;
+      } else {
+        console.warn('[RECIPES DEBUG] Relational fetch failed, falling back to flat fetch. Error:', relationalError);
+        const { data: flatData } = await fetchRecipes();
+        recs = flatData || [];
       }
+      
       setRecipes(recs);
       window.RECIPES = recs;
       window.ALL_RECIPES = recs;
-
-      // Force-update KPIs if global function is present
-      if (typeof window.updateDashboardKPIs === 'function') {
-        window.updateDashboardKPIs();
-      }
+      console.log('[RECIPES DEBUG] Succeeded loading', recs.length, 'recipes.');
     } catch (err) {
-      console.error('Error loading recipes tab data:', err);
+      console.error('[RECIPES DEBUG] Error loading recipes tab data:', err);
     } finally {
       setLoading(false);
     }
