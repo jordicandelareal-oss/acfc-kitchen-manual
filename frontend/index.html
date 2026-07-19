@@ -881,6 +881,8 @@
   // Cache variables for recipes screen
   let _recipeIngredientsBuilder = [];
 
+  /* CÓDIGO LEGACY INVENTARIO - SEGURO EN src/components/InventoryTab.jsx */
+  /*
   async function loadSupabaseInventory() {
     try {
       const { data, error } = await api.fetchIngredients();
@@ -954,6 +956,7 @@
       console.error('Unexpected error loading inventory:', err);
     }
   }
+  */
 
   // ── RECIPES DYNAMIC LOADER (fault-tolerant) ─────────────────────
   async function loadSupabaseRecipes() {
@@ -1792,7 +1795,7 @@
   };
 
   // Expose functions globally
-  window.loadSupabaseInventory = loadSupabaseInventory;
+  // window.loadSupabaseInventory = loadSupabaseInventory;
   window.loadSupabaseRecipes = loadSupabaseRecipes;
   window.filterRecipes = filterRecipes;
   window.openNewRecipeModal = openNewRecipeModal;
@@ -2225,8 +2228,7 @@
       }
     }
   };
-
-  loadSupabaseInventory();
+  // loadSupabaseInventory();
 </script>
 
 <!-- ── REACT APP START ── -->
