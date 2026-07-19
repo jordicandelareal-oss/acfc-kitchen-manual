@@ -118,9 +118,9 @@ BEGIN
     corte := temp_row.corte::varchar;
     cantidad_necesaria := temp_row.qty::numeric;
 
-    -- Obtener o inicializar el stock en el mapa en memoria
+    -- Obtener o inicializar el stock en el mapa en memoria (evaluando la columna stock_actual)
     IF NOT cairo_stock_map ? temp_row.ing_id::text THEN
-      SELECT COALESCE(current_stock, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
+      SELECT COALESCE(stock_actual, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
       cairo_stock_map := cairo_stock_map || jsonb_build_object(temp_row.ing_id::text, db_stock);
     END IF;
 
@@ -150,7 +150,7 @@ BEGIN
     corte := ''::varchar;
     cantidad_necesaria := temp_row.total_qty::numeric;
 
-    SELECT COALESCE(current_stock, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
+    SELECT COALESCE(stock_actual, 0) INTO db_stock FROM public.ingredients WHERE id = temp_row.ing_id;
     a_comprar := GREATEST(0, cantidad_necesaria - db_stock)::numeric;
     destinations := temp_row.all_dests::text;
 
