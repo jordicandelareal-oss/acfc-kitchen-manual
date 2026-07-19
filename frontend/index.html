@@ -872,14 +872,8 @@
   async function init() {
     loadSupabaseRecipes().catch(e => console.error("Error loading recipes on init", e));
     
-    // Fetch planner data
-    PLANNER_LOADING = true;
-    fetchPlannerData().then(() => {
-      PLANNER_LOADING = false;
-    }).catch(err => {
-      console.error('Planner init error:', err);
-      PLANNER_LOADING = false;
-    });
+    // Fetch planner data moved to React component
+    // PLANNER_LOADING = true;
     
     // Legacy async loads removed, managed in React now
   }
