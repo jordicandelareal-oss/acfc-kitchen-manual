@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as api from '../api';
 import * as mathUtils from '../utils/mathUtils';
+import { PLANNER_RULES } from '../utils/plannerRules';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
   Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle 
@@ -244,24 +245,35 @@ export default function PlannerTab({ recipes = [] }) {
     }
     addLog(`Generando menú automático para semanas: ${selectedWeeks.join(', ')}...`, 'info');
     try {
-      // Pick random recipes for meals
-      const mainRecipes = recipes.filter(r => r.category !== 'Acompañamiento');
-      const sideRecipes = recipes.filter(r => r.category === 'Acompañamiento');
+      // Get user settings
+      const settings = PLANNER_RULES.getSettings();
       
-      if (mainRecipes.length === 0) {
-        addLog('No hay recetas de plato principal cargadas en la base de datos', 'error');
-        return;
-      }
-
       const upserts = [];
       selectedWeeks.forEach(week => {
         const startDay = (week - 1) * 7 + 1;
         for (let offset = 0; offset < 7; offset++) {
           const day = startDay + offset;
+          
+          // Determine if day falls on weekend (Jul 2026 starts on Wednesday, so Sat=4, Sun=5, etc. of the week)
+          // Simplified check: weekend is Saturday and Sunday
+          const isWeekend = (offset === 5 || offset === 6); // Sat=5, Sun=6 relative to week Mon-Sun
+          
           if (day <= 31) {
-            const randLunch = mainRecipes[Math.floor(Math.random() * mainRecipes.length)]?.id || null;
-            const randSide = sideRecipes.length > 0 ? sideRecipes[Math.floor(Math.random() * sideRecipes.length)]?.id : null;
-            const randDinner = mainRecipes[Math.floor(Math.random() * mainRecipes.length)]?.id || null;
+            // Apply business rules to filter available recipes for this specific day
+            const filteredMain = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category !== 'Acompañamiento'), settings, isWeekend);
+            const filteredSide = PLANNER_RULES.filtrarRecetas(recipes.filter(r => r.category === 'Acompañamiento'), settings, isWeekend);
+            
+            const randLunch = filteredMain.length > 0 
+              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]?.id 
+              : recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
+              
+            const randSide = filteredSide.length > 0 
+              ? filteredSide[Math.floor(Math.random() * filteredSide.length)]?.id 
+              : null;
+              
+            const randDinner = filteredMain.length > 0 
+              ? filteredMain[Math.floor(Math.random() * filteredMain.length)]?.id 
+              : recipes.filter(r => r.category !== 'Acompañamiento')[0]?.id || null;
 
             upserts.push({
               date: `2026-07-${String(day).padStart(2, '0')}`,
