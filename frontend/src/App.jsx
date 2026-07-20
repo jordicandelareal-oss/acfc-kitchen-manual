@@ -10,6 +10,7 @@ import SplashScreen from './SplashScreen';
 import './index.css';
 import * as mathUtils from './utils/mathUtils';
 
+import DashboardTab from './components/DashboardTab';
 import InventoryTab from './components/InventoryTab';
 import RecipesTab from './components/RecipesTab';
 import SuppliersTab from './components/SuppliersTab';
@@ -172,51 +173,7 @@ const InsumoRow = ({ item }) => {
   );
 };
 
-// ─── Tab: Dashboard ───────────────────────────────────────────────────────────
-const DashboardTab = ({ onNavigate }) => {
-  const [stats, setStats] = useState({ totalIngredients: 0, lowStockAlerts: 0, pendingOrders: 0 });
-
-  useEffect(() => {
-    fetchDashboardStats().then(res => { if (res.success) setStats(res); });
-  }, []);
-
-  return (
-    <div>
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon icon-blue"><Package size={22} /></div>
-          <div className="stat-value">{stats.totalIngredients}</div>
-          <div className="stat-label">Ingredientes</div>
-        </div>
-        <div className="stat-card" onClick={() => onNavigate('insumos')} style={{ cursor: 'pointer' }}>
-          <div className="stat-icon icon-orange"><AlertTriangle size={22} /></div>
-          <div className="stat-value stat-alert">{stats.lowStockAlerts}</div>
-          <div className="stat-label">Stock Bajo</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon icon-green"><TrendingUp size={22} /></div>
-          <div className="stat-value">{stats.pendingOrders}</div>
-          <div className="stat-label">Pedidos Pend.</div>
-        </div>
-      </div>
-
-      <div className="premium-card" style={{ marginTop: 16 }}>
-        <h3 className="section-title">Accesos Rápidos</h3>
-        {[
-          { icon: <Utensils size={18} />,   label: 'Ver Menú Semanal',    tab: 'menus' },
-          { icon: <ShoppingBag size={18} />, label: 'Lista de Compras',    tab: 'compras' },
-          { icon: <Package size={18} />,    label: 'Control de Insumos',  tab: 'insumos' },
-        ].map(({ icon, label, tab }) => (
-          <button key={tab} className="quick-action" onClick={() => onNavigate(tab)}>
-            <span className="quick-action-icon">{icon}</span>
-            <span>{label}</span>
-            <ChevronRight size={16} className="chevron" />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
+// ─── Tab: Dashboard (Migrado a components/DashboardTab.jsx) ───────────────────
 
 // ─── Tab: Menús ───────────────────────────────────────────────────────────────
 const MenusTab = ({ data, loading }) => {
@@ -656,7 +613,7 @@ function App() {
 
       {/* ── MAIN CONTENT CON PESTAÑAS REACT MODULARES MIGRADAS ── */}
       <main className="content">
-        {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} />}
+        {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} recipes={globalRecipes} />}
         {activeTab === 'inventory' && <InventoryTab />}
         {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} />}
         {activeTab === 'suppliers' && <SuppliersTab />}
