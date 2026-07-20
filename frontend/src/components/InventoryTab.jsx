@@ -421,9 +421,17 @@ export default function InventoryTab() {
   const statsFillRate = statsTotal > 0 ? Math.round(((statsTotal - statsCritical) / statsTotal) * 100) : 0;
   const statsValue = useMemo(() => {
     return inventory.reduce((sum, item) => {
-      const stock = Number(item.stock_actual || 0);
+      const stockRaw = Number(item.stock_actual || 0);
+      if (stockRaw <= 0) return sum;
+
       const price = Number(item.cost || item.calculated_net_cost_kg || item.precio_compra || item.purchase_price || 0);
-      return sum + (stock * price);
+      const unit = String(item.unit || '').toLowerCase().trim();
+
+      // Normalize stock: if unit is gram (gr, g) or milliliter (ml), convert to kg/lt
+      const isGramOrMl = unit === 'gr' || unit === 'g' || unit === 'ml';
+      const stockNormalized = isGramOrMl ? stockRaw / 1000 : stockRaw;
+
+      return sum + (stockNormalized * price);
     }, 0);
   }, [inventory]);
 
