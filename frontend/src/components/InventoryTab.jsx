@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   fetchIngredients, 
   insertIngredient, 
@@ -419,11 +419,21 @@ export default function InventoryTab() {
   const statsTotal = inventory.length;
   const statsCritical = inventory.filter(i => i.critical).length;
   const statsFillRate = statsTotal > 0 ? Math.round(((statsTotal - statsCritical) / statsTotal) * 100) : 0;
-  const statsValue = inventory.reduce((sum, i) => sum + ((Number(i.cost) || 0) * (Number(i.stock_actual) || 0)), 0);
+  const statsValue = useMemo(() => {
+    return inventory.reduce((sum, item) => {
+      const stock = Number(item.stock_actual || 0);
+      const price = Number(item.cost || item.calculated_net_cost_kg || item.precio_compra || item.purchase_price || 0);
+      return sum + (stock * price);
+    }, 0);
+  }, [inventory]);
 
-  const formatEuroK = (val) => {
-    const num = Number(val) || 0;
-    return num >= 1000 ? (num/1000).toFixed(1) + 'K€' : num.toFixed(0) + '€';
+  const formatEuro = (val) => {
+    return Number(val || 0).toLocaleString('es-ES', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   };
 
   // Calculate net cost display inside modal form
@@ -489,7 +499,7 @@ export default function InventoryTab() {
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : formatEuroK(statsValue)}
+            {loading ? '—' : formatEuro(statsValue)}
           </p>
           <p className="text-xs text-slate-400 mt-0.5">Valor stock</p>
         </div>
