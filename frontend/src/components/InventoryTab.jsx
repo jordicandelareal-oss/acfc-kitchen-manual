@@ -463,10 +463,8 @@ export default function InventoryTab() {
           <button onClick={() => setCatManagerModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-brand hover:text-brand transition-colors">
             <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>category</span>Categorías
           </button>
-          <button onClick={() => window.toast('🔄 Sincronizando con ERP...')} className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors">
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>sync</span>Sync ERP
-          </button>
         </div>
+
       </div>
 
       {/* Stats row */}

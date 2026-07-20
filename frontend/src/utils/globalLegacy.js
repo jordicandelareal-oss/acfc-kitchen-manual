@@ -145,4 +145,54 @@ if (typeof window !== 'undefined') {
   window.fetchPlannerData = fetchPlannerData;
   window.renderCalendar = renderCalendar;
   window.mathUtils = mathUtils;
+
+  // Modern Toast notification system
+  window.toast = window.toast || function(message) {
+    console.log('Toast message:', message);
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.position = 'fixed';
+      container.style.top = '20px';
+      container.style.right = '20px';
+      container.style.zIndex = '99999';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '8px';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    el.style.background = '#1e293b';
+    el.style.color = '#ffffff';
+    el.style.padding = '10px 18px';
+    el.style.borderRadius = '10px';
+    el.style.fontSize = '13px';
+    el.style.fontWeight = '500';
+    el.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.gap = '8px';
+    el.style.border = '1px solid #334155';
+    el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-10px)';
+    el.textContent = message;
+
+    container.appendChild(el);
+    
+    // Trigger transition
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Auto-remove
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-10px)';
+      setTimeout(() => el.remove(), 200);
+    }, 3500);
+  };
 }
+
