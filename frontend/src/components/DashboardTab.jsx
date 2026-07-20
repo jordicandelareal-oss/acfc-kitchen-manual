@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Package, AlertTriangle, TrendingUp, ChevronRight, 
   Utensils, ShoppingBag, Euro, Shield, Users, 
-  CheckCircle, Calendar, HelpCircle, Activity
+  CheckCircle, Calendar, HelpCircle, Activity, Edit2, Check, X
 } from 'lucide-react';
 import { fetchIngredients, fetchPlannerDataDb, updateIngredient } from '../api';
+import { supabase } from '../supabaseClient';
 
 export default function DashboardTab({ onNavigate, recipes = [] }) {
   const [role, setRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
@@ -13,6 +14,11 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
+
+  // Budget state variables
+  const [budget, setBudget] = useState(null);
+  const [isEditingLimit, setIsEditingLimit] = useState(false);
+  const [newLimitInput, setNewLimitInput] = useState('');
 
   // Sync role to localStorage
   const handleRoleChange = (newRole) => {
@@ -38,10 +44,86 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
       if (plannerRes && !plannerRes.error) {
         setPlannerData(plannerRes.data || []);
       }
+
+      // Financial Budget and Spent calculations
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      let { data: budgets, error: budgetErr } = await supabase
+        .from('purchase_budgets')
+        .select('*')
+        .order('start_date', { ascending: false })
+        .limit(1);
+
+      let activeBudget = budgets && budgets[0];
+
+      if (!activeBudget) {
+        const { data: newBudget, error: insertErr } = await supabase
+          .from('purchase_budgets')
+          .insert([{
+            start_date: firstDay,
+            end_date: lastDay,
+            budget_amount: 24500,
+            spent_amount: 0,
+            status: 'active'
+          }])
+          .select()
+          .single();
+        if (!insertErr && newBudget) {
+          activeBudget = newBudget;
+        }
+      }
+
+      const { data: orders, error: ordersErr } = await supabase
+        .from('purchase_orders')
+        .select('total_amount')
+        .gte('order_date', firstDay)
+        .lte('order_date', lastDay)
+        .neq('status', 'cancelled');
+
+      const totalSpent = (orders || []).reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+
+      if (activeBudget) {
+        if (activeBudget.spent_amount !== totalSpent) {
+          await supabase
+            .from('purchase_budgets')
+            .update({ spent_amount: totalSpent })
+            .eq('id', activeBudget.id);
+          activeBudget.spent_amount = totalSpent;
+        }
+        setBudget(activeBudget);
+        setNewLimitInput(String(activeBudget.budget_amount));
+      }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveLimit = async () => {
+    const amt = parseFloat(newLimitInput);
+    if (isNaN(amt) || amt <= 0) {
+      if (typeof window.toast === 'function') window.toast('⚠️ Por favor, introduce un límite válido.');
+      return;
+    }
+    if (!budget) return;
+
+    try {
+      const { error } = await supabase
+        .from('purchase_budgets')
+        .update({ budget_amount: amt })
+        .eq('id', budget.id);
+
+      if (error) throw error;
+
+      setBudget(prev => ({ ...prev, budget_amount: amt }));
+      setIsEditingLimit(false);
+      if (typeof window.toast === 'function') window.toast('✅ Límite presupuestario actualizado.');
+    } catch (err) {
+      console.error('Error updating budget limit:', err);
+      if (typeof window.toast === 'function') window.toast('❌ Error: ' + err.message);
     }
   };
 
@@ -250,8 +332,9 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
     }, 1000);
   };
 
-  const budgetLimit = 24500;
-  const budgetPct = Math.min(100, Math.round((stats.warehouseValue / budgetLimit) * 100)) || 0;
+  const spentAmount = budget ? Number(budget.spent_amount) : 0;
+  const limitAmount = budget ? Number(budget.budget_amount) : 24500;
+  const budgetPct = Math.min(100, Math.round((spentAmount / limitAmount) * 100)) || 0;
 
   return (
     <div className="space-y-6">
@@ -332,7 +415,7 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
           <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Total Recetas</p>
         </div>
 
-        {/* KPI: Warehouse Value (Only for Admin profile, or styled differently) */}
+        {/* KPI: Gasto del Mes */}
         <div className={`p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${role === 'administrador' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-indigo-50 text-brand rounded-xl">
@@ -346,7 +429,7 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
           {role === 'administrador' ? (
             <>
               <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
-                {loading ? '—' : stats.warehouseValue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                {loading ? '—' : spentAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
               </p>
               <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                 <div 
@@ -354,7 +437,37 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
                   style={{ width: `${budgetPct}%` }}
                 ></div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1.5 font-medium">Límite mensual: 24.500 €</p>
+              
+              <div className="flex items-center justify-between mt-2">
+                {isEditingLimit ? (
+                  <div className="flex items-center gap-1.5 w-full mt-1">
+                    <span className="text-[10px] text-slate-400 font-medium">Límite:</span>
+                    <input 
+                      type="number"
+                      value={newLimitInput}
+                      onChange={e => setNewLimitInput(e.target.value)}
+                      className="w-20 px-1.5 py-0.5 text-xs bg-slate-50 border border-slate-200 rounded outline-none focus:border-brand"
+                    />
+                    <button onClick={handleSaveLimit} className="text-emerald-600 hover:text-emerald-700 p-0.5">
+                      <Check size={12} />
+                    </button>
+                    <button onClick={() => { setIsEditingLimit(false); setNewLimitInput(String(limitAmount)); }} className="text-red-500 hover:text-red-600 p-0.5">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between w-full mt-1.5">
+                    <p className="text-[10px] text-slate-400 font-medium">Límite mensual: {limitAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
+                    <button 
+                      onClick={() => setIsEditingLimit(true)}
+                      className="text-slate-400 hover:text-brand transition-colors p-0.5"
+                      title="Editar límite presupuestario"
+                    >
+                      <Edit2 size={11} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className="mt-4 py-2">
@@ -362,10 +475,10 @@ export default function DashboardTab({ onNavigate, recipes = [] }) {
                 <Shield size={12} />
                 <span>Restringido a Admin</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Cambia el perfil activo arriba a la derecha para ver la valoración financiera.</p>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Cambia el perfil activo arriba a la derecha para ver las compras acumuladas.</p>
             </div>
           )}
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Valor de Almacén</p>
+          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Gasto del Mes</p>
         </div>
       </div>
 
