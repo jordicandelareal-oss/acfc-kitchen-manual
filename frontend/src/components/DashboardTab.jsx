@@ -7,8 +7,10 @@ import {
 import { fetchIngredients, fetchPlannerDataDb, updateIngredient } from '../api';
 import { supabase } from '../supabaseClient';
 
-export default function DashboardTab({ onNavigate, recipes = [] }) {
-  const [role, setRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
+export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
+  const [localRole, setLocalRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
+  const role = propsRole !== undefined ? propsRole : localRole;
+  const setRole = propsSetRole !== undefined ? propsSetRole : setLocalRole;
   const [ingredients, setIngredients] = useState([]);
   const [plannerData, setPlannerData] = useState([]);
   const [loading, setLoading] = useState(true);
