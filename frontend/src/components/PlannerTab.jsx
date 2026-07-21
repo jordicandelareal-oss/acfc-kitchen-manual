@@ -62,10 +62,24 @@ export default function PlannerTab({ recipes = [] }) {
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWeeks, setSelectedWeeks] = useState([1]);
-  const [logs, setLogs] = useState([
-    { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
-  ]);
+  // Estado de comensales configurados por semana { 1: 25, 2: 25, 3: 25, 4: 25 }
+  const [weeklyPlayers, setWeeklyPlayers] = useState(() => {
+    const stored = localStorage.getItem('acfc_weekly_players');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) { /* fallback */ }
+    }
+    return { 1: 25, 2: 25, 3: 25, 4: 25 };
+  });
+
+  const handleUpdatePlayers = (weekNum, delta) => {
+    setWeeklyPlayers(prev => {
+      const current = prev[weekNum] || 25;
+      const nextVal = Math.max(1, current + delta);
+      const updated = { ...prev, [weekNum]: nextVal };
+      localStorage.setItem('acfc_weekly_players', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // ── Derived recipe arrays (single source of truth for filtering) ──
   const sideRecipes = useMemo(() => recipes.filter(isSideRecipe), [recipes]);
@@ -434,21 +448,25 @@ export default function PlannerTab({ recipes = [] }) {
               recentRecipeIds = recentRecipeIds.slice(-14);
             }
 
+            // Número de comensales asignado específicamente a esta semana
+            const weekLunchPlayers = Number(weeklyPlayers[week]) || defaultLunchPlayers;
+            const weekDinnerPlayers = Math.max(1, Math.round(weekLunchPlayers * 0.8));
+
             upserts.push({
               date: dateISO,
               breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
               lunch_recipe_id: randLunch,
               lunch_side_recipe_id: randSide,
               dinner_recipe_id: randDinner,
-              lunch_players: defaultLunchPlayers,
-              lunch_halal: Math.round(defaultLunchPlayers * 0.08),
-              lunch_kosher: Math.round(defaultLunchPlayers * 0.04),
-              lunch_vegan: Math.round(defaultLunchPlayers * 0.08),
+              lunch_players: weekLunchPlayers,
+              lunch_halal: Math.round(weekLunchPlayers * 0.08),
+              lunch_kosher: Math.round(weekLunchPlayers * 0.04),
+              lunch_vegan: Math.round(weekLunchPlayers * 0.08),
               lunch_allergies: '1 Celíaco',
-              dinner_players: defaultDinnerPlayers,
-              dinner_halal: Math.round(defaultDinnerPlayers * 0.05),
+              dinner_players: weekDinnerPlayers,
+              dinner_halal: Math.round(weekDinnerPlayers * 0.05),
               dinner_kosher: 0,
-              dinner_vegan: Math.round(defaultDinnerPlayers * 0.05),
+              dinner_vegan: Math.round(weekDinnerPlayers * 0.05),
               dinner_allergies: ''
             });
           }
@@ -561,6 +579,33 @@ export default function PlannerTab({ recipes = [] }) {
                 <span>{w}</span>
               </label>
             ))}
+          </div>
+
+          {/* Quick Weekly Players Controls */}
+          <div className="flex items-center gap-1.5 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+            <Users size={14} className="text-indigo-600 ml-1" />
+            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight hidden sm:inline">
+              Comensales (Sem {selectedWeeks[0] || 1}):
+            </span>
+            <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs">
+              <button 
+                onClick={() => handleUpdatePlayers(selectedWeeks[0] || 1, -1)}
+                className="w-5 h-5 flex items-center justify-center font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors text-xs cursor-pointer"
+                title="Disminuir raciones"
+              >
+                -
+              </button>
+              <span className="font-extrabold text-xs text-indigo-950 px-1 min-w-[22px] text-center">
+                {weeklyPlayers[selectedWeeks[0] || 1] || 25}
+              </span>
+              <button 
+                onClick={() => handleUpdatePlayers(selectedWeeks[0] || 1, 1)}
+                className="w-5 h-5 flex items-center justify-center font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors text-xs cursor-pointer"
+                title="Aumentar raciones"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Auto-generate button */}
