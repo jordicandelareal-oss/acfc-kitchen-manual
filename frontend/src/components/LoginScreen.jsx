@@ -51,9 +51,45 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
   };
 
-  const fillQuickAccess = (email, pass) => {
+  const executeLoginWithCredentials = async (email, pass) => {
+    setErrorMsg('');
+    setLoading(true);
     setEmailInput(email);
     setPassword(pass);
+
+    try {
+      let rawEmail = email.trim();
+      if (rawEmail.toLowerCase() === 'kitchenassistant' || rawEmail.toLowerCase() === 'asistente') {
+        rawEmail = 'jordicandelareal+assistant@gmail.com';
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: rawEmail,
+        password: pass
+      });
+
+      if (error) throw error;
+
+      if (data?.session) {
+        const { data: roleRow } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.session.user.id)
+          .maybeSingle();
+
+        const userRole = roleRow?.role || 'chef';
+        localStorage.setItem('acfc_user_role', userRole);
+
+        if (typeof onLoginSuccess === 'function') {
+          onLoginSuccess(data.session.user, userRole);
+        }
+      }
+    } catch (err) {
+      console.error('Error de inicio de sesión:', err);
+      setErrorMsg(err.message || 'Credenciales no válidas. Revisa tu usuario y contraseña.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +118,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               <input
                 type="text"
                 required
-                placeholder="ej: Adm@acfcacademy.com o Kitchenassistant"
+                placeholder="ej: jordicandelareal+admin@gmail.com"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-brand focus:bg-white transition-all"
@@ -122,23 +158,26 @@ export default function LoginScreen({ onLoginSuccess }) {
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos de Prueba</p>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos de Prueba (1-Clic)</p>
           <div className="grid grid-cols-3 gap-2 text-[10px]">
             <button
-              onClick={() => fillQuickAccess('Adm@acfcacademy.com', 'Smartcoach1')}
-              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all"
+              onClick={() => executeLoginWithCredentials('jordicandelareal+admin@gmail.com', 'Smartcoach1')}
+              disabled={loading}
+              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all cursor-pointer hover:border-brand"
             >
               👑 Admin
             </button>
             <button
-              onClick={() => fillQuickAccess('Acfckitchen@gmail.com', 'Akiko')}
-              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all"
+              onClick={() => executeLoginWithCredentials('jordicandelareal+chef@gmail.com', 'Akiko')}
+              disabled={loading}
+              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all cursor-pointer hover:border-brand"
             >
               👨‍🍳 Chef
             </button>
             <button
-              onClick={() => fillQuickAccess('Kitchenassistant', 'AcfcKitchen')}
-              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all"
+              onClick={() => executeLoginWithCredentials('jordicandelareal+assistant@gmail.com', 'AcfcKitchen')}
+              disabled={loading}
+              className="p-2 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-lg text-slate-700 font-semibold transition-all cursor-pointer hover:border-brand"
             >
               🥗 Asistente
             </button>
