@@ -356,5 +356,15 @@ export const liberarStockReservado = async (recipeId, comensales) => {
 };
 
 export const procesarDescuentosAutomaticosTurnos = async () => {
-  return supabase.rpc('procesar_descuentos_automaticos_turnos');
+  try {
+    const res = await supabase.rpc('procesar_descuentos_automaticos_turnos');
+    if (res.error && (res.error.code === 'PGRST202' || res.error.message?.includes('404') || res.error.details?.includes('function'))) {
+      console.warn('[API] RPC procesar_descuentos_automaticos_turnos no encontrada en Supabase remoto. Omitiendo.');
+      return { data: { processed_count: 0 }, error: null };
+    }
+    return res;
+  } catch (err) {
+    console.warn('[API] Error al ejecutar procesar_descuentos_automaticos_turnos:', err);
+    return { data: { processed_count: 0 }, error: null };
+  }
 };

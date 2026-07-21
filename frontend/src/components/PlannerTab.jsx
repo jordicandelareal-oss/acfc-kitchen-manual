@@ -59,6 +59,7 @@ const isSideRecipe = (r) => {
 // PlannerTab Component
 export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
+  const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
   const [logs, setLogs] = useState([
