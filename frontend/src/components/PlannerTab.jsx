@@ -6,7 +6,7 @@ import PlannerSettingsModal from './PlannerSettingsModal';
 import ShoppingListModal from './ShoppingListModal';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
-  Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle 
+  Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle, Users 
 } from 'lucide-react';
 
 // Audit Console — captures window.addPlannerAuditLog into React state
