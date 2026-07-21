@@ -112,6 +112,16 @@ export default function PlannerTab({ recipes = [] }) {
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
   }, []);
 
+  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 6, 1)); // Default: Julio 2026
+
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
   // Fetch Planner Data & Process Automatic Shift Deductions
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -135,8 +145,7 @@ export default function PlannerTab({ recipes = [] }) {
       if (plannerRes.data) {
         plannerRes.data.forEach(row => {
           if (row.date) {
-            const day = new Date(row.date).getDate();
-            plannerMap[day] = row;
+            plannerMap[row.date] = row;
           }
         });
       }
@@ -532,11 +541,21 @@ export default function PlannerTab({ recipes = [] }) {
 
           {/* Month Navigator */}
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-            <button className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500">
+            <button 
+              onClick={handlePrevMonth}
+              className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer"
+              title="Mes anterior"
+            >
               <ChevronLeft size={16} />
             </button>
-            <span className="font-semibold text-slate-700 text-xs px-1">Jul 2026</span>
-            <button className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500">
+            <span className="font-semibold text-slate-700 text-xs px-1 min-w-[70px] text-center">
+              {currentDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+            </span>
+            <button 
+              onClick={handleNextMonth}
+              className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer"
+              title="Mes siguiente"
+            >
               <ChevronRight size={16} />
             </button>
           </div>
@@ -566,61 +585,89 @@ export default function PlannerTab({ recipes = [] }) {
             ))}
           </div>
 
-          {/* Desktop Days Grid - React Pure Rendering */}
+          {/* Desktop Days Grid - Dynamic Calendar Alignment */}
           <div className="hidden md:grid grid-cols-7 gap-2">
-            {Array.from({ length: 31 }, (_, i) => {
-              const d = i + 1;
-              const isToday = d === new Date().getDate();
-              const menu = plannerData[d] || null;
+            {(() => {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth();
+              
+              // Days in month
+              const daysInMonth = new Date(year, month + 1, 0).getDate();
+              
+              // First day of month (0 = Sun, 1 = Mon, ..., 6 = Sat)
+              // Convert to Spanish Monday-first index: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+              const rawFirstDay = new Date(year, month, 1).getDay();
+              const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
+              
+              const now = new Date();
+              const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
 
-              const lunchName = getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
-              const lunchSideName = getRecipeName(menu?.lunch_side_recipe_id, '');
-              const dinnerName = getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
+              const elements = [];
 
-              const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+              // Render empty offset cells
+              for (let empty = 0; empty < firstDayOffset; empty++) {
+                elements.push(
+                  <div key={`empty-${empty}`} className="min-h-[140px] bg-slate-50/40 border border-dashed border-slate-100 rounded-xl" />
+                );
+              }
 
-              return (
-                <div 
-                  key={d}
-                  className={`card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
-                    isToday 
-                      ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
-                      : hasMeal 
-                        ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
-                        : 'bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
-                    {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
-                  </div>
+              // Render days
+              for (let d = 1; d <= daysInMonth; d++) {
+                const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isToday = isCurrentMonthYear && d === now.getDate();
+                const menu = plannerData[dateISO] || plannerData[d] || null;
 
-                  <div className="mt-2 space-y-1 flex-grow">
-                    <div className={`text-[10px] truncate leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
-                      🌞 {lunchName}
+                const lunchName = getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
+                const lunchSideName = getRecipeName(menu?.lunch_side_recipe_id, '');
+                const dinnerName = getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
+
+                const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+
+                elements.push(
+                  <div 
+                    key={d}
+                    className={`card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
+                      isToday 
+                        ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
+                        : hasMeal 
+                          ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
+                          : 'bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
+                      {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
                     </div>
-                    {lunchSideName && (
-                      <div className="text-[9px] truncate leading-normal text-emerald-600 font-medium pl-2">
-                        🥗 {lunchSideName}
+
+                    <div className="mt-2 space-y-1 flex-grow">
+                      <div className={`text-[10px] truncate leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
+                        🌞 {lunchName}
                       </div>
-                    )}
-                    <div className={`text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}`}>
-                      🌙 {dinnerName}
+                      {lunchSideName && (
+                        <div className="text-[9px] truncate leading-normal text-emerald-600 font-medium pl-2">
+                          🥗 {lunchSideName}
+                        </div>
+                      )}
+                      <div className={`text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}`}>
+                        🌙 {dinnerName}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
+                      <span>👥 {menu?.lunch_players || 0}</span>
+                      <button 
+                        onClick={() => openDayEditor(d)} 
+                        className="text-brand hover:underline font-bold transition-all cursor-pointer"
+                      >
+                        Editar
+                      </button>
                     </div>
                   </div>
+                );
+              }
 
-                  <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
-                    <span>👥 {menu?.lunch_players || 0}</span>
-                    <button 
-                      onClick={() => openDayEditor(d)} 
-                      className="text-brand hover:underline font-bold transition-all cursor-pointer"
-                    >
-                      Editar
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+              return elements;
+            })()}
           </div>
         </div>
 
