@@ -817,29 +817,24 @@ export default function PlannerTab({ recipes = [] }) {
                     <div className="mt-2 space-y-1.5 flex-grow overflow-hidden">
                       {/* Almuerzo / Plato Principal */}
                       <div 
-                        title={`Almuerzo: ${lunchName}`}
+                        title={`Almuerzo: ${lunchName}${lunchSideName ? ' + Guarnición: ' + lunchSideName : ''}`}
                         className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border overflow-hidden ${
                           menu?.lunch_recipe_id 
                             ? 'bg-amber-50/80 border-amber-200/80 text-amber-950' 
                             : 'bg-slate-50 border-slate-100 text-slate-400 italic'
                         }`}
                       >
-                        <div className="flex items-center gap-1 font-bold text-amber-700 text-[10px] uppercase tracking-wider mb-0.5">
+                        <div className="flex items-center justify-between font-bold text-amber-700 text-[10px] uppercase tracking-wider mb-0.5">
                           <span>☀️ Almuerzo</span>
                         </div>
                         <span className="font-semibold block truncate">{lunchName}</span>
+                        {lunchSideName && (
+                          <div className="mt-1 pt-1 border-t border-amber-200/60 flex items-center gap-1 text-[10px] text-emerald-800 font-bold truncate">
+                            <span className="text-emerald-600 flex-shrink-0">🥗</span>
+                            <span className="truncate">{lunchSideName}</span>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Guarnición */}
-                      {lunchSideName && (
-                        <div 
-                          title={`Guarnición: ${lunchSideName}`}
-                          className="p-1 rounded-md text-[10px] leading-tight bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 flex items-center gap-1 overflow-hidden"
-                        >
-                          <span className="font-bold text-emerald-600 flex-shrink-0">🥗</span>
-                          <span className="font-semibold block truncate">{lunchSideName}</span>
-                        </div>
-                      )}
 
                       {/* Cena */}
                       <div 
