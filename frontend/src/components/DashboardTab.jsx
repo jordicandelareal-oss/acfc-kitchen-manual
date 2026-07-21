@@ -7,6 +7,16 @@ import {
 import { fetchIngredients, fetchPlannerDataDb } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
+  // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
+  const todayISO = useMemo(() => {
+    const d = new Date();
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0')
+    ].join('-');
+  }, []);
+
   const [localRole, setLocalRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
   const role = propsRole !== undefined ? propsRole : localRole;
   const setRole = propsSetRole !== undefined ? propsSetRole : setLocalRole;
