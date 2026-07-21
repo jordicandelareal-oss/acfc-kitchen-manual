@@ -12,7 +12,11 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
       PLANNER_RULES.usuario.forEach(rule => {
         const stored = localStorage.getItem(rule.key);
         if (stored !== null) {
-          activeValues[rule.key] = stored === 'true';
+          if (rule.type === 'number') {
+            activeValues[rule.key] = parseInt(stored, 10) || rule.defaultValue;
+          } else {
+            activeValues[rule.key] = stored === 'true';
+          }
         } else {
           activeValues[rule.key] = rule.defaultValue;
         }
@@ -28,13 +32,29 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
     }));
   };
 
-  const handleSave = () => {
-    Object.entries(editableSettings).forEach(([key, val]) => {
-      localStorage.setItem(key, val);
-    });
+  const handleSave = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    if (onSave) onSave(editableSettings);
-    onClose();
+    try {
+      Object.entries(editableSettings).forEach(([key, val]) => {
+        localStorage.setItem(key, String(val));
+      });
+      
+      if (onSave) {
+        onSave(editableSettings);
+      }
+
+      if (typeof window.toast === 'function') {
+        window.toast('⚙️ Ajustes del planificador guardados correctamente');
+      }
+
+      onClose();
+    } catch (err) {
+      console.error('Error al guardar ajustes en localStorage:', err);
+    }
   };
 
   if (!isOpen) return null;
@@ -107,10 +127,18 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
 
         {/* Footer */}
         <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+          >
             Cancelar
           </button>
-          <button onClick={handleSave} className="px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-xl shadow-sm transition-all">
+          <button 
+            type="button"
+            onClick={handleSave} 
+            className="px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-xl shadow-sm transition-all cursor-pointer"
+          >
             Guardar Ajustes
           </button>
         </div>
