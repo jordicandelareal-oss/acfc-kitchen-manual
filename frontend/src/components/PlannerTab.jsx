@@ -599,6 +599,18 @@ export default function PlannerTab({ recipes = [] }) {
     if (suggested) {
       console.log(`[Planificador] Guarnición auto-sugerida: "${suggested.name}" para plato "${lunchRecipe.name}"`);
       setDayForm(prev => ({ ...prev, lunch_side_recipe_id: suggested.id }));
+
+      if (selectedDay) {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        
+        setPlannerData(prev => ({
+          ...prev,
+          [formattedDate]: { ...prev[formattedDate], lunch_side_recipe_id: suggested.id },
+          [selectedDay]: { ...prev[selectedDay], lunch_side_recipe_id: suggested.id }
+        }));
+      }
     }
   };
 
