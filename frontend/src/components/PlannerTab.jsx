@@ -315,6 +315,14 @@ export default function PlannerTab({ recipes = [] }) {
       
       const { error } = await api.guardarMenuYReservarStock([payload]);
       if (error) throw error;
+
+      // Actualizar estado local inmediatamente para refrescar la tarjeta visual al instante
+      setPlannerData(prev => {
+        const nextMap = { ...prev };
+        nextMap[formattedDate] = { ...nextMap[formattedDate], ...payload };
+        nextMap[selectedDay] = { ...nextMap[selectedDay], ...payload };
+        return nextMap;
+      });
       
       addLog(`Día ${selectedDay} guardado con éxito`, 'success');
       setDayModalOpen(false);
@@ -333,12 +341,12 @@ export default function PlannerTab({ recipes = [] }) {
     // Search plannerData using ISO date string first, then by numeric day
     const dayData = plannerData[dateISO] || plannerData[day] || {};
     
-    const defaultSideId = dayData.lunch_side_recipe_id || (sideRecipes.length > 0 ? sideRecipes[0].id : '');
+    const savedSideId = dayData.lunch_side_recipe_id || dayData.lunch_side_recipe?.id || '';
 
     setDayForm({
       breakfast_recipe_id: dayData.breakfast_recipe_id || '',
       lunch_recipe_id: dayData.lunch_recipe_id || '',
-      lunch_side_recipe_id: defaultSideId,
+      lunch_side_recipe_id: savedSideId,
       dinner_recipe_id: dayData.dinner_recipe_id || '',
       lunch_players: dayData.lunch_players || 25,
       lunch_halal: dayData.lunch_halal || 0,
@@ -792,9 +800,10 @@ export default function PlannerTab({ recipes = [] }) {
                 const isToday = isCurrentMonthYear && d === now.getDate();
                 const menu = plannerData[dateISO] || plannerData[d] || null;
 
-                const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
-                const lunchSideName = menu?.lunch_side_recipe?.name || getRecipeName(menu?.lunch_side_recipe_id, '');
-                const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
+                const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
+                const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
+                const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
 
                 const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
 
