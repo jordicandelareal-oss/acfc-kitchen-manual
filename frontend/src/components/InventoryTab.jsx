@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   fetchIngredients, 
   insertIngredient, 
@@ -456,6 +456,76 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
 
   const hasBulkChanges = Object.keys(pendingChanges).length > 0;
 
+  // ── Abecedario lateral ──────────────────────────────────────────────────────
+  const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  // Letras que tienen al menos un ingrediente filtrado
+  const activeLetters = useMemo(() => {
+    const set = new Set();
+    filteredInventory.forEach(item => {
+      const first = (item.name || '').trim()[0]?.toUpperCase();
+      if (first) set.add(first);
+    });
+    return set;
+  }, [filteredInventory]);
+
+  // Índice de la primera fila de cada letra dentro de filteredInventory (ya ordenado)
+  const sortedInventory = useMemo(() => {
+    return [...filteredInventory].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
+  }, [filteredInventory]);
+
+  // Refs por letra para scroll
+  const letterRefs = useRef({});
+
+  const [activeLetter, setActiveLetter] = useState('');
+
+  const scrollToLetter = (letter) => {
+    const el = letterRefs.current[letter];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveLetter(letter);
+    } else {
+      // busca la letra disponible más cercana
+      const available = ALPHABET.filter(l => activeLetters.has(l));
+      const nearest = available.find(l => l >= letter);
+      if (nearest && letterRefs.current[nearest]) {
+        letterRefs.current[nearest].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActiveLetter(nearest);
+      }
+    }
+  };
+
+  // Componente barra lateral A-Z
+  const AlphaIndex = () => (
+    <div
+      className="sticky top-20 z-10 flex flex-col items-center justify-start gap-0 py-1 select-none"
+      style={{ minWidth: '22px', maxWidth: '22px' }}
+    >
+      {ALPHABET.map(letter => {
+        const isActive = activeLetters.has(letter);
+        const isCurrent = activeLetter === letter;
+        return (
+          <button
+            key={letter}
+            onClick={() => isActive && scrollToLetter(letter)}
+            className={`text-center leading-none font-bold transition-all ${
+              isCurrent
+                ? 'text-brand scale-125'
+                : isActive
+                ? 'text-slate-600 hover:text-brand hover:scale-110'
+                : 'text-slate-200 cursor-default'
+            }`}
+            style={{ fontSize: '9px', padding: '2px 0', width: '22px' }}
+            title={isActive ? `Ir a: ${letter}` : `Sin ingredientes en ${letter}`}
+            aria-disabled={!isActive}
+          >
+            {letter}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-end gap-4">
@@ -558,184 +628,257 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
         </div>
       </div>
 
-      {/* Main Stock Table */}
-      <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Live Stock Matrix</h3>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400">
-              {filteredInventory.length} de {inventory.length} líneas
-            </span>
-            {hasBulkChanges && (
-              <button onClick={saveAllChanges} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm animate-bounce">
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>save</span>
-                <span>Guardar Cambios ({Object.keys(pendingChanges).length})</span>
-              </button>
-            )}
-            {!isAssistant && (
-              <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
-                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nuevo
-              </button>
-            )}
-          </div>
+      {/* Main Stock Table + Abecedario Lateral */}
+      <div className="flex gap-0">
+        {/* Barra lateral A-Z (desktop + mobile) */}
+        <div className="hidden sm:flex flex-col flex-shrink-0">
+          <AlphaIndex />
         </div>
 
-        {/* Desktop View */}
-        <div className="overflow-x-auto hidden md:block">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('name')}>Ingrediente {sortKey === 'name' && (sortDir === 1 ? '↑' : '↓')}</th>
-                <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cat')}>Categoría {sortKey === 'cat' && (sortDir === 1 ? '↑' : '↓')}</th>
-                <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock')}>Stock Actual {sortKey === 'stock' && (sortDir === 1 ? '↑' : '↓')}</th>
-                <th className="px-4 py-3">Mínimo</th>
-                <th className="px-4 py-3">Máximo</th>
-                {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste/kg {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
-                <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
-                <th className="px-4 py-3">Estado</th>
-                {!isAssistant && <th className="px-4 py-3"></th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 bg-white text-slate-700">
-              {filteredInventory.map(item => (
-                <tr key={item.id} className="tr-hover cursor-pointer" onClick={() => openEditModal(item)}>
-                  {/* Ingrediente */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
-                        {item.image_url ? (
-                          <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-                        ) : (
-                          <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
+        {/* Contenido principal de la tabla */}
+        <div className="card overflow-hidden flex-1 min-w-0">
+          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Live Stock Matrix</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-slate-400">
+                {filteredInventory.length} de {inventory.length} líneas
+              </span>
+              {hasBulkChanges && (
+                <button onClick={saveAllChanges} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-sm animate-bounce">
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>save</span>
+                  <span>Guardar Cambios ({Object.keys(pendingChanges).length})</span>
+                </button>
+              )}
+              {!isAssistant && (
+                <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nuevo
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop View */}
+          <div className="overflow-x-auto hidden md:block">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 border-b border-slate-100 text-xs text-slate-400 uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('name')}>Ingrediente {sortKey === 'name' && (sortDir === 1 ? '↑' : '↓')}</th>
+                  <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cat')}>Categoría {sortKey === 'cat' && (sortDir === 1 ? '↑' : '↓')}</th>
+                  <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock')}>Stock Actual {sortKey === 'stock' && (sortDir === 1 ? '↑' : '↓')}</th>
+                  <th className="px-4 py-3">Mínimo</th>
+                  <th className="px-4 py-3">Máximo</th>
+                  {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste/kg {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
+                  <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
+                  <th className="px-4 py-3">Estado</th>
+                  {!isAssistant && <th className="px-4 py-3"></th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 bg-white text-slate-700">
+                {sortedInventory.map((item, idx) => {
+                  const firstLetter = (item.name || '').trim()[0]?.toUpperCase();
+                  const prevLetter = idx > 0 ? (sortedInventory[idx - 1].name || '').trim()[0]?.toUpperCase() : null;
+                  const isFirstOfLetter = firstLetter && firstLetter !== prevLetter;
+
+                  return (
+                    <React.Fragment key={item.id}>
+                      {isFirstOfLetter && (
+                        <tr
+                          ref={el => { if (el) letterRefs.current[firstLetter] = el; }}
+                          id={`group-${firstLetter}`}
+                          className="bg-slate-50/80"
+                        >
+                          <td colSpan={isAssistant ? 7 : 9} className="px-6 py-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{firstLetter}</span>
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="tr-hover cursor-pointer" onClick={() => openEditModal(item)}>
+                        {/* Ingrediente */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                              {item.image_url ? (
+                                <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                              ) : (
+                                <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{item.name}</p>
+                              {item.brand && <p className="text-[10px] text-slate-400 font-medium">{item.brand}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        {/* Categoría */}
+                        <td className="px-4 py-4"><span className="badge badge-slate">{item.cat}</span></td>
+                        {/* Stock Actual */}
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.stock_actual}
+                              onChange={e => handleLocalFieldChange(item.id, 'stock_actual', e.target.value)}
+                              className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
+                            />
+                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                          </div>
+                        </td>
+                        {/* Mínimo */}
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="any"
+                              disabled={isAssistant}
+                              value={item.stock_minimo}
+                              onChange={e => handleLocalFieldChange(item.id, 'stock_minimo', e.target.value)}
+                              className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
+                            />
+                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                          </div>
+                        </td>
+                        {/* Máximo */}
+                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              step="any"
+                              disabled={isAssistant}
+                              value={item.stock_maximo}
+                              onChange={e => handleLocalFieldChange(item.id, 'stock_maximo', e.target.value)}
+                              className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
+                            />
+                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                          </div>
+                        </td>
+                        {/* Coste/Kg — solo chef/admin */}
+                        {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
+                        {/* Proveedor — visible para todos */}
+                        <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
+                        {/* Estado */}
+                        <td className="px-4 py-4">
+                          {item.critical ? (
+                            <span className="badge badge-red pulse-red">REORDENAR</span>
+                          ) : (
+                            <span className="badge badge-green">OK</span>
+                          )}
+                        </td>
+                        {/* Acciones — solo chef/admin */}
+                        {!isAssistant && (
+                          <td className="px-4 py-4">
+                            <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile View — con abecedario inline arriba */}
+          <div className="md:hidden">
+            {/* Abecedario horizontal compacto para móvil */}
+            <div className="px-3 pt-2 pb-1 flex flex-wrap gap-0.5 border-b border-slate-100 bg-slate-50">
+              {ALPHABET.map(letter => {
+                const isActive = activeLetters.has(letter);
+                const isCurrent = activeLetter === letter;
+                return (
+                  <button
+                    key={letter}
+                    onClick={() => isActive && scrollToLetter(letter)}
+                    className={`text-[9px] font-bold leading-none px-1 py-1 rounded transition-all ${
+                      isCurrent
+                        ? 'bg-brand text-white'
+                        : isActive
+                        ? 'text-slate-600 hover:text-brand hover:bg-brand/10'
+                        : 'text-slate-200 cursor-default'
+                    }`}
+                    aria-disabled={!isActive}
+                  >
+                    {letter}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Lista móvil con separadores de letra */}
+            <div className="p-3 space-y-2">
+              {sortedInventory.map((item, idx) => {
+                const firstLetter = (item.name || '').trim()[0]?.toUpperCase();
+                const prevLetter = idx > 0 ? (sortedInventory[idx - 1].name || '').trim()[0]?.toUpperCase() : null;
+                const isFirstOfLetter = firstLetter && firstLetter !== prevLetter;
+                const stockColor = item.stock_actual <= 0 ? 'text-red-500' : 'text-slate-700';
+                const detailId = `react-inv-detail-${item.id}`;
+                const toggleDetail = () => {
+                  const el = document.getElementById(detailId);
+                  if (el) el.classList.toggle('hidden');
+                };
+
+                return (
+                  <React.Fragment key={item.id}>
+                    {isFirstOfLetter && (
+                      <div
+                        ref={el => { if (el) letterRefs.current[firstLetter] = el; }}
+                        id={`group-mobile-${firstLetter}`}
+                        className="pt-2 pb-0.5 px-1"
+                      >
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 pb-0.5 block">{firstLetter}</span>
+                      </div>
+                    )}
+
+                    <div className="border border-slate-100 rounded-xl overflow-hidden bg-white">
+                      <div className="flex items-center py-2.5 px-3 gap-2">
+                        <div className="flex flex-col min-w-0 flex-1 cursor-pointer" onClick={toggleDetail}>
+                          <span className="font-medium text-slate-800 text-sm truncate leading-tight">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">{item.cat}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1 flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
+                          <span className={`text-xs font-semibold ${stockColor}`}>{item.stock_actual}</span>
+                          <span className="text-xs text-slate-400">{item.unit}</span>
+                        </div>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <button onClick={toggleDetail} className="p-1.5 text-slate-400 hover:text-slate-600">
+                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>expand_more</span>
+                          </button>
+                          {!isAssistant && (
+                            <button onClick={() => openEditModal(item)} className="p-1.5 text-indigo-600 hover:text-indigo-900">
+                              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div id={detailId} className="hidden px-3 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 grid grid-cols-2 gap-x-4 gap-y-2.5">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Proveedor</p>
+                          <p className="font-medium text-slate-700 truncate">{item.supplier}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Marca / Ref.</p>
+                          <p className="font-medium text-slate-700 truncate">{item.brand || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Merma</p>
+                          <p className="font-medium text-slate-700">{item.waste_percentage > 0 ? item.waste_percentage + '%' : '—'}</p>
+                        </div>
+                        {!isAssistant && (
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / {item.unit}</p>
+                            <p className="font-bold text-slate-900">{(item.cost || 0).toFixed(2)}€</p>
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <p className="font-semibold text-slate-900">{item.name}</p>
-                        {item.brand && <p className="text-[10px] text-slate-400 font-medium">{item.brand}</p>}
-                      </div>
                     </div>
-                  </td>
-                  {/* Categoría */}
-                  <td className="px-4 py-4"><span className="badge badge-slate">{item.cat}</span></td>
-                  {/* Stock Actual */}
-                  <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="any"
-                        value={item.stock_actual}
-                        onChange={e => handleLocalFieldChange(item.id, 'stock_actual', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
-                      />
-                      <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                    </div>
-                  </td>
-                  {/* Mínimo */}
-                  <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="any"
-                        disabled={isAssistant}
-                        value={item.stock_minimo}
-                        onChange={e => handleLocalFieldChange(item.id, 'stock_minimo', e.target.value)}
-                        className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
-                      />
-                      <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                    </div>
-                  </td>
-                  {/* Máximo */}
-                  <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="any"
-                        disabled={isAssistant}
-                        value={item.stock_maximo}
-                        onChange={e => handleLocalFieldChange(item.id, 'stock_maximo', e.target.value)}
-                        className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
-                      />
-                      <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                    </div>
-                  </td>
-                  {/* Coste/Kg — solo chef/admin */}
-                  {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
-                  {/* Proveedor — visible para todos */}
-                  <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
-                  {/* Estado */}
-                  <td className="px-4 py-4">
-                    {item.critical ? (
-                      <span className="badge badge-red pulse-red">REORDENAR</span>
-                    ) : (
-                      <span className="badge badge-green">OK</span>
-                    )}
-                  </td>
-                  {/* Acciones — solo chef/admin */}
-                  {!isAssistant && (
-                    <td className="px-4 py-4">
-                      <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
-                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile View */}
-        <div className="md:hidden p-3 space-y-2">
-          {filteredInventory.map(item => {
-            const stockColor = item.stock_actual <= 0 ? 'text-red-500' : 'text-slate-700';
-            const detailId = `react-inv-detail-${item.id}`;
-            const toggleDetail = () => {
-              const el = document.getElementById(detailId);
-              if (el) el.classList.toggle('hidden');
-            };
-
-            return (
-              <div key={item.id} className="border border-slate-100 rounded-xl overflow-hidden bg-white">
-                <div className="flex items-center py-2.5 px-3 gap-2">
-                  <div className="flex flex-col min-w-0 flex-1 cursor-pointer" onClick={toggleDetail}>
-                    <span className="font-medium text-slate-800 text-sm truncate leading-tight">{item.name}</span>
-                    <span className="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">{item.cat}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1 flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
-                    <span className={`text-xs font-semibold ${stockColor}`}>{item.stock_actual}</span>
-                    <span className="text-xs text-slate-400">{item.unit}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <button onClick={toggleDetail} className="p-1.5 text-slate-400 hover:text-slate-600">
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>expand_more</span>
-                    </button>
-                    <button onClick={() => openEditModal(item)} className="p-1.5 text-indigo-600 hover:text-indigo-900">
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div id={detailId} className="hidden px-3 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 grid grid-cols-2 gap-x-4 gap-y-2.5">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Proveedor</p>
-                    <p className="font-medium text-slate-700 truncate">{item.supplier}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Marca / Ref.</p>
-                    <p className="font-medium text-slate-700 truncate">{item.brand || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Merma</p>
-                    <p className="font-medium text-slate-700">{item.waste_percentage > 0 ? item.waste_percentage + '%' : '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / {item.unit}</p>
-                    <p className="font-bold text-slate-900">{(item.cost || 0).toFixed(2)}€</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
