@@ -797,12 +797,37 @@ export default function PlannerTab({ recipes = [] }) {
                       {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
                     </div>
 
-                    <div className="mt-2 space-y-1 flex-grow">
-                      <div className={`text-[10px] leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
-                        🌞 {lunchName}{lunchSideName ? <span className="text-emerald-700 font-bold"> / {lunchSideName}</span> : ''}
+                    <div className="mt-2 space-y-1.5 flex-grow">
+                      {/* Almuerzo / Plato Principal */}
+                      <div className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border ${
+                        menu?.lunch_recipe_id 
+                          ? 'bg-amber-50/80 border-amber-200/80 text-amber-950' 
+                          : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                      }`}>
+                        <div className="flex items-center gap-1 font-bold text-amber-700 text-[10px] uppercase tracking-wider mb-0.5">
+                          <span>☀️ Almuerzo</span>
+                        </div>
+                        <span className="font-semibold">{lunchName}</span>
                       </div>
-                      <div className={`text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}`}>
-                        🌙 {dinnerName}
+
+                      {/* Guarnición */}
+                      {lunchSideName && (
+                        <div className="p-1 rounded-md text-[10px] leading-tight bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 flex items-center gap-1">
+                          <span className="font-bold text-emerald-600">🥗</span>
+                          <span className="font-semibold truncate">{lunchSideName}</span>
+                        </div>
+                      )}
+
+                      {/* Cena */}
+                      <div className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border ${
+                        menu?.dinner_recipe_id 
+                          ? 'bg-indigo-50/80 border-indigo-200/80 text-indigo-950' 
+                          : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                      }`}>
+                        <div className="flex items-center gap-1 font-bold text-indigo-700 text-[10px] uppercase tracking-wider mb-0.5">
+                          <span>🌙 Cena</span>
+                        </div>
+                        <span className="font-semibold truncate">{dinnerName}</span>
                       </div>
                     </div>
 

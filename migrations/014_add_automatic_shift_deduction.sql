@@ -41,7 +41,6 @@ BEGIN
       v_qty := (v_ing.quantity_per_portion * v_rec.players);
       UPDATE ingredients 
       SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
-          current_stock = COALESCE(current_stock, 0) - v_qty,
           stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
           updated_at = NOW()
       WHERE id = v_ing.ingredient_id;
@@ -69,12 +68,11 @@ BEGIN
           WHERE recipe_id = v_rec.lunch_recipe_id
         LOOP
           v_qty := (v_ing.quantity_per_portion * v_rec.players);
-          UPDATE ingredients 
-          SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
-              current_stock = COALESCE(current_stock, 0) - v_qty,
-              stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
-              updated_at = NOW()
-          WHERE id = v_ing.ingredient_id;
+      UPDATE ingredients 
+      SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
+          stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
+          updated_at = NOW()
+      WHERE id = v_ing.ingredient_id;
         END LOOP;
       END IF;
 
@@ -86,12 +84,11 @@ BEGIN
           WHERE recipe_id = v_rec.lunch_side_recipe_id
         LOOP
           v_qty := (v_ing.quantity_per_portion * v_rec.players);
-          UPDATE ingredients 
-          SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
-              current_stock = COALESCE(current_stock, 0) - v_qty,
-              stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
-              updated_at = NOW()
-          WHERE id = v_ing.ingredient_id;
+      UPDATE ingredients 
+      SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
+          stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
+          updated_at = NOW()
+      WHERE id = v_ing.ingredient_id;
         END LOOP;
       END IF;
     END IF;
@@ -118,7 +115,6 @@ BEGIN
         v_qty := (v_ing.quantity_per_portion * v_rec.players);
         UPDATE ingredients 
         SET stock_actual = COALESCE(stock_actual, 0) - v_qty,
-            current_stock = COALESCE(current_stock, 0) - v_qty,
             stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty),
             updated_at = NOW()
         WHERE id = v_ing.ingredient_id;
