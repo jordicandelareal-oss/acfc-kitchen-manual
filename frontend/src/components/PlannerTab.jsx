@@ -112,11 +112,17 @@ export default function PlannerTab({ recipes = [] }) {
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
   }, []);
 
-  // Fetch Planner Data
+  // Fetch Planner Data & Process Automatic Shift Deductions
   const loadData = useCallback(async () => {
     setLoading(true);
     addLog('Cargando planificación e inventario desde Supabase...', 'info');
     try {
+      // 1. Verificación automática de turnos transcurridos (09:00, 13:00, 19:00)
+      const autoRes = await api.procesarDescuentosAutomaticosTurnos();
+      if (autoRes.data && autoRes.data.processed_count > 0) {
+        addLog(`⏱️ Se procesaron automáticamente ${autoRes.data.processed_count} servicio(s) transcurridos`, 'success');
+      }
+
       const [plannerRes, ingredientsRes] = await Promise.all([
         api.fetchPlannerDataDb(),
         api.fetchIngredients()
@@ -503,7 +509,7 @@ export default function PlannerTab({ recipes = [] }) {
             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
           >
             <Check size={14} />
-            <span>Guardar Menú y Descontar Stock</span>
+            <span>Guardar Planificación</span>
           </button>
 
           {/* Shopping list button */}

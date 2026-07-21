@@ -354,3 +354,7 @@ export const generarListaComprasOptimizada = async () => {
 export const liberarStockReservado = async (recipeId, comensales) => {
   return supabase.rpc('liberar_stock_reservado', { p_recipe_id: recipeId, p_comensales: comensales });
 };
+
+export const procesarDescuentosAutomaticosTurnos = async () => {
+  return supabase.rpc('procesar_descuentos_automaticos_turnos');
+};
