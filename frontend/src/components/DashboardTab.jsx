@@ -70,6 +70,47 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     return plannerData.find(m => m.date === selectedDayISO);
   }, [plannerData, selectedDayISO]);
 
+  // Weeks list for selector
+  const weeksList = useMemo(() => {
+    return [
+      { value: '2026-07-06', label: 'Semana 1 (Del 06/07 al 12/07)' },
+      { value: '2026-07-13', label: 'Semana 2 (Del 13/07 al 19/07)' },
+      { value: '2026-07-20', label: 'Semana 3 (Del 20/07 al 26/07)' },
+      { value: '2026-07-27', label: 'Semana 4 (Del 27/07 al 02/08)' },
+      { value: '2026-08-03', label: 'Semana 5 (Del 03/08 al 09/08)' }
+    ];
+  }, []);
+
+  // Set default selected week to current or closest
+  useEffect(() => {
+    if (!selectedWeek && weeksList.length > 0) {
+      const todayTime = new Date(selectedDayISO).getTime();
+      const currentWeek = weeksList.find(w => {
+        const start = new Date(w.value).getTime();
+        const end = start + 7 * 24 * 60 * 60 * 1000;
+        return todayTime >= start && todayTime < end;
+      });
+      setSelectedWeek(currentWeek ? currentWeek.value : weeksList[1].value);
+    }
+  }, [weeksList, selectedWeek, selectedDayISO]);
+
+  // Filter planner data for the selected week
+  const weekMenus = useMemo(() => {
+    if (!selectedWeek) return [];
+    const start = new Date(selectedWeek);
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      weekDates.push([
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0')
+      ].join('-'));
+    }
+    return plannerData.filter(m => m.date && weekDates.includes(m.date));
+  }, [plannerData, selectedWeek]);
+
   // ── Coste Teórico Planificado (Semanal & Mensual) ──
   const { weeklyPlannedCost, totalPlannedCostMonthly } = useMemo(() => {
     const calculateMenuCost = (menuList) => {
