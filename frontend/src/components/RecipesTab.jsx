@@ -3,7 +3,7 @@ import useRecipeCalculations, { calculateRecipe } from '../hooks/useRecipeCalcul
 import { fetchRecipesWithIngredients, fetchRecipes, fetchRecipeCategories, fetchIngredients } from '../api';
 import { supabase } from '../supabaseClient';
 
-export default function RecipesTab({ recipes = [], reloadRecipes }) {
+export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit = true }) {
   const [recipeCategories, setRecipeCategories] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -560,12 +560,14 @@ export default function RecipesTab({ recipes = [], reloadRecipes }) {
           </button>
         </div>
 
-        <button
-          onClick={() => openNewRecipeModal()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm w-full sm:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nueva receta
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => openNewRecipeModal()}
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm w-full sm:w-auto justify-center"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nueva receta
+          </button>
+        )}
       </div>
 
       {/* KPI Stats Row */}

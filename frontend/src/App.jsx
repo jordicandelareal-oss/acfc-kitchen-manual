@@ -36,7 +36,40 @@ function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [role, setRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
+  // Estado de Rol (RBAC) sincrónico instantáneo (0ms) con fallback a 'chef'
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem('acfc_user_role');
+    if (stored === 'admin' || stored === 'chef' || stored === 'assistant') return stored;
+    // Mapear compatibilidad legacy 'jefe_cocina' -> 'chef'
+    if (stored === 'jefe_cocina') return 'chef';
+    return 'chef';
+  });
+
+  // Verificación asíncrona de sesión y rol de Supabase Auth en segundo plano
+  useEffect(() => {
+    async function checkSupabaseUserRole() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: roleRow } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          if (roleRow?.role) {
+            const mappedRole = roleRow.role;
+            setRole(mappedRole);
+            localStorage.setItem('acfc_user_role', mappedRole);
+          }
+        }
+      } catch (err) {
+        console.warn('[RBAC] Fallback a rol local activo:', err);
+      }
+    }
+    checkSupabaseUserRole();
+  }, []);
+
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [globalRecipes, setGlobalRecipes] = useState([]);
 
@@ -245,13 +278,13 @@ function App() {
         {/* MAIN CONTENT */}
         <main className="content">
           {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} recipes={globalRecipes} role={role} setRole={setRole} />}
-          {activeTab === 'inventory' && <InventoryTab />}
-          {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} />}
-          {activeTab === 'suppliers' && <SuppliersTab />}
-          {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} />}
-          {activeTab === 'menus' && <MenusTab data={data} loading={loading} />}
-          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} />}
-          {activeTab === 'insumos' && <InsumosTab loading={loading} />}
+          {activeTab === 'inventory' && <InventoryTab role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'suppliers' && <SuppliersTab role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'menus' && <MenusTab data={data} loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'insumos' && <InsumosTab loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
         </main>
 
         {/* Mobile Footer Tab Bar */}

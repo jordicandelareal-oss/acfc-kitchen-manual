@@ -57,7 +57,7 @@ const isSideRecipe = (r) => {
 };
 
 // PlannerTab Component
-export default function PlannerTab({ recipes = [] }) {
+export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerData, setPlannerData] = useState({});
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
@@ -626,14 +626,16 @@ export default function PlannerTab({ recipes = [] }) {
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           
           {/* Reset button */}
-          <button 
-            onClick={() => setResetModalOpen(true)}
-            className="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-semibold px-4 py-2 rounded-xl flex items-center gap-2 transition-all text-xs whitespace-nowrap"
-          >
-            <Trash2 size={15} />
-            <span>Resetear</span>
-          </button>
-          
+          {canEdit && (
+            <button 
+              onClick={() => setResetModalOpen(true)}
+              className="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-semibold px-4 py-2 rounded-xl flex items-center gap-2 transition-all text-xs whitespace-nowrap"
+            >
+              <Trash2 size={15} />
+              <span>Resetear</span>
+            </button>
+          )}
+
           {/* Week selector */}
           <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
             <span className="text-[10px] font-bold text-slate-500 uppercase px-2">Sem:</span>
@@ -660,61 +662,73 @@ export default function PlannerTab({ recipes = [] }) {
             {/* Comida / Lunch */}
             <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
               <span className="text-[10px] font-bold text-brand">🌞</span>
-              <button 
-                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
-                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-              >
-                -
-              </button>
+              {canEdit && (
+                <button 
+                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
+                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                >
+                  -
+                </button>
+              )}
               <span className="font-extrabold text-xs text-slate-800 min-w-[20px] text-center">
                 {weeklyPlayers[selectedWeeks[0] || 1]?.lunch ?? 25}
               </span>
-              <button 
-                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
-                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-              >
-                +
-              </button>
+              {canEdit && (
+                <button 
+                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
+                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                >
+                  +
+                </button>
+              )}
             </div>
 
             {/* Cena / Dinner */}
             <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
               <span className="text-[10px] font-bold text-indigo-600">🌙</span>
-              <button 
-                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
-                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-              >
-                -
-              </button>
+              {canEdit && (
+                <button 
+                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
+                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                >
+                  -
+                </button>
+              )}
               <span className="font-extrabold text-xs text-indigo-950 min-w-[20px] text-center">
                 {weeklyPlayers[selectedWeeks[0] || 1]?.dinner ?? 20}
               </span>
-              <button 
-                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
-                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-              >
-                +
-              </button>
+              {canEdit && (
+                <button 
+                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
+                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                >
+                  +
+                </button>
+              )}
             </div>
           </div>
 
           {/* Auto-generate button */}
-          <button 
-            onClick={handleGenerateWeekly}
-            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
-          >
-            <RefreshCw size={14} className="animate-pulse" />
-            <span>Generar Menú Semanal</span>
-          </button>
+          {canEdit && (
+            <button 
+              onClick={handleGenerateWeekly}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
+            >
+              <RefreshCw size={14} className="animate-pulse" />
+              <span>Generar Menú Semanal</span>
+            </button>
+          )}
 
           {/* Save / Reserve Stock button */}
-          <button 
-            onClick={handleSaveAndConfirm}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
-          >
-            <Check size={14} />
-            <span>Guardar Planificación</span>
-          </button>
+          {canEdit && (
+            <button 
+              onClick={handleSaveAndConfirm}
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
+            >
+              <Check size={14} />
+              <span>Guardar Planificación</span>
+            </button>
+          )}
 
           {/* Shopping list button */}
           <button 
@@ -884,12 +898,16 @@ export default function PlannerTab({ recipes = [] }) {
 
                     <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
                       <span>👥 {menu?.lunch_players || 0}</span>
-                      <button 
-                        onClick={() => openDayEditor(d)} 
-                        className="text-brand hover:underline font-bold transition-all cursor-pointer"
-                      >
-                        Editar
-                      </button>
+                      {canEdit ? (
+                        <button 
+                          onClick={() => openDayEditor(d)} 
+                          className="text-brand hover:underline font-bold transition-all cursor-pointer"
+                        >
+                          Editar
+                        </button>
+                      ) : (
+                        <span className="text-slate-400 font-semibold italic">Lectura</span>
+                      )}
                     </div>
                   </div>
                 );

@@ -1,5 +1,17 @@
 import { supabase } from './supabaseClient';
 
+// ── Auth & Roles ──
+export const fetchUserRoleDb = async (userId) => {
+  if (!userId) return null;
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) return null;
+  return data?.role || null;
+};
+
 // ── Menús: planning semanal ────────────────────────────────────────────────
 export const fetchMenus = async () => {
   try {

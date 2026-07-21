@@ -306,18 +306,25 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         
         <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200/50">
           <button 
-            onClick={() => handleRoleChange('jefe_cocina')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${role === 'jefe_cocina' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            onClick={() => handleRoleChange('chef')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${role === 'chef' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <Utensils size={13} />
-            <span>Jefe de Cocina</span>
+            <span>Chef</span>
           </button>
           <button 
-            onClick={() => handleRoleChange('administrador')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${role === 'administrador' ? 'bg-brand text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            onClick={() => handleRoleChange('assistant')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${role === 'assistant' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            <Users size={13} />
+            <span>Asistente</span>
+          </button>
+          <button 
+            onClick={() => handleRoleChange('admin')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${role === 'admin' ? 'bg-brand text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <Shield size={13} />
-            <span>Administrador</span>
+            <span>Admin</span>
           </button>
         </div>
       </div>
@@ -372,7 +379,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </div>
 
         {/* KPI: Coste Teórico Planificado */}
-        <div className={`p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${role === 'administrador' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
+        <div className={`p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${role === 'admin' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-indigo-50 text-brand rounded-xl">
               <Euro size={22} />
@@ -382,7 +389,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
             </span>
           </div>
           
-          {role === 'administrador' ? (
+          {role === 'admin' ? (
             <>
               <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
                 {loading ? '—' : weeklyPlannedCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })}
@@ -401,7 +408,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
                 <Shield size={12} />
                 <span>Restringido a Admin</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Cambia el perfil a Admin para ver costes financieros.</p>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Los costes financieros están reservados al perfil Administrador.</p>
             </div>
           )}
           <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Teórico Semanal</p>
