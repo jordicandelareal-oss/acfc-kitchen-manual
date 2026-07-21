@@ -303,9 +303,9 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     return Object.entries(cuts);
   }, [weekMenus, recipes, ingredients]);
 
-  // ── Lógica de Mise en Place dinámico para Asistente (calculada a partir del menú de HOY) ──
-  const todayMiseEnPlace = useMemo(() => {
-    const targetMenu = plannerData.find(m => m.date === todayISO);
+  // ── Lógica de Mise en Place dinámico para Asistente (calculada para el día seleccionado) ──
+  const selectedDayMiseEnPlace = useMemo(() => {
+    const targetMenu = plannerData.find(m => m.date === selectedDayISO);
     if (!targetMenu) return [];
     
     const itemsMap = new Map();
@@ -334,18 +334,20 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     processRecipe(targetMenu.dinner_recipe_id, targetMenu.dinner_players || 0);
 
     return Array.from(itemsMap.values());
-  }, [plannerData, recipes, todayISO]);
+  }, [plannerData, recipes, selectedDayISO]);
 
-  // Estado del checklist de Mise en Place guardado en localStorage por fecha ISO
-  const storageKey = `acfc_mise_${todayISO}`;
-  const [checkedItems, setCheckedItems] = useState(() => {
+  // Estado del checklist de Mise en Place guardado en localStorage dinámico por fecha ISO
+  const storageKey = `acfc_mise_${selectedDayISO}`;
+  const [checkedItems, setCheckedItems] = useState({});
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : {};
+      setCheckedItems(saved ? JSON.parse(saved) : {});
     } catch {
-      return {};
+      setCheckedItems({});
     }
-  });
+  }, [storageKey]);
 
   const toggleCheckItem = (name) => {
     const updated = { ...checkedItems, [name]: !checkedItems[name] };
@@ -357,66 +359,114 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     }
   };
 
-  // Renderizado exclusivo para Asistente de Cocina (Mise en Place Ultra-Simplificado)
+  // Renderizado exclusivo para Asistente de Cocina (Mise en Place & Producción de 3 Días)
   if (role === 'assistant') {
-    const todayMenuCurrent = plannerData.find(m => m.date === todayISO);
+    const selectedDayMenuCurrent = plannerData.find(m => m.date === selectedDayISO);
+    const isTomorrow = viewDayOffset === 1;
+
     return (
       <div className="space-y-6">
-        <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center">
+        {/* Cabecera y Selector de 3 Días */}
+        <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Outfit' }}>
-              Mise en Place & Producción de Hoy
+              Mise en Place & Producción de Cocina
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Vista simplificada para Asistente de Cocina · {todayISO}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Vista operativa para Asistente · Fecha: <span className="font-bold text-slate-700">{selectedDayISO}</span></p>
           </div>
-          <span className="px-3 py-1.5 bg-brand/10 text-brand text-xs font-bold rounded-xl flex items-center gap-1">
-            <Users size={14} /> Modo Producción (Asistente)
-          </span>
+
+          <div className="flex items-center gap-3">
+            {/* Carrusel AYER | HOY | MAÑANA */}
+            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold text-center min-w-[240px]">
+              <button 
+                onClick={() => setViewDayOffset(-1)}
+                className={`py-2 rounded-lg transition-all ${viewDayOffset === -1 ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                AYER
+              </button>
+              <button 
+                onClick={() => setViewDayOffset(0)}
+                className={`py-2 rounded-lg transition-all ${viewDayOffset === 0 ? 'bg-brand text-white shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                HOY
+              </button>
+              <button 
+                onClick={() => setViewDayOffset(1)}
+                className={`py-2 rounded-lg transition-all ${viewDayOffset === 1 ? 'bg-indigo-600 text-white shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                MAÑANA
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Menú y Comensales de Hoy */}
+        {/* Alerta de Descongelación Previa para MAÑANA */}
+        {isTomorrow && (
+          <div className="p-4 bg-orange-50 border-2 border-orange-200 text-orange-950 rounded-2xl flex items-center gap-3 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-extrabold text-lg flex-shrink-0">
+              🧊
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-orange-900">Atención: Preparación de Descongelación & Marinado Previo (Mañana)</p>
+              <p className="text-xs font-medium text-orange-800 mt-0.5">
+                Revisa los ingredientes carnes/pescados de la lista inferior y sácalos del congelador o déjalos marinando durante la jornada de hoy.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Menú y Comensales del Día Seleccionado */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-6 bg-amber-50/80 border border-amber-200 rounded-3xl shadow-sm">
             <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <span>☀️ Almuerzo ({todayMenuCurrent?.lunch_players || 0} Jugadores)</span>
+              <span>☀️ Almuerzo ({selectedDayMenuCurrent?.lunch_players || 0} Jugadores)</span>
             </h3>
-            <p className="text-lg font-extrabold text-slate-900">{todayMenuCurrent?.lunch_recipe?.name || 'No planificado'}</p>
-            {todayMenuCurrent?.lunch_side_recipe && (
-              <div className="mt-2 p-2 bg-emerald-100/70 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-950">
-                🥗 Guarnición: {todayMenuCurrent.lunch_side_recipe.name}
+            <p className="text-xl font-black text-slate-900">{selectedDayMenuCurrent?.lunch_recipe?.name || 'No planificado'}</p>
+            {selectedDayMenuCurrent?.lunch_side_recipe && (
+              <div className="mt-2.5 p-2.5 bg-emerald-100/80 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-950">
+                🥗 Guarnición: {selectedDayMenuCurrent.lunch_side_recipe.name}
               </div>
             )}
           </div>
 
           <div className="p-6 bg-indigo-50/80 border border-indigo-200 rounded-3xl shadow-sm">
             <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <span>🌙 Cena ({todayMenuCurrent?.dinner_players || 0} Jugadores)</span>
+              <span>🌙 Cena ({selectedDayMenuCurrent?.dinner_players || 0} Jugadores)</span>
             </h3>
-            <p className="text-lg font-extrabold text-slate-900">{todayMenuCurrent?.dinner_recipe?.name || 'No planificado'}</p>
+            <p className="text-xl font-black text-slate-900">{selectedDayMenuCurrent?.dinner_recipe?.name || 'No planificado'}</p>
           </div>
         </div>
 
         {/* Checklist de Mise en Place */}
         <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-1" style={{ fontFamily: 'Outfit' }}>
-            📋 Pre-elaboraciones e Ingredientes Reservados para Hoy
-          </h3>
-          <p className="text-xs text-slate-400 mb-4">Ingredientes calculados por ración en el planificador. Marca las tareas a medida que las prepares.</p>
+          <div className="flex justify-between items-center mb-1">
+            <h3 className="text-base font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+              📋 Pre-elaboraciones e Ingredientes Reservados ({viewDayOffset === -1 ? 'Ayer' : viewDayOffset === 0 ? 'Hoy' : 'Mañana'})
+            </h3>
+            <span className="text-[11px] font-mono text-slate-400 font-semibold">{selectedDayISO}</span>
+          </div>
+          <p className="text-xs text-slate-400 mb-4">Ingredientes calculados dinámicamente según las raciones del planificador. Marca cada ítem completado.</p>
 
-          {todayMiseEnPlace.length === 0 ? (
+          {selectedDayMiseEnPlace.length === 0 ? (
             <div className="text-slate-400 text-xs italic text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              No hay ingredientes reservados o platos planificados para el día de hoy.
+              No hay ingredientes reservados o platos planificados para este día.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {todayMiseEnPlace.map(item => {
+              {selectedDayMiseEnPlace.map(item => {
                 const isChecked = !!checkedItems[item.name];
+                const isMeatOrFish = item.name.toLowerCase().includes('carne') || item.name.toLowerCase().includes('pollo') || item.name.toLowerCase().includes('ternera') || item.name.toLowerCase().includes('pescado') || item.name.toLowerCase().includes('salmon');
+                
                 return (
                   <div 
                     key={item.name}
                     onClick={() => toggleCheckItem(item.name)}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                      isChecked ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 line-through opacity-75' : 'bg-slate-50 border-slate-200 hover:border-brand text-slate-800'
+                      isChecked 
+                        ? 'bg-emerald-50/80 border-emerald-300 text-emerald-900 line-through opacity-75' 
+                        : isTomorrow && isMeatOrFish
+                        ? 'bg-orange-50/90 border-orange-300 hover:border-orange-500 text-orange-950 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 hover:border-brand text-slate-800'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -425,7 +475,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
                       }`}>
                         {isChecked ? '✓' : ''}
                       </div>
-                      <span className="text-sm font-bold">{item.name}</span>
+                      <span className="text-sm font-bold flex items-center gap-1.5">
+                        {item.name}
+                        {isTomorrow && isMeatOrFish && !isChecked && <span className="text-[10px] bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded font-extrabold">🧊 Descongelar</span>}
+                      </span>
                     </div>
                     <span className="text-xs font-extrabold px-2.5 py-1 bg-white border border-slate-200 rounded-lg shadow-xs">
                       {item.qty >= 1000 ? `${(item.qty / 1000).toFixed(1)} kg` : `${item.qty.toFixed(0)} ${item.unit}`}
