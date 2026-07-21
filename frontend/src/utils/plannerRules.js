@@ -43,6 +43,22 @@ export const PLANNER_RULES = {
       type: 'boolean',
       defaultValue: false,
       section: 'personalizable'
+    },
+    {
+      key: 'menu_setting_default_lunch_players',
+      label: 'Comensales por defecto (Almuerzo)',
+      desc: 'Número por defecto de raciones / comensales a asignar al almuerzo en la generación automática.',
+      type: 'number',
+      defaultValue: 25,
+      section: 'personalizable'
+    },
+    {
+      key: 'menu_setting_default_dinner_players',
+      label: 'Comensales por defecto (Cena)',
+      desc: 'Número por defecto de raciones / comensales a asignar a la cena en la generación automática.',
+      type: 'number',
+      defaultValue: 20,
+      section: 'personalizable'
     }
   ],
 
@@ -52,7 +68,11 @@ export const PLANNER_RULES = {
     this.usuario.forEach(rule => {
       const stored = localStorage.getItem(rule.key);
       if (stored !== null) {
-        settings[rule.key] = stored === 'true';
+        if (rule.type === 'number') {
+          settings[rule.key] = parseInt(stored, 10) || rule.defaultValue;
+        } else {
+          settings[rule.key] = stored === 'true';
+        }
       } else {
         settings[rule.key] = rule.defaultValue;
       }

@@ -76,15 +76,26 @@ export default function PlannerSettingsModal({ isOpen, onClose, onSave }) {
                     </div>
 
                     <div className="flex-shrink-0">
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      {rule.type === 'number' ? (
                         <input 
-                          type="checkbox" 
-                          checked={!!currentValue}
-                          onChange={(e) => handleChange(rule.key, e.target.checked)}
-                          className="sr-only peer"
+                          type="number"
+                          min="1"
+                          max="200"
+                          value={currentValue !== undefined ? currentValue : rule.defaultValue}
+                          onChange={(e) => handleChange(rule.key, parseInt(e.target.value, 10) || 1)}
+                          className="w-20 px-2 py-1 text-xs border border-slate-200 rounded-lg outline-none focus:border-brand font-semibold text-slate-700"
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                      </label>
+                      ) : (
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={!!currentValue}
+                            onChange={(e) => handleChange(rule.key, e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+                        </label>
+                      )}
                     </div>
                   </div>
                 );

@@ -333,57 +333,69 @@ export default function PlannerTab({ recipes = [] }) {
       console.log('Aplicando regla de guarnición:', settings['menu_setting_incluir_guarniciones']);
       
       const upserts = [];
-      // Cola histórica de recetas asignadas recientemente para rotación (historial de últimos 5 días = 10 comidas)
       let recentRecipeIds = [];
+
+      const defaultLunchPlayers = Number(settings['menu_setting_default_lunch_players']) || 25;
+      const defaultDinnerPlayers = Number(settings['menu_setting_default_dinner_players']) || 20;
+
+      // Helper for Fisher-Yates array shuffle to guarantee random uniform rotation
+      const shuffleArray = (arr) => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      };
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
 
       selectedWeeks.forEach(week => {
         const startDay = (week - 1) * 7 + 1;
         for (let offset = 0; offset < 7; offset++) {
           const day = startDay + offset;
           const isWeekend = (offset === 5 || offset === 6);
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
           
-          if (day <= 31) {
+          if (day <= daysInMonth) {
+            const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
             // ── EVALUACIÓN PASO A PASO: ALMUERZO ──
             let lunchRecipe = null;
-            const lunchFailures = [];
+            const shuffledMainsForLunch = shuffleArray(mainRecipes);
 
-            for (const candidate of mainRecipes) {
+            for (const candidate of shuffledMainsForLunch) {
               const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch');
               if (check.valid) {
                 lunchRecipe = candidate;
                 break;
-              } else {
-                lunchFailures.push({ name: candidate.name, reason: check.reason });
               }
             }
 
             if (!lunchRecipe) {
-              console.error(`[Generador] No se encontró plato principal válido para almuerzo el día ${day}. Fallas registradas:`, lunchFailures);
-              lunchRecipe = mainRecipes[0] || null; // Fallback
+              // Fallback to any main recipe not recently served if strict rules exclude all
+              lunchRecipe = shuffledMainsForLunch.find(r => !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForLunch[0] || null;
             }
 
             const randLunch = lunchRecipe?.id || null;
             if (randLunch) {
               recentRecipeIds.push(randLunch);
-              console.log(`Generando para día ${day} (Almuerzo): "${lunchRecipe?.name}" | Categoría: ${lunchRecipe?.category}`);
             }
 
             // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
             let randSide = null;
-            if (settings['menu_setting_incluir_guarniciones']) {
-              const sideFailures = [];
-              for (const candidate of sideRecipes) {
+            if (settings['menu_setting_incluir_guarniciones'] !== false) {
+              const shuffledSides = shuffleArray(sideRecipes);
+              for (const candidate of shuffledSides) {
                 const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch_side');
                 if (check.valid) {
                   randSide = candidate.id;
                   break;
-                } else {
-                  sideFailures.push({ name: candidate.name, reason: check.reason });
                 }
               }
               if (!randSide && sideRecipes.length > 0) {
-                console.warn(`[Generador] No se encontró guarnición válida para día ${day}. Fallas:`, sideFailures);
-                randSide = sideRecipes[0]?.id || null; // Fallback
+                randSide = sideRecipes[Math.floor(Math.random() * sideRecipes.length)]?.id || null;
               }
               if (randSide) {
                 recentRecipeIds.push(randSide);
@@ -392,49 +404,45 @@ export default function PlannerTab({ recipes = [] }) {
 
             // ── EVALUACIÓN PASO A PASO: CENA ──
             let dinnerRecipe = null;
-            const dinnerFailures = [];
+            const shuffledMainsForDinner = shuffleArray(mainRecipes);
 
-            for (const candidate of mainRecipes) {
+            for (const candidate of shuffledMainsForDinner) {
               const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'dinner', lunchRecipe);
               if (check.valid) {
                 dinnerRecipe = candidate;
                 break;
-              } else {
-                dinnerFailures.push({ name: candidate.name, reason: check.reason });
               }
             }
 
             if (!dinnerRecipe) {
-              console.error(`[Generador] No se encontró plato válido para cena el día ${day}. Fallas registradas:`, dinnerFailures);
-              dinnerRecipe = mainRecipes[0] || null; // Fallback
+              dinnerRecipe = shuffledMainsForDinner.find(r => r.id !== randLunch && !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForDinner[0] || null;
             }
 
             const randDinner = dinnerRecipe?.id || null;
             if (randDinner) {
               recentRecipeIds.push(randDinner);
-              console.log(`Generando para día ${day} (Cena): "${dinnerRecipe?.name}" | Categoría: ${dinnerRecipe?.category}`);
             }
 
-            // Mantener la cola de rotación en los últimos 10 platos (aprox. 5 días de almuerzo y cena)
-            if (recentRecipeIds.length > 10) {
-              recentRecipeIds = recentRecipeIds.slice(-10);
+            // Mantener cola de rotación amplia (últimos 14 platos servidos)
+            if (recentRecipeIds.length > 14) {
+              recentRecipeIds = recentRecipeIds.slice(-14);
             }
 
             upserts.push({
-              date: `2026-07-${String(day).padStart(2, '0')}`,
+              date: dateISO,
               breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
               lunch_recipe_id: randLunch,
               lunch_side_recipe_id: randSide,
               dinner_recipe_id: randDinner,
-              lunch_players: 25,
-              lunch_halal: 2,
-              lunch_kosher: 1,
-              lunch_vegan: 2,
+              lunch_players: defaultLunchPlayers,
+              lunch_halal: Math.round(defaultLunchPlayers * 0.08),
+              lunch_kosher: Math.round(defaultLunchPlayers * 0.04),
+              lunch_vegan: Math.round(defaultLunchPlayers * 0.08),
               lunch_allergies: '1 Celíaco',
-              dinner_players: 20,
-              dinner_halal: 1,
+              dinner_players: defaultDinnerPlayers,
+              dinner_halal: Math.round(defaultDinnerPlayers * 0.05),
               dinner_kosher: 0,
-              dinner_vegan: 1,
+              dinner_vegan: Math.round(defaultDinnerPlayers * 0.05),
               dinner_allergies: ''
             });
           }
