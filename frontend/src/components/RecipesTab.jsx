@@ -205,19 +205,24 @@ export default function RecipesTab({ recipes = [], reloadRecipes }) {
 
   // Recipe Metrics stars update in DB
   const handleUpdateMetric = async (recipeId, field, value) => {
-    if (!window.supabase) return;
     try {
-      const { error } = await window.supabase
+      const { error } = await supabase
         .from('recipes')
         .update({ [field]: value, updated_at: new Date().toISOString() })
         .eq('id', recipeId);
       if (error) throw error;
-      
-      // Update locally
-      setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, [field]: value } : r));
+
+      if (typeof reloadRecipes === 'function') {
+        await reloadRecipes();
+      }
+      if (typeof window.toast === 'function') {
+        window.toast(`⭐ Métrica actualizada (${field}: ${value}★)`);
+      }
     } catch (e) {
       console.error('Error updating metric:', e);
-      window.toast && window.toast('❌ Error al actualizar métrica');
+      if (typeof window.toast === 'function') {
+        window.toast('❌ Error al actualizar métrica: ' + (e.message || e));
+      }
     }
   };
 
