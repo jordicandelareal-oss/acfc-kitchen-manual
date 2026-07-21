@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Package, AlertTriangle, TrendingUp, ChevronRight, 
-  Utensils, ShoppingBag, Euro, Shield, Users, 
-  CheckCircle, Calendar, HelpCircle, Activity, Edit2, Check, X
+  Package, AlertTriangle, ChevronRight, 
+  Utensils, Euro, Shield, Users, 
+  CheckCircle, Calendar, Activity, Check, X
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb, updateIngredient } from '../api';
-import { supabase } from '../supabaseClient';
+import { fetchIngredients, fetchPlannerDataDb } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
   const [localRole, setLocalRole] = useState(() => localStorage.getItem('acfc_user_role') || 'jefe_cocina');
@@ -16,11 +15,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
-
-  // Budget state variables
-  const [budget, setBudget] = useState(null);
-  const [isEditingLimit, setIsEditingLimit] = useState(false);
-  const [newLimitInput, setNewLimitInput] = useState('');
 
   // Sync role to localStorage
   const handleRoleChange = (newRole) => {
@@ -46,86 +40,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
       if (plannerRes && !plannerRes.error) {
         setPlannerData(plannerRes.data || []);
       }
-
-      // Financial Budget and Spent calculations
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
-      let { data: budgets, error: budgetErr } = await supabase
-        .from('purchase_budgets')
-        .select('*')
-        .order('start_date', { ascending: false })
-        .limit(1);
-
-      let activeBudget = budgets && budgets[0];
-
-      if (!activeBudget) {
-        const { data: newBudget, error: insertErr } = await supabase
-          .from('purchase_budgets')
-          .insert([{
-            start_date: firstDay,
-            end_date: lastDay,
-            budget_amount: 24500,
-            spent_amount: 0,
-            status: 'active'
-          }])
-          .select()
-          .single();
-        if (!insertErr && newBudget) {
-          activeBudget = newBudget;
-        }
-      }
-
-      const { data: orders, error: ordersErr } = await supabase
-        .from('purchase_orders')
-        .select('total_amount')
-        .gte('order_date', firstDay)
-        .lte('order_date', lastDay)
-        .neq('status', 'cancelled');
-
-      const totalSpent = (orders || []).reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-
-      if (activeBudget) {
-        if (activeBudget.spent_amount !== totalSpent) {
-          await supabase
-            .from('purchase_budgets')
-            .update({ spent_amount: totalSpent })
-            .eq('id', activeBudget.id);
-          activeBudget.spent_amount = totalSpent;
-        }
-        setBudget(activeBudget);
-        setNewLimitInput(String(activeBudget.budget_amount));
-      }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSaveLimit = async () => {
-    const amt = parseFloat(newLimitInput);
-    if (isNaN(amt) || amt <= 0) {
-      if (typeof window.toast === 'function') window.toast('⚠️ Por favor, introduce un límite válido.');
-      return;
-    }
-    if (!budget) return;
-
-    try {
-      const { error } = await supabase
-        .from('purchase_budgets')
-        .update({ budget_amount: amt })
-        .eq('id', budget.id);
-
-      if (error) throw error;
-
-      setBudget(prev => ({ ...prev, budget_amount: amt }));
-      setIsEditingLimit(false);
-      if (typeof window.toast === 'function') window.toast('✅ Límite presupuestario actualizado.');
-    } catch (err) {
-      console.error('Error updating budget limit:', err);
-      if (typeof window.toast === 'function') window.toast('❌ Error: ' + err.message);
     }
   };
 
@@ -150,7 +68,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
 
   // Weeks list for selector
   const weeksList = useMemo(() => {
-    // Generate 5 weeks starting from July 6, 2026
     return [
       { value: '2026-07-06', label: 'Semana 1 (Del 06/07 al 12/07)' },
       { value: '2026-07-13', label: 'Semana 2 (Del 13/07 al 19/07)' },
@@ -163,14 +80,13 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   // Set default selected week to current or closest
   useEffect(() => {
     if (!selectedWeek && weeksList.length > 0) {
-      // Find if today fits in any week range
       const todayTime = new Date(todayISO).getTime();
       const currentWeek = weeksList.find(w => {
         const start = new Date(w.value).getTime();
         const end = start + 7 * 24 * 60 * 60 * 1000;
         return todayTime >= start && todayTime < end;
       });
-      setSelectedWeek(currentWeek ? currentWeek.value : weeksList[1].value); // fallback to Week 2
+      setSelectedWeek(currentWeek ? currentWeek.value : weeksList[1].value);
     }
   }, [weeksList, selectedWeek, todayISO]);
 
@@ -191,11 +107,57 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     return plannerData.filter(m => m.date && weekDates.includes(m.date));
   }, [plannerData, selectedWeek]);
 
+  // ── Coste Teórico Planificado (Semanal & Mensual) ──
+  const { weeklyPlannedCost, totalPlannedCostMonthly } = useMemo(() => {
+    const calculateMenuCost = (menuList) => {
+      let costSum = 0;
+      menuList.forEach(menu => {
+        const meals = [
+          { recipeId: menu.breakfast_recipe_id, players: 5 },
+          { recipeId: menu.lunch_recipe_id, players: menu.lunch_players || 0 },
+          { recipeId: menu.lunch_side_recipe_id, players: menu.lunch_players || 0 },
+          { recipeId: menu.dinner_recipe_id, players: menu.dinner_players || 0 }
+        ];
+
+        meals.forEach(meal => {
+          if (!meal.recipeId || meal.players <= 0) return;
+          const recipe = recipes.find(r => r.id === meal.recipeId);
+          if (!recipe) return;
+
+          let recipeCostPerPortion = 0;
+          if (recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0) {
+            recipeCostPerPortion = recipe.recipe_ingredients.reduce((acc, ri) => {
+              const ing = ri.ingredients;
+              if (!ing) return acc;
+              const pricePerUnit = Number(ing.calculated_net_cost_kg ?? ing.precio_por_kg ?? ing.precio_por_u ?? ing.precio_mas_bajo ?? 0);
+              const qty = Number(ri.quantity_per_portion ?? ri.quantity ?? 0);
+              const unit = (ri.unit || ing.unit || 'g').toLowerCase();
+              let qtyInBase = qty;
+              if (unit === 'g' || unit === 'gr' || unit === 'ml') {
+                qtyInBase = qty / 1000;
+              }
+              return acc + (qtyInBase * pricePerUnit);
+            }, 0);
+          } else {
+            recipeCostPerPortion = Number(recipe.cost_per_serving ?? recipe.coste_racion ?? 0);
+          }
+
+          costSum += recipeCostPerPortion * meal.players;
+        });
+      });
+      return costSum;
+    };
+
+    return {
+      weeklyPlannedCost: calculateMenuCost(weekMenus),
+      totalPlannedCostMonthly: calculateMenuCost(plannerData)
+    };
+  }, [weekMenus, plannerData, recipes]);
+
   // Statistics
   const stats = useMemo(() => {
     const totalIngredients = ingredients.length;
     
-    // Critical ingredients calculations (available stock <= min_stock)
     const criticalItems = ingredients.filter(i => {
       const stock = i.stock_actual ?? i.current_stock ?? 0;
       const reserved = i.stock_reservado ?? 0;
@@ -205,7 +167,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
 
     const lowStockAlerts = criticalItems.length;
 
-    // Warehouse Valuation
     const warehouseValue = ingredients.reduce((sum, item) => {
       const stock = Number(item.stock_actual ?? item.current_stock ?? 0);
       const cost = Number(item.calculated_net_cost_kg ?? item.precio_mas_bajo ?? item.purchase_price ?? 0);
@@ -260,7 +221,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
       });
     });
 
-    // Consolidate ingredient demands
     const needs = {};
     activeMeals.forEach(meal => {
       const servings = meal.players || 1;
@@ -268,7 +228,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         const ing = ri.ingredients;
         if (!ing) return;
         const key = ing.id;
-        const qtyPerServing = Number(ri.quantity) || 0;
+        const qtyPerServing = Number(ri.quantity_per_portion ?? ri.quantity ?? 0);
         const totalQty = qtyPerServing * servings;
 
         if (!needs[key]) {
@@ -325,7 +285,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     if (typeof window.toast === 'function') {
       window.toast(`🛒 Iniciando pedido rápido para ${item.name}...`);
     }
-    // Simulate auto-order trigger or email template
     setTimeout(() => {
       setUpdatingIngredientId(null);
       if (typeof window.toast === 'function') {
@@ -334,13 +293,9 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     }, 1000);
   };
 
-  const spentAmount = budget ? Number(budget.spent_amount) : 0;
-  const limitAmount = budget ? Number(budget.budget_amount) : 24500;
-  const budgetPct = Math.min(100, Math.round((spentAmount / limitAmount) * 100)) || 0;
-
   return (
     <div className="space-y-6">
-      {/* ── Welcome and Role Selector Header ── */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Outfit' }}>
@@ -349,7 +304,6 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           <p className="text-xs text-slate-400 mt-0.5">ACFC Kitchen Principal · Samir Cairo</p>
         </div>
         
-        {/* Role Toggle Switcher */}
         <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200/50">
           <button 
             onClick={() => handleRoleChange('jefe_cocina')}
@@ -368,9 +322,9 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </div>
       </div>
 
-      {/* ── Stats Grid ── */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI: Total Ingredients */}
+        {/* Total Ingredients */}
         <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
@@ -384,7 +338,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Ingredientes</p>
         </div>
 
-        {/* KPI: Low Stock Alerts */}
+        {/* Low Stock Alerts */}
         <div 
           onClick={() => onNavigate('inventory')}
           className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden cursor-pointer group"
@@ -403,7 +357,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Stock Crítico</p>
         </div>
 
-        {/* KPI: Total Recipes */}
+        {/* Total Recipes */}
         <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -417,59 +371,29 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Total Recetas</p>
         </div>
 
-        {/* KPI: Gasto del Mes */}
+        {/* KPI: Coste Teórico Planificado */}
         <div className={`p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${role === 'administrador' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
           <div className="flex justify-between items-start">
             <div className="p-2.5 bg-indigo-50 text-brand rounded-xl">
               <Euro size={22} />
             </div>
-            <span className={`badge ${budgetPct > 90 ? 'badge-danger' : 'badge-ok'}`}>
-              {budgetPct}%
+            <span className="badge badge-indigo">
+              Planificado
             </span>
           </div>
           
           {role === 'administrador' ? (
             <>
               <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
-                {loading ? '—' : spentAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                {loading ? '—' : weeklyPlannedCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })}
               </p>
-              <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                <div 
-                  className={`h-full rounded-full ${budgetPct > 90 ? 'bg-red-500' : 'bg-brand'}`} 
-                  style={{ width: `${budgetPct}%` }}
-                ></div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-500">Total Mensual Planificado:</span>
+                <span className="text-xs font-bold text-brand">
+                  {totalPlannedCostMonthly.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                </span>
               </div>
-              
-              <div className="flex items-center justify-between mt-2">
-                {isEditingLimit ? (
-                  <div className="flex items-center gap-1.5 w-full mt-1">
-                    <span className="text-[10px] text-slate-400 font-medium">Límite:</span>
-                    <input 
-                      type="number"
-                      value={newLimitInput}
-                      onChange={e => setNewLimitInput(e.target.value)}
-                      className="w-20 px-1.5 py-0.5 text-xs bg-slate-50 border border-slate-200 rounded outline-none focus:border-brand"
-                    />
-                    <button onClick={handleSaveLimit} className="text-emerald-600 hover:text-emerald-700 p-0.5">
-                      <Check size={12} />
-                    </button>
-                    <button onClick={() => { setIsEditingLimit(false); setNewLimitInput(String(limitAmount)); }} className="text-red-500 hover:text-red-600 p-0.5">
-                      <X size={12} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between w-full mt-1.5">
-                    <p className="text-[10px] text-slate-400 font-medium">Límite mensual: {limitAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</p>
-                    <button 
-                      onClick={() => setIsEditingLimit(true)}
-                      className="text-slate-400 hover:text-brand transition-colors p-0.5"
-                      title="Editar límite presupuestario"
-                    >
-                      <Edit2 size={11} />
-                    </button>
-                  </div>
-                )}
-              </div>
+              <p className="text-[10px] text-slate-400 mt-1 leading-tight">Calculado según raciones y escandallos activos.</p>
             </>
           ) : (
             <div className="mt-4 py-2">
@@ -477,14 +401,14 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
                 <Shield size={12} />
                 <span>Restringido a Admin</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Cambia el perfil activo arriba a la derecha para ver las compras acumuladas.</p>
+              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Cambia el perfil a Admin para ver costes financieros.</p>
             </div>
           )}
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Gasto del Mes</p>
+          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Teórico Semanal</p>
         </div>
       </div>
 
-      {/* ── Week Selector for Weekly widgets ── */}
+      {/* Week Selector */}
       <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-slate-700 font-semibold">
           <Calendar size={16} className="text-brand" />
@@ -501,7 +425,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </select>
       </div>
 
-      {/* ── Main Operations Section ── */}
+      {/* Main Operations Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Today's Menu Widget */}
@@ -620,7 +544,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </div>
       </div>
 
-      {/* ── Critical Alerts List Section ── */}
+      {/* Critical Alerts List Section */}
       <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
         <h3 className="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
           <AlertTriangle size={18} className="text-red-500" />
@@ -669,14 +593,14 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         )}
       </div>
 
-      {/* ── Quick Access Actions ── */}
+      {/* Quick Access Actions */}
       <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
         <h3 className="section-title mb-3" style={{ fontFamily: 'Outfit' }}>Accesos Rápidos a Módulos</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { icon: <Calendar size={16} />,   label: 'Ver Menú Semanal',    tab: 'planner' },
-            { icon: <ShoppingBag size={16} />, label: 'Lista de Compras',    tab: 'planner' }, // Planner also hosts shopping list consolidator
             { icon: <Package size={16} />,    label: 'Control de Insumos',  tab: 'inventory' },
+            { icon: <Utensils size={16} />,   label: 'Recetas & Escandallos', tab: 'recipes' },
           ].map(({ icon, label, tab }, idx) => (
             <button 
               key={idx} 
