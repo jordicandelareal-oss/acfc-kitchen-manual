@@ -1,4 +1,6 @@
 -- Función RPC mejorada para guardar menú liberando previamente el stock antiguo del día para consistencia total
+DROP FUNCTION IF EXISTS public.guardar_menu_y_reservar_stock(jsonb);
+
 CREATE OR REPLACE FUNCTION public.guardar_menu_y_reservar_stock(p_menu_days jsonb)
 RETURNS void
 LANGUAGE plpgsql
