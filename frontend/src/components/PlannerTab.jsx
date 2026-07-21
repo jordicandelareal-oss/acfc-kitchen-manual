@@ -785,9 +785,9 @@ export default function PlannerTab({ recipes = [] }) {
                 const isToday = isCurrentMonthYear && d === now.getDate();
                 const menu = plannerData[dateISO] || plannerData[d] || null;
 
-                const lunchName = getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
-                const lunchSideName = getRecipeName(menu?.lunch_side_recipe_id, '');
-                const dinnerName = getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
+                const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id, 'Sin asignar');
+                const lunchSideName = menu?.lunch_side_recipe?.name || getRecipeName(menu?.lunch_side_recipe_id, '');
+                const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id, 'Sin asignar');
 
                 const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
 

@@ -108,13 +108,21 @@ export const PLANNER_RULES = {
       }
     }
 
-    // 3. Regla de Paella / Guisos de Noche (Cenas ligeras)
+    // 3. Regla Horaria de Distribución (Mediodía vs. Noche)
     if (mealType === 'dinner') {
+      const esPasta = name.includes('pasta') || name.includes('macarr') || name.includes('spaghetti') || cat.includes('pasta');
+      if (esPasta) {
+        return { valid: false, reason: 'La Pasta se asigna prioritariamente en el servicio de mediodía' };
+      }
       if (noPaellaNoche && name.includes('paella')) {
         return { valid: false, reason: 'Excluida Paella en cena por regla de noche' };
       }
-      if (name.includes('guiso') || name.includes('estofado') || name.includes('fabada') || name.includes('cocido')) {
-        return { valid: false, reason: 'Excluido Guiso/Estofado pesado en cena' };
+    }
+
+    if (mealType === 'lunch') {
+      const esGuisoPesado = name.includes('fabada') || name.includes('cocido');
+      if (esGuisoPesado) {
+        return { valid: false, reason: 'Guiso muy pesado reservado para el turno de cena' };
       }
     }
 
