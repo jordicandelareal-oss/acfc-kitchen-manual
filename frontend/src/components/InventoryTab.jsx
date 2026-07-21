@@ -447,6 +447,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
     });
   };
 
+
   // Calculate net cost display inside modal form
   const parsedFormat = parseFloat(ingFormatGr) || 0;
   const parsedPrice = parseFloat(ingPurchasePrice) || 0;
@@ -459,43 +460,72 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
   // ── Abecedario lateral ──────────────────────────────────────────────────────
   const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
-  // Letras que tienen al menos un ingrediente filtrado
-  const activeLetters = useMemo(() => {
-    const set = new Set();
-    filteredInventory.forEach(item => {
-      const first = (item.name || '').trim()[0]?.toUpperCase();
-      if (first) set.add(first);
-    });
-    return set;
-  }, [filteredInventory]);
+    // Letras que tienen al menos un ingrediente filtrado
+    const activeLetters = useMemo(() => {
+      const set = new Set();
+      filteredInventory.forEach(item => {
+        const first = (item.name || '').trim()[0]?.toUpperCase();
+        if (first) set.add(first);
+      });
+      return set;
+    }, [filteredInventory]);
 
-  // Índice de la primera fila de cada letra dentro de filteredInventory (ya ordenado)
-  const sortedInventory = useMemo(() => {
-    return [...filteredInventory].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
-  }, [filteredInventory]);
+    // Lista ordenada alfabéticamente
+    const sortedInventory = useMemo(() => {
+      return [...filteredInventory].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
+      );
+    }, [filteredInventory]);
 
-  // Refs por letra para scroll
-  const letterRefs = useRef({});
+    const [activeLetter, setActiveLetter] = useState('');
 
-  const [activeLetter, setActiveLetter] = useState('');
-
-  const scrollToLetter = (letter) => {
-    const el = letterRefs.current[letter];
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setActiveLetter(letter);
-    } else {
-      // busca la letra disponible más cercana
-      const available = ALPHABET.filter(l => activeLetters.has(l));
-      const nearest = available.find(l => l >= letter);
-      if (nearest && letterRefs.current[nearest]) {
-        letterRefs.current[nearest].scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setActiveLetter(nearest);
+    // ─── scrollToLetter: usa getElementById para máxima fiabilidad ───────────
+    const scrollToLetter = useCallback((letter) => {
+      // intenta la letra pedida o la más cercana disponible
+      const targets = [letter, ...ALPHABET.filter(l => l > letter && activeLetters.has(l))];
+      for (const l of targets) {
+        const el = document.getElementById(`letter-group-${l}`) || document.getElementById(`letter-group-mobile-${l}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveLetter(l);
+          return;
+        }
       }
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeLetters]);
 
-  // Componente barra lateral A-Z — fixed al viewport, acompaña el scroll
+    // ─── IntersectionObserver: resalta letra activa mientras el usuario scrollea ─
+    useEffect(() => {
+      if (sortedInventory.length === 0) return;
+
+      const ratios = {};
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            const letter = entry.target.dataset.alphaLetter;
+            if (letter) ratios[letter] = entry.intersectionRatio;
+          });
+          const best = Object.entries(ratios)
+            .filter(([, r]) => r > 0)
+            .sort(([, a], [, b]) => b - a)[0];
+          if (best) setActiveLetter(best[0]);
+        },
+        { threshold: [0, 0.1, 0.5, 1], rootMargin: '-10% 0px -55% 0px' }
+      );
+
+      ALPHABET.forEach(letter => {
+        const el = document.getElementById(`letter-group-${letter}`) || document.getElementById(`letter-group-mobile-${letter}`);
+        if (el) {
+          el.dataset.alphaLetter = letter;
+          observer.observe(el);
+        }
+      });
+
+      return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sortedInventory]);
+
+  // Componente barra lateral A-Z
   const AlphaIndex = () => (
     <div
       className="fixed z-30 top-1/2 -translate-y-1/2 left-0 hidden sm:flex flex-col items-center gap-0 py-2 px-0.5"
@@ -531,36 +561,6 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       })}
     </div>
   );
-
-  // IntersectionObserver: resalta la letra activa mientras el usuario hace scroll
-  useEffect(() => {
-    const refs = letterRefs.current;
-    const entries = {};
-
-    const observer = new IntersectionObserver(
-      (observedEntries) => {
-        observedEntries.forEach(entry => {
-          entries[entry.target.dataset.letter] = entry.intersectionRatio;
-        });
-        // La letra más visible es la activa
-        const best = Object.entries(entries)
-          .filter(([, ratio]) => ratio > 0)
-          .sort(([, a], [, b]) => b - a)[0];
-        if (best) setActiveLetter(best[0]);
-      },
-      { threshold: [0, 0.1, 0.5, 1.0], rootMargin: '-10% 0px -60% 0px' }
-    );
-
-    Object.entries(refs).forEach(([letter, el]) => {
-      if (el) {
-        el.dataset.letter = letter;
-        observer.observe(el);
-      }
-    });
-
-    return () => observer.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedInventory]);
 
   return (
     <div className="space-y-6">
@@ -717,9 +717,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                     <React.Fragment key={item.id}>
                       {isFirstOfLetter && (
                         <tr
-                          ref={el => { if (el) letterRefs.current[firstLetter] = el; }}
-                          id={`group-${firstLetter}`}
-                          className="bg-slate-50/80"
+                          id={`letter-group-${firstLetter}`}
+                          className="bg-slate-50/80 scroll-mt-24"
                         >
                           <td colSpan={isAssistant ? 7 : 9} className="px-6 py-1">
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{firstLetter}</span>
@@ -857,9 +856,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                   <React.Fragment key={item.id}>
                     {isFirstOfLetter && (
                       <div
-                        ref={el => { if (el) letterRefs.current[firstLetter] = el; }}
-                        id={`group-mobile-${firstLetter}`}
-                        className="pt-2 pb-0.5 px-1"
+                        id={`letter-group-mobile-${firstLetter}`}
+                        className="pt-2 pb-0.5 px-1 scroll-mt-28"
                       >
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 pb-0.5 block">{firstLetter}</span>
                       </div>
