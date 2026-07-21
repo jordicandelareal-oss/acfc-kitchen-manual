@@ -495,11 +495,17 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
     }
   };
 
-  // Componente barra lateral A-Z
+  // Componente barra lateral A-Z — fixed al viewport, acompaña el scroll
   const AlphaIndex = () => (
     <div
-      className="sticky top-20 z-10 flex flex-col items-center justify-start gap-0 py-1 select-none"
-      style={{ minWidth: '22px', maxWidth: '22px' }}
+      className="fixed z-30 top-1/2 -translate-y-1/2 left-0 hidden sm:flex flex-col items-center gap-0 py-2 px-0.5"
+      style={{
+        width: '28px',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(6px)',
+        borderRadius: '0 10px 10px 0',
+        boxShadow: '2px 0 8px rgba(0,0,0,0.06)',
+      }}
     >
       {ALPHABET.map(letter => {
         const isActive = activeLetters.has(letter);
@@ -508,14 +514,14 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
           <button
             key={letter}
             onClick={() => isActive && scrollToLetter(letter)}
-            className={`text-center leading-none font-bold transition-all ${
+            className={`text-center leading-none font-bold transition-all rounded ${
               isCurrent
-                ? 'text-brand scale-125'
+                ? 'text-white bg-brand scale-125 px-0.5'
                 : isActive
-                ? 'text-slate-600 hover:text-brand hover:scale-110'
+                ? 'text-slate-600 hover:text-brand hover:bg-brand/10'
                 : 'text-slate-200 cursor-default'
             }`}
-            style={{ fontSize: '9px', padding: '2px 0', width: '22px' }}
+            style={{ fontSize: '9px', padding: isCurrent ? '2px 3px' : '2px 0', width: '24px', display: 'block' }}
             title={isActive ? `Ir a: ${letter}` : `Sin ingredientes en ${letter}`}
             aria-disabled={!isActive}
           >
@@ -525,6 +531,36 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       })}
     </div>
   );
+
+  // IntersectionObserver: resalta la letra activa mientras el usuario hace scroll
+  useEffect(() => {
+    const refs = letterRefs.current;
+    const entries = {};
+
+    const observer = new IntersectionObserver(
+      (observedEntries) => {
+        observedEntries.forEach(entry => {
+          entries[entry.target.dataset.letter] = entry.intersectionRatio;
+        });
+        // La letra más visible es la activa
+        const best = Object.entries(entries)
+          .filter(([, ratio]) => ratio > 0)
+          .sort(([, a], [, b]) => b - a)[0];
+        if (best) setActiveLetter(best[0]);
+      },
+      { threshold: [0, 0.1, 0.5, 1.0], rootMargin: '-10% 0px -60% 0px' }
+    );
+
+    Object.entries(refs).forEach(([letter, el]) => {
+      if (el) {
+        el.dataset.letter = letter;
+        observer.observe(el);
+      }
+    });
+
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedInventory]);
 
   return (
     <div className="space-y-6">
@@ -628,15 +664,13 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
         </div>
       </div>
 
-      {/* Main Stock Table + Abecedario Lateral */}
-      <div className="flex gap-0">
-        {/* Barra lateral A-Z (desktop + mobile) */}
-        <div className="hidden sm:flex flex-col flex-shrink-0">
-          <AlphaIndex />
-        </div>
+      {/* Abecedario fijo lateral — fuera del flujo de la tabla */}
+      <AlphaIndex />
 
+      {/* Main Stock Table — con margen izquierdo en sm+ para no solapar el abecedario */}
+      <div className="sm:ml-8">
         {/* Contenido principal de la tabla */}
-        <div className="card overflow-hidden flex-1 min-w-0">
+        <div className="card overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Live Stock Matrix</h3>
             <div className="flex items-center gap-3">
