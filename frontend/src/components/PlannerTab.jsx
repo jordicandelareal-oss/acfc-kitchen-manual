@@ -381,6 +381,7 @@ export default function PlannerTab({ recipes = [] }) {
       const upserts = [];
       let recentRecipeIds = [];
       let recentSideIds = [];
+      const weekSideCounts = {};
 
       const defaultLunchPlayers = Number(settings['menu_setting_default_lunch_players']) || 25;
       const defaultDinnerPlayers = Number(settings['menu_setting_default_dinner_players']) || 20;
@@ -434,23 +435,32 @@ export default function PlannerTab({ recipes = [] }) {
             let randSide = null;
             if (settings['menu_setting_incluir_guarniciones'] !== false) {
               const shuffledSides = shuffleArray(sideRecipes);
-              // Filtrar guarniciones que no se hayan servido en los últimos 2 días (espaciado de 1 a 2 días)
+              
+              // Inicializar mapa de uso por semana si no existe
+              if (!weekSideCounts[week]) weekSideCounts[week] = {};
+
+              // Filtrar guarniciones válidas:
+              // 1. Que no se hayan servido el día inmediatamente anterior (no consecutivas)
+              // 2. Que no superen el máximo de 2 repeticiones en la misma semana
               const allowedSides = shuffledSides.filter(candidate => {
-                const check = PLANNER_RULES.isRecipeValid(candidate, recentSideIds.slice(-4), settings, isWeekend, 'lunch_side');
-                return check.valid;
+                const countInWeek = weekSideCounts[week][candidate.id] || 0;
+                const wasServedYesterday = recentSideIds.length > 0 && recentSideIds[recentSideIds.length - 1] === candidate.id;
+                const check = PLANNER_RULES.isRecipeValid(candidate, [], settings, isWeekend, 'lunch_side');
+                return check.valid && !wasServedYesterday && countInWeek < 2;
               });
 
               if (allowedSides.length > 0) {
                 randSide = allowedSides[0].id;
               } else if (sideRecipes.length > 0) {
-                // Fallback: seleccionar una guarnición no servida el día anterior
-                const fallbackSide = shuffledSides.find(s => !recentSideIds.slice(-2).includes(s.id)) || shuffledSides[0];
+                // Fallback: seleccionar cualquier guarnición no servida ayer
+                const fallbackSide = shuffledSides.find(s => recentSideIds.length === 0 || recentSideIds[recentSideIds.length - 1] !== s.id) || shuffledSides[0];
                 randSide = fallbackSide?.id || null;
               }
 
               if (randSide) {
                 recentRecipeIds.push(randSide);
                 recentSideIds.push(randSide);
+                weekSideCounts[week][randSide] = (weekSideCounts[week][randSide] || 0) + 1;
               }
             }
 
@@ -797,37 +807,46 @@ export default function PlannerTab({ recipes = [] }) {
                       {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
                     </div>
 
-                    <div className="mt-2 space-y-1.5 flex-grow">
+                    <div className="mt-2 space-y-1.5 flex-grow overflow-hidden">
                       {/* Almuerzo / Plato Principal */}
-                      <div className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border ${
-                        menu?.lunch_recipe_id 
-                          ? 'bg-amber-50/80 border-amber-200/80 text-amber-950' 
-                          : 'bg-slate-50 border-slate-100 text-slate-400 italic'
-                      }`}>
+                      <div 
+                        title={`Almuerzo: ${lunchName}`}
+                        className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border overflow-hidden ${
+                          menu?.lunch_recipe_id 
+                            ? 'bg-amber-50/80 border-amber-200/80 text-amber-950' 
+                            : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                        }`}
+                      >
                         <div className="flex items-center gap-1 font-bold text-amber-700 text-[10px] uppercase tracking-wider mb-0.5">
                           <span>☀️ Almuerzo</span>
                         </div>
-                        <span className="font-semibold">{lunchName}</span>
+                        <span className="font-semibold block truncate">{lunchName}</span>
                       </div>
 
                       {/* Guarnición */}
                       {lunchSideName && (
-                        <div className="p-1 rounded-md text-[10px] leading-tight bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 flex items-center gap-1">
-                          <span className="font-bold text-emerald-600">🥗</span>
-                          <span className="font-semibold truncate">{lunchSideName}</span>
+                        <div 
+                          title={`Guarnición: ${lunchSideName}`}
+                          className="p-1 rounded-md text-[10px] leading-tight bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 flex items-center gap-1 overflow-hidden"
+                        >
+                          <span className="font-bold text-emerald-600 flex-shrink-0">🥗</span>
+                          <span className="font-semibold block truncate">{lunchSideName}</span>
                         </div>
                       )}
 
                       {/* Cena */}
-                      <div className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border ${
-                        menu?.dinner_recipe_id 
-                          ? 'bg-indigo-50/80 border-indigo-200/80 text-indigo-950' 
-                          : 'bg-slate-50 border-slate-100 text-slate-400 italic'
-                      }`}>
+                      <div 
+                        title={`Cena: ${dinnerName}`}
+                        className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border overflow-hidden ${
+                          menu?.dinner_recipe_id 
+                            ? 'bg-indigo-50/80 border-indigo-200/80 text-indigo-950' 
+                            : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                        }`}
+                      >
                         <div className="flex items-center gap-1 font-bold text-indigo-700 text-[10px] uppercase tracking-wider mb-0.5">
                           <span>🌙 Cena</span>
                         </div>
-                        <span className="font-semibold truncate">{dinnerName}</span>
+                        <span className="font-semibold block truncate">{dinnerName}</span>
                       </div>
                     </div>
 
