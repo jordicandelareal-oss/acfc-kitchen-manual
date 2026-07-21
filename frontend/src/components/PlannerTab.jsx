@@ -53,7 +53,7 @@ function AuditConsole({ logs, onClear }) {
 const SIDE_CATEGORIES = ['acompañamiento', 'acompanamiento', 'guarnicion', 'guarnición', 'guarniciones', 'ensalada', 'side'];
 const isSideRecipe = (r) => {
   const cat = (r.category || '').toLowerCase().trim();
-  return SIDE_CATEGORIES.some(s => cat.includes(s));
+  return SIDE_CATEGORIES.some(s => cat === s || cat.includes(s));
 };
 
 // PlannerTab Component
@@ -334,6 +334,7 @@ export default function PlannerTab({ recipes = [] }) {
       
       const upserts = [];
       let recentRecipeIds = [];
+      let recentSideIds = [];
 
       const defaultLunchPlayers = Number(settings['menu_setting_default_lunch_players']) || 25;
       const defaultDinnerPlayers = Number(settings['menu_setting_default_dinner_players']) || 20;
@@ -387,18 +388,23 @@ export default function PlannerTab({ recipes = [] }) {
             let randSide = null;
             if (settings['menu_setting_incluir_guarniciones'] !== false) {
               const shuffledSides = shuffleArray(sideRecipes);
-              for (const candidate of shuffledSides) {
-                const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch_side');
-                if (check.valid) {
-                  randSide = candidate.id;
-                  break;
-                }
+              // Filtrar guarniciones que no se hayan servido en los últimos 2 días (espaciado de 1 a 2 días)
+              const allowedSides = shuffledSides.filter(candidate => {
+                const check = PLANNER_RULES.isRecipeValid(candidate, recentSideIds.slice(-4), settings, isWeekend, 'lunch_side');
+                return check.valid;
+              });
+
+              if (allowedSides.length > 0) {
+                randSide = allowedSides[0].id;
+              } else if (sideRecipes.length > 0) {
+                // Fallback: seleccionar una guarnición no servida el día anterior
+                const fallbackSide = shuffledSides.find(s => !recentSideIds.slice(-2).includes(s.id)) || shuffledSides[0];
+                randSide = fallbackSide?.id || null;
               }
-              if (!randSide && sideRecipes.length > 0) {
-                randSide = sideRecipes[Math.floor(Math.random() * sideRecipes.length)]?.id || null;
-              }
+
               if (randSide) {
                 recentRecipeIds.push(randSide);
+                recentSideIds.push(randSide);
               }
             }
 
@@ -694,14 +700,9 @@ export default function PlannerTab({ recipes = [] }) {
                     </div>
 
                     <div className="mt-2 space-y-1 flex-grow">
-                      <div className={`text-[10px] truncate leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
-                        🌞 {lunchName}
+                      <div className={`text-[10px] leading-normal ${menu?.lunch_recipe_id ? 'text-brand font-semibold' : 'text-slate-400 italic'}`}>
+                        🌞 {lunchName}{lunchSideName ? <span className="text-emerald-700 font-bold"> / {lunchSideName}</span> : ''}
                       </div>
-                      {lunchSideName && (
-                        <div className="text-[9px] truncate leading-normal text-emerald-600 font-medium pl-2">
-                          🥗 {lunchSideName}
-                        </div>
-                      )}
                       <div className={`text-[10px] truncate leading-normal ${menu?.dinner_recipe_id ? 'text-indigo-600 font-semibold' : 'text-slate-400 italic'}`}>
                         🌙 {dinnerName}
                       </div>
