@@ -175,7 +175,14 @@ export default function PlannerTab({ recipes = [] }) {
       if (plannerRes.data) {
         plannerRes.data.forEach(row => {
           if (row.date) {
+            // Indexar por ISO 'YYYY-MM-DD'
             plannerMap[row.date] = row;
+            
+            // Indexar también por número del día (ej. 1, 2, 3...)
+            const dayNum = parseInt(String(row.date).split('-')[2], 10);
+            if (!isNaN(dayNum)) {
+              plannerMap[dayNum] = row;
+            }
           }
         });
       }
