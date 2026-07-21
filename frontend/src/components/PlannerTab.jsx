@@ -59,27 +59,39 @@ const isSideRecipe = (r) => {
 // PlannerTab Component
 export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
-  const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
   const [logs, setLogs] = useState([
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
   ]);
-  // Estado de comensales configurados por semana { 1: 25, 2: 25, 3: 25, 4: 25 }
+  const [loading, setLoading] = useState(false);
+  // Estado de comensales configurados por semana { 1: { lunch: 25, dinner: 20 }, ... }
   const [weeklyPlayers, setWeeklyPlayers] = useState(() => {
-    const stored = localStorage.getItem('acfc_weekly_players');
+    const stored = localStorage.getItem('acfc_weekly_players_v2');
     if (stored) {
       try { return JSON.parse(stored); } catch (e) { /* fallback */ }
     }
-    return { 1: 25, 2: 25, 3: 25, 4: 25 };
+    return {
+      1: { lunch: 25, dinner: 20 },
+      2: { lunch: 25, dinner: 20 },
+      3: { lunch: 25, dinner: 20 },
+      4: { lunch: 25, dinner: 20 }
+    };
   });
 
-  const handleUpdatePlayers = (weekNum, delta) => {
+  const handleUpdateMealPlayers = (weekNum, mealType, delta) => {
     setWeeklyPlayers(prev => {
-      const current = prev[weekNum] || 25;
-      const nextVal = Math.max(1, current + delta);
-      const updated = { ...prev, [weekNum]: nextVal };
-      localStorage.setItem('acfc_weekly_players', JSON.stringify(updated));
+      const currentWeekObj = prev[weekNum] || { lunch: 25, dinner: 20 };
+      const currentVal = currentWeekObj[mealType] !== undefined ? currentWeekObj[mealType] : (mealType === 'lunch' ? 25 : 20);
+      const nextVal = Math.max(1, currentVal + delta);
+      const updated = { 
+        ...prev, 
+        [weekNum]: { 
+          ...currentWeekObj, 
+          [mealType]: nextVal 
+        } 
+      };
+      localStorage.setItem('acfc_weekly_players_v2', JSON.stringify(updated));
       return updated;
     });
   };
@@ -451,9 +463,9 @@ export default function PlannerTab({ recipes = [] }) {
               recentRecipeIds = recentRecipeIds.slice(-14);
             }
 
-            // Número de comensales asignado específicamente a esta semana
-            const weekLunchPlayers = Number(weeklyPlayers[week]) || defaultLunchPlayers;
-            const weekDinnerPlayers = Math.max(1, Math.round(weekLunchPlayers * 0.8));
+            // Número de comensales asignado específicamente a esta semana (Comida y Cena independientes)
+            const weekLunchPlayers = Number(weeklyPlayers[week]?.lunch) || defaultLunchPlayers;
+            const weekDinnerPlayers = Number(weeklyPlayers[week]?.dinner) || defaultDinnerPlayers;
 
             upserts.push({
               date: dateISO,
@@ -584,27 +596,48 @@ export default function PlannerTab({ recipes = [] }) {
             ))}
           </div>
 
-          {/* Quick Weekly Players Controls */}
-          <div className="flex items-center gap-1.5 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+          {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}
+          <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
             <Users size={14} className="text-indigo-600 ml-1" />
-            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight hidden sm:inline">
-              Comensales (Sem {selectedWeeks[0] || 1}):
+            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight hidden lg:inline">
+              Sem {selectedWeeks[0] || 1}:
             </span>
-            <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs">
+            
+            {/* Comida / Lunch */}
+            <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
+              <span className="text-[10px] font-bold text-brand">🌞</span>
               <button 
-                onClick={() => handleUpdatePlayers(selectedWeeks[0] || 1, -1)}
-                className="w-5 h-5 flex items-center justify-center font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors text-xs cursor-pointer"
-                title="Disminuir raciones"
+                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
+                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
               >
                 -
               </button>
-              <span className="font-extrabold text-xs text-indigo-950 px-1 min-w-[22px] text-center">
-                {weeklyPlayers[selectedWeeks[0] || 1] || 25}
+              <span className="font-extrabold text-xs text-slate-800 min-w-[20px] text-center">
+                {weeklyPlayers[selectedWeeks[0] || 1]?.lunch ?? 25}
               </span>
               <button 
-                onClick={() => handleUpdatePlayers(selectedWeeks[0] || 1, 1)}
-                className="w-5 h-5 flex items-center justify-center font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors text-xs cursor-pointer"
-                title="Aumentar raciones"
+                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
+                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Cena / Dinner */}
+            <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
+              <span className="text-[10px] font-bold text-indigo-600">🌙</span>
+              <button 
+                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
+                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+              >
+                -
+              </button>
+              <span className="font-extrabold text-xs text-indigo-950 min-w-[20px] text-center">
+                {weeklyPlayers[selectedWeeks[0] || 1]?.dinner ?? 20}
+              </span>
+              <button 
+                onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
+                className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
               >
                 +
               </button>
