@@ -739,14 +739,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <span>Lista compra</span>
           </button>
 
-          {/* Settings button */}
-          <button 
-            onClick={() => setSettingsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-all whitespace-nowrap"
-          >
-            <Settings size={14} />
-            <span>Ajustes Menú</span>
-          </button>
+          {/* Settings button — only for chef/admin */}
+          {canEdit && (
+            <button 
+              onClick={() => setSettingsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-all whitespace-nowrap"
+            >
+              <Settings size={14} />
+              <span>Ajustes Menú</span>
+            </button>
+          )}
 
           {/* Month Navigator */}
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">

@@ -489,7 +489,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className={`grid gap-4 ${isAssistant ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
         <div className="card p-4 text-center">
           <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
             {loading ? '—' : statsTotal}
@@ -502,18 +502,22 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
           </p>
           <p className="text-xs text-slate-400 mt-0.5">Stock crítico</p>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : statsFillRate + '%'}
-          </p>
-          <p className="text-xs text-slate-400 mt-0.5">Fill rate</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : formatEuro(statsValue)}
-          </p>
-          <p className="text-xs text-slate-400 mt-0.5">Valor stock</p>
-        </div>
+        {!isAssistant && (
+          <div className="card p-4 text-center">
+            <p className="text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : statsFillRate + '%'}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">Fill rate</p>
+          </div>
+        )}
+        {!isAssistant && (
+          <div className="card p-4 text-center">
+            <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : formatEuro(statsValue)}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">Valor stock</p>
+          </div>
+        )}
       </div>
 
       {/* Filters Card */}
@@ -568,9 +572,11 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                 <span>Guardar Cambios ({Object.keys(pendingChanges).length})</span>
               </button>
             )}
-            <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nuevo
-            </button>
+            {!isAssistant && (
+              <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-semibold hover:bg-brand-dark transition-colors shadow-sm">
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add</span>Nuevo
+              </button>
+            )}
           </div>
         </div>
 
@@ -647,8 +653,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>
-                  <td className="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">{item.supplier}</td>
+                  {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
+                  {!isAssistant && <td className="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">{item.supplier}</td>}
                   <td className="px-4 py-4">
                     {item.critical ? (
                       <span className="badge badge-red pulse-red">REORDENAR</span>
@@ -656,11 +662,13 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="badge badge-green">OK</span>
                     )}
                   </td>
-                  <td className="px-4 py-4">
-                    <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-                    </button>
-                  </td>
+                  {!isAssistant && (
+                    <td className="px-4 py-4">
+                      <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

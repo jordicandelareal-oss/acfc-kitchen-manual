@@ -291,10 +291,12 @@ function App() {
 
             {/* Right: actions */}
             <div className="flex items-center gap-2">
-              <button onClick={() => setNewModalOpen(true)} className="flex items-center gap-1.5 bg-brand text-white font-semibold text-sm px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors shadow-sm" style={{ fontFamily: 'Inter' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
-                <span className="hidden sm:inline">Nuevo</span>
-              </button>
+              {role !== 'assistant' && (
+                <button onClick={() => setNewModalOpen(true)} className="flex items-center gap-1.5 bg-brand text-white font-semibold text-sm px-4 py-2 rounded-xl hover:bg-brand-dark transition-colors shadow-sm" style={{ fontFamily: 'Inter' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+                  <span className="hidden sm:inline">Nuevo</span>
+                </button>
+              )}
               <button onClick={() => setNotificationsOpen(true)} className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors" aria-label="Notificaciones">
                 <span className="material-symbols-outlined" style={{ fontSize: 22 }}>notifications</span>
                 {lowStockAlerts.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full pulse-red"></span>}
