@@ -814,38 +814,47 @@ export default function PlannerTab({ recipes = [] }) {
                       {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
                     </div>
 
-                    <div className="mt-2 space-y-1.5 flex-grow overflow-hidden">
-                      {/* Almuerzo / Plato Principal */}
+                    <div className="mt-2 space-y-1 flex-grow overflow-hidden">
+                      {/* 1. Almuerzo / Plato Principal */}
                       <div 
-                        title={`Almuerzo: ${lunchName}${lunchSideName ? ' + Guarnición: ' + lunchSideName : ''}`}
-                        className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border overflow-hidden ${
+                        title={`Almuerzo: ${lunchName}`}
+                        className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
                           menu?.lunch_recipe_id 
-                            ? 'bg-amber-50/80 border-amber-200/80 text-amber-950' 
-                            : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                            ? 'bg-amber-50/90 border-amber-200 text-amber-950' 
+                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
                         }`}
                       >
-                        <div className="flex items-center justify-between font-bold text-amber-700 text-[10px] uppercase tracking-wider mb-0.5">
+                        <div className="font-bold text-amber-700 text-[9px] uppercase tracking-wider mb-0.5 flex items-center gap-1">
                           <span>☀️ Almuerzo</span>
                         </div>
                         <span className="font-semibold block truncate">{lunchName}</span>
-                        {lunchSideName && (
-                          <div className="mt-1 pt-1 border-t border-amber-200/60 flex items-center gap-1 text-[10px] text-emerald-800 font-bold truncate">
-                            <span className="text-emerald-600 flex-shrink-0">🥗</span>
-                            <span className="truncate">{lunchSideName}</span>
-                          </div>
-                        )}
                       </div>
 
-                      {/* Cena */}
+                      {/* 2. Guarnición (BLOQUE FIJO INCONDICIONAL) */}
                       <div 
-                        title={`Cena: ${dinnerName}`}
-                        className={`p-1.5 rounded-md text-[11px] font-medium leading-snug border overflow-hidden ${
-                          menu?.dinner_recipe_id 
-                            ? 'bg-indigo-50/80 border-indigo-200/80 text-indigo-950' 
-                            : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                        title={`Guarnición: ${lunchSideName || 'Sin guarnición asignada'}`}
+                        className={`p-1 rounded-md text-[10px] leading-tight border flex items-center gap-1 overflow-hidden ${
+                          lunchSideName 
+                            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' 
+                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
                         }`}
                       >
-                        <div className="flex items-center gap-1 font-bold text-indigo-700 text-[10px] uppercase tracking-wider mb-0.5">
+                        <span className="font-bold text-emerald-600 flex-shrink-0 text-[9px]">🥗</span>
+                        <span className="font-semibold block truncate">
+                          {lunchSideName || 'Sin guarnición asignada'}
+                        </span>
+                      </div>
+
+                      {/* 3. Cena */}
+                      <div 
+                        title={`Cena: ${dinnerName}`}
+                        className={`p-1.5 rounded-md text-[10px] font-medium leading-snug border overflow-hidden ${
+                          menu?.dinner_recipe_id 
+                            ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950' 
+                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
+                        }`}
+                      >
+                        <div className="font-bold text-indigo-700 text-[9px] uppercase tracking-wider mb-0.5 flex items-center gap-1">
                           <span>🌙 Cena</span>
                         </div>
                         <span className="font-semibold block truncate">{dinnerName}</span>
