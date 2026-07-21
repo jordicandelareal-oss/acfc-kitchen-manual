@@ -19,10 +19,10 @@ import InsumosTab from './components/InsumosTab';
 import LoginScreen from './components/LoginScreen';
 import {
   NewItemModal,
-  NotificationsModal,
   SettingsModal,
   ProfileModal
 } from './components/GlobalModals';
+import NotificationsPanel from './components/NotificationsPanel';
 
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
@@ -365,10 +365,13 @@ function App() {
           onClose={() => setNewModalOpen(false)} 
           onNavigate={tab => setActiveTab(tab)} 
         />
-        <NotificationsModal 
-          isOpen={notificationsOpen} 
-          onClose={() => setNotificationsOpen(false)} 
-          lowStockAlerts={lowStockAlerts} 
+        <NotificationsPanel
+          isOpen={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+          userId={userSession?.id}
+          role={role}
+          lowStockAlerts={lowStockAlerts}
+          onNavigate={tab => setActiveTab(tab)}
         />
         <SettingsModal 
           isOpen={settingsOpen} 
