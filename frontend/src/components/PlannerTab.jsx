@@ -61,7 +61,10 @@ export default function PlannerTab({ recipes = [] }) {
   const [plannerData, setPlannerData] = useState({});
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedWeeks, setSelectedWeeks] = useState([1]);
+  const [logs, setLogs] = useState([
+    { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
+  ]);
   // Estado de comensales configurados por semana { 1: 25, 2: 25, 3: 25, 4: 25 }
   const [weeklyPlayers, setWeeklyPlayers] = useState(() => {
     const stored = localStorage.getItem('acfc_weekly_players');
