@@ -17,6 +17,12 @@ import ComprasTab from './components/ComprasTab';
 import InsumosTab from './components/InsumosTab';
 
 import LoginScreen from './components/LoginScreen';
+import {
+  NewItemModal,
+  NotificationsModal,
+  SettingsModal,
+  ProfileModal
+} from './components/GlobalModals';
 
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
