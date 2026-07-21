@@ -280,9 +280,11 @@ export default function PlannerTab({ recipes = [] }) {
 
   const handleSaveDay = async () => {
     if (!selectedDay) return;
-    addLog(`Guardando día ${selectedDay} de Julio...`, 'info');
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    addLog(`Guardando día ${selectedDay} (${formattedDate})...`, 'info');
     try {
-      const formattedDate = `2026-07-${String(selectedDay).padStart(2, '0')}`;
       
       const payload = {
         date: formattedDate,
@@ -317,18 +319,24 @@ export default function PlannerTab({ recipes = [] }) {
 
   const openDayEditor = (day) => {
     setSelectedDay(day);
-    const dayData = plannerData[day] || {};
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    // Search plannerData using ISO date string first, then by numeric day
+    const dayData = plannerData[dateISO] || plannerData[day] || {};
+    
     setDayForm({
       breakfast_recipe_id: dayData.breakfast_recipe_id || '',
       lunch_recipe_id: dayData.lunch_recipe_id || '',
       lunch_side_recipe_id: dayData.lunch_side_recipe_id || '',
       dinner_recipe_id: dayData.dinner_recipe_id || '',
-      lunch_players: dayData.lunch_players || 0,
+      lunch_players: dayData.lunch_players || 25,
       lunch_halal: dayData.lunch_halal || 0,
       lunch_kosher: dayData.lunch_kosher || 0,
       lunch_vegan: dayData.lunch_vegan || 0,
       lunch_allergies: dayData.lunch_allergies || '',
-      dinner_players: dayData.dinner_players || 0,
+      dinner_players: dayData.dinner_players || 20,
       dinner_halal: dayData.dinner_halal || 0,
       dinner_kosher: dayData.dinner_kosher || 0,
       dinner_vegan: dayData.dinner_vegan || 0,
