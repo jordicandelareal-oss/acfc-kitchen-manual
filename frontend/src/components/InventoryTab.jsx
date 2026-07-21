@@ -9,7 +9,10 @@ import {
   updateSubcategory
 } from '../api';
 
-export default function InventoryTab() {
+export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit }) {
+  const localRole = localStorage.getItem('acfc_user_role') || 'chef';
+  const role = propsRole !== undefined ? propsRole : localRole;
+  const isAssistant = role === 'assistant';
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -623,9 +626,10 @@ export default function InventoryTab() {
                       <input
                         type="number"
                         step="any"
+                        disabled={isAssistant}
                         value={item.stock_minimo}
                         onChange={e => handleLocalFieldChange(item.id, 'stock_minimo', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
+                        className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
                       />
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>
@@ -635,9 +639,10 @@ export default function InventoryTab() {
                       <input
                         type="number"
                         step="any"
+                        disabled={isAssistant}
                         value={item.stock_maximo}
                         onChange={e => handleLocalFieldChange(item.id, 'stock_maximo', e.target.value)}
-                        className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
+                        className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
                       />
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>

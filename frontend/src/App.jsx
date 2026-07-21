@@ -204,13 +204,15 @@ function App() {
     loadData();
   }, [loadData]);
 
-  const tabs = [
+  const allTabs = [
     { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
     { id: 'inventory', icon: <Package size={18} />,         label: 'Inventario' },
     { id: 'recipes',   icon: <Utensils size={18} />,        label: 'Recetas' },
     { id: 'suppliers', icon: <Truck size={18} />,           label: 'Proveedores' },
     { id: 'planner',   icon: <ShoppingCart size={18} />,     label: 'Planificador' },
   ];
+
+  const tabs = allTabs.filter(t => role !== 'assistant' || t.id !== 'suppliers');
 
   const handleLogout = async () => {
     try {

@@ -613,15 +613,17 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                       <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>{r.name || 'Sin nombre'}</h3>
                       <p className="text-xs text-slate-400 mt-0.5">
                         <span className="badge badge-slate mr-2">{r.category || 'Sin familia'}</span>
-                        {rPortions} pax · Coste total: {totalRecipeCost.toFixed(2)}€
+                        {rPortions} pax {canEdit && `· Coste total: ${totalRecipeCost.toFixed(2)}€`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>{costPerPortion.toFixed(2)}€</p>
-                      <p className="text-xs text-slate-400">por ración</p>
-                    </div>
+                    {canEdit && (
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>{costPerPortion.toFixed(2)}€</p>
+                        <p className="text-xs text-slate-400">por ración</p>
+                      </div>
+                    )}
                     
                     {/* Stars Metric */}
                     <div className="flex flex-col gap-0.5 bg-slate-50 border border-slate-100 rounded-xl px-2.5 py-1 text-slate-500 text-[11px]" onClick={e => e.stopPropagation()}>
@@ -684,76 +686,80 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                 {/* Detail Accordion Panel */}
                 {detailOpen && (
                   <div className="px-6 pb-6 border-t border-slate-100 pt-5">
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
-                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                        <button
-                          onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'cocina' }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
-                        >
-                          Cocina
-                        </button>
-                        <button
-                          onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'escandallo' }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
-                        >
-                          Escandallo
-                        </button>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
+                        {canEdit && (
+                          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                            <button
+                              onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'cocina' }))}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
+                            >
+                              Cocina
+                            </button>
+                            <button
+                              onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'escandallo' }))}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
+                            >
+                              Escandallo
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* VISTA A: COCINA */}
-                    {viewType === 'cocina' && (
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr class="text-xs text-slate-400 uppercase border-b border-slate-100">
-                                <th className="pb-2 text-left font-semibold">Ingrediente</th>
-                                <th className="pb-2 text-right font-semibold">Cantidad</th>
-                                <th className="pb-2 text-right font-semibold">Unidad</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                              {parsedIngredients.map((ing, idx) => (
-                                <tr key={idx} className="text-slate-700">
-                                  <td className="py-2.5 font-medium">{ing.name}</td>
-                                  <td className="py-2.5 text-right text-slate-500 font-mono">{ing.rawQty}</td>
-                                  <td className="py-2.5 text-right text-slate-400">{ing.unit}</td>
+                      {/* VISTA A: COCINA */}
+                      {(viewType === 'cocina' || !canEdit) && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          <div className="lg:col-span-2">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-xs text-slate-400 uppercase border-b border-slate-100">
+                                  <th className="pb-2 text-left font-semibold">Ingrediente</th>
+                                  <th className="pb-2 text-right font-semibold">Cantidad</th>
+                                  <th className="pb-2 text-right font-semibold">Unidad</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        
-                        <div className="space-y-4">
-                          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
-                            <div className="text-sm text-slate-600 space-y-2">
-                              {r.instructions ? r.instructions.split('\n').map((step, idx) => (
-                                <p key={idx} className="leading-relaxed"><strong className="text-brand mr-1">{idx+1}.</strong> {step}</p>
-                              )) : <p className="italic text-slate-400">Sin instrucciones registradas.</p>}
-                            </div>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50">
+                                {parsedIngredients.map((ing, idx) => (
+                                  <tr key={idx} className="text-slate-700">
+                                    <td className="py-2.5 font-medium">{ing.name}</td>
+                                    <td className="py-2.5 text-right text-slate-500 font-mono">{ing.rawQty}</td>
+                                    <td className="py-2.5 text-right text-slate-400">{ing.unit}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                           
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              onClick={() => openNewRecipeModal(r.id)}
-                              className="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>Editar
-                            </button>
-                            <button
-                              onClick={() => handleDeleteRecipe(r.id)}
-                              className="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
-                              title="Eliminar Receta"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
-                            </button>
+                          <div className="space-y-4">
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
+                              <div className="text-sm text-slate-600 space-y-2">
+                                {r.instructions ? r.instructions.split('\n').map((step, idx) => (
+                                  <p key={idx} className="leading-relaxed"><strong className="text-brand mr-1">{idx+1}.</strong> {step}</p>
+                                )) : <p className="italic text-slate-400">Sin instrucciones registradas.</p>}
+                              </div>
+                            </div>
+                            
+                            {canEdit && (
+                              <div className="flex gap-2 flex-wrap">
+                                <button
+                                  onClick={() => openNewRecipeModal(r.id)}
+                                  className="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors"
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>Editar
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRecipe(r.id)}
+                                  className="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                                  title="Eliminar Receta"
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* VISTA B: ESCANDALLO */}
                     {viewType === 'escandallo' && (
