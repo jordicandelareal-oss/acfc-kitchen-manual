@@ -157,8 +157,12 @@ export function SettingsModal({ isOpen, onClose, role, setRole }) {
   );
 }
 
-export function ProfileModal({ isOpen, onClose, role }) {
+export function ProfileModal({ isOpen, onClose, userSession, role, onLogout }) {
   if (!isOpen) return null;
+  const email = userSession?.email || 'usuario@acfcacademy.com';
+  const roleLabel = role === 'admin' ? 'Administrador' : role === 'chef' ? 'Jefe de Cocina' : 'Asistente de Cocina';
+  const initial = email.charAt(0).toUpperCase();
+
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-box w-full max-w-sm flex flex-col max-h-[85vh]">
@@ -171,23 +175,33 @@ export function ProfileModal({ isOpen, onClose, role }) {
         
         <div className="flex-1 overflow-y-auto space-y-4">
           <div className="flex flex-col items-center text-center p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-2xl shadow-md mb-3">CJ</div>
-            <h4 className="font-bold text-slate-800 text-sm">Chef Jefe (Samir)</h4>
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-2xl shadow-md mb-3">{initial}</div>
+            <h4 className="font-bold text-slate-800 text-sm">{email}</h4>
             <span className="px-2.5 py-0.5 bg-brand-muted text-brand text-[10px] font-bold rounded-full mt-1">
-              {role === 'administrador' ? 'Administrador' : 'Jefe de Cocina'}
+              {roleLabel}
             </span>
           </div>
           
           <div className="space-y-2 text-xs">
             <div className="flex justify-between p-2.5 border-b border-slate-100">
-              <span className="text-slate-400 font-medium">Email</span>
-              <span className="text-slate-700 font-semibold">samir.cairo@acfc.com</span>
+              <span className="text-slate-400 font-medium">Cuenta Supabase</span>
+              <span className="text-slate-700 font-semibold">{email}</span>
             </div>
             <div className="flex justify-between p-2.5 border-b border-slate-100">
               <span className="text-slate-400 font-medium">Establecimiento</span>
               <span className="text-slate-700 font-semibold">ACFC Kitchen Principal</span>
             </div>
           </div>
+
+          <button
+            onClick={() => {
+              onClose();
+              if (typeof onLogout === 'function') onLogout();
+            }}
+            className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition-all border border-red-200 mt-2"
+          >
+            Cerrar Sesión
+          </button>
         </div>
       </div>
     </div>

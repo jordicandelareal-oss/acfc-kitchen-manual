@@ -16,17 +16,14 @@ import MenusTab from './components/MenusTab';
 import ComprasTab from './components/ComprasTab';
 import InsumosTab from './components/InsumosTab';
 
-import {
-  NewItemModal,
-  NotificationsModal,
-  SettingsModal,
-  ProfileModal
-} from './components/GlobalModals';
+import LoginScreen from './components/LoginScreen';
 
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('introPlayed');
   });
+  const [userSession, setUserSession] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [month, setMonth] = useState('Julio');
   const [data, setData] = useState([]);
@@ -36,21 +33,21 @@ function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  // Estado de Rol (RBAC) sincrónico instantáneo (0ms) con fallback a 'chef'
+  
+  // Estado de Rol (RBAC) dinámico vinculado a la sesión activa
   const [role, setRole] = useState(() => {
     const stored = localStorage.getItem('acfc_user_role');
     if (stored === 'admin' || stored === 'chef' || stored === 'assistant') return stored;
-    // Mapear compatibilidad legacy 'jefe_cocina' -> 'chef'
-    if (stored === 'jefe_cocina') return 'chef';
     return 'chef';
   });
 
-  // Verificación asíncrona de sesión y rol de Supabase Auth en segundo plano
+  // Verificación de sesión real de Supabase Auth sin usuario default estático
   useEffect(() => {
-    async function checkSupabaseUserRole() {
+    async function checkAuthSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          setUserSession(session.user);
           const { data: roleRow } = await supabase
             .from('user_roles')
             .select('role')
@@ -58,16 +55,41 @@ function App() {
             .maybeSingle();
           
           if (roleRow?.role) {
-            const mappedRole = roleRow.role;
-            setRole(mappedRole);
-            localStorage.setItem('acfc_user_role', mappedRole);
+            setRole(roleRow.role);
+            localStorage.setItem('acfc_user_role', roleRow.role);
           }
+        } else {
+          setUserSession(null);
         }
       } catch (err) {
-        console.warn('[RBAC] Fallback a rol local activo:', err);
+        console.warn('[RBAC] Error al verificar sesión de Supabase Auth:', err);
+      } finally {
+        setAuthChecking(false);
       }
     }
-    checkSupabaseUserRole();
+
+    checkAuthSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUserSession(session.user);
+        const { data: roleRow } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        if (roleRow?.role) {
+          setRole(roleRow.role);
+          localStorage.setItem('acfc_user_role', roleRow.role);
+        }
+      } else {
+        setUserSession(null);
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
@@ -186,6 +208,28 @@ function App() {
     { id: 'planner',   icon: <ShoppingCart size={18} />,     label: 'Planificador' },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('acfc_user_role');
+      setUserSession(null);
+    } catch (e) {
+      console.error('Error al cerrar sesión:', e);
+    }
+  };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
+        Verificando sesión segura de Supabase Auth...
+      </div>
+    );
+  }
+
+  if (!userSession) {
+    return <LoginScreen onLoginSuccess={(user, role) => { setUserSession(user); setRole(role); }} />;
+  }
+
   return (
     <>
       {showIntro && (
@@ -252,7 +296,13 @@ function App() {
               <button onClick={() => setSettingsOpen(true)} className="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors hidden sm:flex" aria-label="Ajustes">
                 <span className="material-symbols-outlined" style={{ fontSize: 22 }}>settings</span>
               </button>
-              <div onClick={() => setProfileOpen(true)} className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-sm cursor-pointer" title="Chef Jefe">CJ</div>
+              <div 
+                onClick={() => setProfileOpen(true)} 
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-light flex items-center justify-center text-white font-bold text-sm cursor-pointer" 
+                title={userSession?.email || 'Usuario'}
+              >
+                {(userSession?.email || 'U').charAt(0).toUpperCase()}
+              </div>
             </div>
           </div>
 
@@ -321,7 +371,9 @@ function App() {
         <ProfileModal 
           isOpen={profileOpen} 
           onClose={() => setProfileOpen(false)} 
+          userSession={userSession}
           role={role} 
+          onLogout={handleLogout}
         />
       </div>
     </>
