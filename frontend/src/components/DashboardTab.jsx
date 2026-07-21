@@ -575,10 +575,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </select>
       </div>
 
-      {/* Main Operations Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Operations Section: Contenedor Superior en Grid 2 Columnas (lg:grid-cols-2) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Menu Carousel Widget (AYER | HOY | MAÑANA) */}
+        {/* COLUMNA 1 (Izquierda): Menu Carousel Widget (AYER | HOY | MAÑANA) + Presupuesto */}
         <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -593,19 +593,19 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
             <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl mb-4 text-[11px] font-bold text-center">
               <button 
                 onClick={() => setViewDayOffset(-1)}
-                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === -1 ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === -1 ? 'bg-white text-slate-800 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 AYER
               </button>
               <button 
                 onClick={() => setViewDayOffset(0)}
-                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === 0 ? 'bg-brand text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === 0 ? 'bg-brand text-white shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 HOY
               </button>
               <button 
                 onClick={() => setViewDayOffset(1)}
-                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === 1 ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`py-1.5 rounded-lg transition-all ${viewDayOffset === 1 ? 'bg-white text-slate-800 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 MAÑANA
               </button>
@@ -622,26 +622,26 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
                 {selectedDayMenu.breakfast_recipe && (
                   <div className="flex items-center justify-between text-xs p-2 bg-slate-50/50 rounded-xl border border-slate-100">
                     <span className="text-slate-500 font-medium flex items-center gap-1">🍳 Desayuno:</span>
-                    <span className="font-bold text-slate-800 truncate max-w-[150px]">{selectedDayMenu.breakfast_recipe.name}</span>
+                    <span className="font-bold text-slate-800 truncate max-w-[200px]">{selectedDayMenu.breakfast_recipe.name}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between text-xs p-2 bg-amber-50/60 border border-amber-100 rounded-xl">
-                  <span className="text-amber-800 font-medium flex items-center gap-1">☀️ Almuerzo:</span>
-                  <span className="font-bold text-amber-950 truncate max-w-[150px]">{selectedDayMenu.lunch_recipe?.name || 'No planificado'}</span>
+                <div className="flex items-center justify-between text-xs p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl">
+                  <span className="text-amber-900 font-bold flex items-center gap-1">☀️ Almuerzo:</span>
+                  <span className="font-extrabold text-amber-950 truncate max-w-[200px]">{selectedDayMenu.lunch_recipe?.name || 'No planificado'}</span>
                 </div>
                 {selectedDayMenu.lunch_side_recipe && (
-                  <div className="flex items-center justify-between text-xs p-2 pl-4 bg-emerald-50/60 rounded-xl border border-emerald-200/60">
-                    <span className="text-emerald-700 font-medium flex items-center gap-1">🥗 Guarnición:</span>
-                    <span className="font-bold text-emerald-950 truncate max-w-[150px]">{selectedDayMenu.lunch_side_recipe.name}</span>
+                  <div className="flex items-center justify-between text-xs p-2.5 pl-4 bg-emerald-50/70 rounded-xl border border-emerald-200/80">
+                    <span className="text-emerald-800 font-bold flex items-center gap-1">🥗 Guarnición:</span>
+                    <span className="font-extrabold text-emerald-950 truncate max-w-[200px]">{selectedDayMenu.lunch_side_recipe.name}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between text-xs p-2 bg-indigo-50/60 border border-indigo-100 rounded-xl">
-                  <span className="text-indigo-800 font-medium flex items-center gap-1">🌙 Cena:</span>
-                  <span className="font-bold text-indigo-950 truncate max-w-[150px]">{selectedDayMenu.dinner_recipe?.name || 'No planificado'}</span>
+                <div className="flex items-center justify-between text-xs p-2.5 bg-indigo-50/70 border border-indigo-200/80 rounded-xl">
+                  <span className="text-indigo-900 font-bold flex items-center gap-1">🌙 Cena:</span>
+                  <span className="font-extrabold text-indigo-950 truncate max-w-[200px]">{selectedDayMenu.dinner_recipe?.name || 'No planificado'}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                  <span className="text-slate-500 font-medium flex items-center gap-1"><Users size={12} /> Comensales:</span>
-                  <span className="font-bold text-slate-800">
+                <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
+                  <span className="text-slate-500 font-medium flex items-center gap-1"><Users size={14} /> Comensales Totales:</span>
+                  <span className="font-extrabold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-lg">
                     {(selectedDayMenu.lunch_players || 0) + (selectedDayMenu.dinner_players || 0)} jugadores
                   </span>
                 </div>
@@ -653,84 +653,100 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           {(role === 'chef' || role === 'admin') && (
             <div className="mt-4 pt-4 border-t border-slate-100">
               <div className="flex justify-between items-center text-xs mb-1.5">
-                <span className="font-bold text-slate-700">Presupuesto Semanal:</span>
+                <span className="font-bold text-slate-700">Presupuesto Semanal Asignado:</span>
                 <span className="font-extrabold text-slate-900">{budgetAnalysis.spent.toFixed(0)}€ / {budgetAnalysis.budget}€</span>
               </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-500 ${budgetAnalysis.isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}
                   style={{ width: `${budgetAnalysis.percentage}%` }}
                 />
               </div>
-              <p className={`text-[10px] font-bold mt-1 text-right ${budgetAnalysis.isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
+              <p className={`text-[10px] font-bold mt-1.5 text-right ${budgetAnalysis.isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
                 {budgetAnalysis.isOverBudget ? '⚠️ Excede presupuesto semanal' : `🟢 Dentro del límite (${budgetAnalysis.percentage}%)`}
               </p>
             </div>
           )}
         </div>
-        </div>
 
-        {/* Special Diets Widget */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
-          <div>
+        {/* COLUMNA 2 (Derecha - Espacio Aprovechado): Dietas Especiales + Carnicería El Cairo */}
+        <div className="space-y-6 flex flex-col justify-between">
+          
+          {/* Dietas Especiales Widget */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
             <h3 className="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
               <Activity size={18} className="text-brand" />
-              <span>Dietas Especiales</span>
+              <span>Dietas Especiales & Alergias</span>
             </h3>
-            <p className="text-[11px] text-slate-400 mb-4">Resumen de requerimientos semanales</p>
+            <p className="text-[11px] text-slate-400 mb-3">Requerimientos dietéticos para la semana activa</p>
             
             {loading ? (
-              <div className="text-center p-6 text-slate-400 text-xs italic">Cargando dietas...</div>
+              <div className="text-center p-4 text-slate-400 text-xs italic">Cargando dietas...</div>
             ) : weekMenus.length === 0 ? (
-              <div className="text-slate-400 text-xs italic text-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <div className="text-slate-400 text-xs italic text-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 Sin menús planificados para esta semana.
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-2.5">
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3 flex justify-between items-center">
-                  <span className="text-xs text-emerald-700 font-bold uppercase tracking-wider">🟢 Halal</span>
-                  <span className="text-base font-extrabold text-emerald-800">{diets.halal} raciones</span>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5 flex flex-col items-center">
+                  <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider mb-0.5">🟢 Halal</span>
+                  <span className="text-base font-black text-emerald-950">{diets.halal}</span>
                 </div>
-                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 flex justify-between items-center">
-                  <span className="text-xs text-blue-700 font-bold uppercase tracking-wider">🔵 Kosher</span>
-                  <span className="text-base font-extrabold text-blue-800">{diets.kosher} raciones</span>
+                <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-2.5 flex flex-col items-center">
+                  <span className="text-[10px] text-blue-800 font-bold uppercase tracking-wider mb-0.5">🔵 Kosher</span>
+                  <span className="text-base font-black text-blue-950">{diets.kosher}</span>
                 </div>
-                <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-3 flex justify-between items-center">
-                  <span className="text-xs text-orange-700 font-bold uppercase tracking-wider">🌿 Vegano</span>
-                  <span className="text-base font-extrabold text-orange-800">{diets.vegan} raciones</span>
+                <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-2.5 flex flex-col items-center">
+                  <span className="text-[10px] text-orange-800 font-bold uppercase tracking-wider mb-0.5">🌿 Vegano</span>
+                  <span className="text-base font-black text-orange-950">{diets.vegan}</span>
                 </div>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Carnicería El Cairo Widget */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <CheckCircle size={18} className="text-brand" />
-              <span>Carnicería El Cairo</span>
-            </h3>
-            <p className="text-[11px] text-slate-400 mb-4">Cortes y demandas de carne para la semana</p>
-            
-            {loading ? (
-              <div className="text-center p-6 text-slate-400 text-xs italic">Cargando cortes...</div>
-            ) : cairoCuts.length === 0 ? (
-              <div className="text-slate-400 text-xs italic text-center p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                No se requieren cortes de carne para esta semana.
+          {/* Carnicería El Cairo Widget */}
+          <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex-grow flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                  <CheckCircle size={18} className="text-brand" />
+                  <span>Carnicería El Cairo</span>
+                </h3>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-full">Proveedor Directo</span>
               </div>
-            ) : (
-              <div className="space-y-2 max-h-[170px] overflow-y-auto pr-1">
-                {cairoCuts.map(([cut, val]) => (
-                  <div key={cut} className="flex justify-between items-center text-xs p-2 bg-slate-50/60 border border-slate-100 rounded-xl">
-                    <span className="text-slate-600 font-semibold">{cut}:</span>
-                    <span className="font-bold text-slate-800">{val.toFixed(2)} kg</span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[11px] text-slate-400 mb-3">Demanda consolidada de cortes cárnicos</p>
+              
+              {loading ? (
+                <div className="text-center p-4 text-slate-400 text-xs italic">Cargando cortes...</div>
+              ) : cairoCuts.length === 0 ? (
+                <div className="text-slate-400 text-xs italic text-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  No se requieren cortes de carne para esta semana.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                  {cairoCuts.map(([cut, val]) => (
+                    <div key={cut} className="flex justify-between items-center text-xs p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                      <span className="text-slate-700 font-bold">{cut}:</span>
+                      <span className="font-extrabold text-slate-900">{val.toFixed(2)} kg</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {cairoCuts.length > 0 && (
+              <a 
+                href={`https://wa.me/?text=${encodeURIComponent('Hola Samir, te envío el resumen de cortes para esta semana:\n' + cairoCuts.map(([cut, val]) => `- ${cut}: ${val.toFixed(2)} kg`).join('\n'))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>💬 Pedir por WhatsApp a Samir Cairo</span>
+              </a>
             )}
           </div>
         </div>
+      </div>
 
       {/* Critical Alerts List Section */}
       <div className="p-6 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
