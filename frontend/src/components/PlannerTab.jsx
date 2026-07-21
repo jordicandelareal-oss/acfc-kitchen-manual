@@ -179,20 +179,66 @@ export default function PlannerTab({ recipes = [] }) {
   const handleWeekToggle = (w) =>
     setSelectedWeeks(prev => prev.includes(w) ? prev.filter(x => x !== w) : [...prev, w]);
 
+  const [resetScope, setResetScope] = useState('month'); // 'day' | 'week' | 'month'
+
   const handleReset = async () => {
-    addLog('Iniciando borrado del planificador...', 'warn');
+    addLog(`Iniciando vaciado del planificador (Alcance: ${resetScope})...`, 'warn');
     try {
-      const allDates = [];
-      for (let i = 1; i <= 31; i++) {
-        allDates.push(`2026-07-${String(i).padStart(2, '0')}`);
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      let datesToReset = [];
+
+      if (resetScope === 'day') {
+        if (!selectedDay) {
+          if (typeof window.toast === 'function') window.toast('⚠️ Selecciona primero un día para vaciar');
+          return;
+        }
+        const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        datesToReset = [dateISO];
+      } else if (resetScope === 'week') {
+        if (!selectedWeeks || selectedWeeks.length === 0) {
+          if (typeof window.toast === 'function') window.toast('⚠️ No hay ninguna semana activa en el filtro');
+          return;
+        }
+        // Calculate days belonging to selected weeks in current month
+        selectedWeeks.forEach(w => {
+          const startDay = (w - 1) * 7 + 1;
+          const endDay = Math.min(w * 7, new Date(year, month + 1, 0).getDate());
+          for (let d = startDay; d <= endDay; d++) {
+            datesToReset.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+          }
+        });
+      } else {
+        // Full Month
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          datesToReset.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+        }
       }
-      const { error } = await api.eliminarMenuYLiberarStock(allDates);
+
+      if (datesToReset.length === 0) {
+        addLog('No hay fechas seleccionadas para vaciar.', 'warn');
+        return;
+      }
+
+      const { error } = await api.eliminarMenuYLiberarStock(datesToReset);
       if (error) throw error;
-      addLog('Planificador reseteado y stock liberado con éxito en la base de datos', 'success');
+
+      const scopeText = resetScope === 'day' ? `Día ${selectedDay}` : resetScope === 'week' ? `Semanas (${selectedWeeks.join(', ')})` : 'Mes completo';
+      addLog(`Planificación vaciada y stock liberado con éxito para: ${scopeText}`, 'success');
+      
+      if (typeof window.toast === 'function') {
+        window.toast(`🗑️ Reseteo completado (${scopeText}) y stock liberado.`);
+      }
+
       setResetModalOpen(false);
+      if (resetScope === 'day') setDayModalOpen(false);
       loadData();
     } catch (e) {
       addLog(`Error al resetear planificador: ${e.message}`, 'error');
+      if (typeof window.toast === 'function') {
+        window.toast(`❌ Error al resetear: ${e.message}`);
+      }
     }
   };
 
@@ -820,23 +866,75 @@ export default function PlannerTab({ recipes = [] }) {
         </div>
       )}
 
-      {/* ── MODAL: CONFIRMACIÓN RESET ── */}
+      {/* ── MODAL: CONFIRMACIÓN RESET CON OPCIONES DE ALCANCE ── */}
       {resetModalOpen && (
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setResetModalOpen(false); }}>
-          <div className="modal-box max-w-sm">
+          <div className="modal-box max-w-md">
             <div className="flex items-center gap-3 text-red-600 mb-4">
-              <AlertTriangle size={32} />
-              <h3 className="text-lg font-bold" style={{ fontFamily: 'Outfit' }}>¿Resetear Planificador?</h3>
+              <AlertTriangle size={28} />
+              <div>
+                <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Vaciar Planificación</h3>
+                <p className="text-xs text-slate-400">Selecciona el alcance del borrado</p>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 mb-6">
-              Esta acción vaciará por completo la planificación de todo el mes de Julio. No se puede deshacer.
+
+            <div className="space-y-2 mb-6">
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${resetScope === 'day' ? 'bg-red-50/50 border-red-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                <input 
+                  type="radio" 
+                  name="resetScope" 
+                  value="day" 
+                  checked={resetScope === 'day'} 
+                  onChange={() => setResetScope('day')}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Día actual / seleccionado</span>
+                  <span className="text-[11px] text-slate-500">Vacía únicamente las comidas del día {selectedDay || 'actual'}.</span>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${resetScope === 'week' ? 'bg-red-50/50 border-red-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                <input 
+                  type="radio" 
+                  name="resetScope" 
+                  value="week" 
+                  checked={resetScope === 'week'} 
+                  onChange={() => setResetScope('week')}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Semana(s) seleccionada(s)</span>
+                  <span className="text-[11px] text-slate-500">Vacía únicamente los días de las semanas activas ({selectedWeeks.join(', ')}).</span>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${resetScope === 'month' ? 'bg-red-50/50 border-red-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                <input 
+                  type="radio" 
+                  name="resetScope" 
+                  value="month" 
+                  checked={resetScope === 'month'} 
+                  onChange={() => setResetScope('month')}
+                  className="mt-0.5 text-red-600 focus:ring-red-500"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-800 block">Mes entero ({currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})</span>
+                  <span className="text-[11px] text-slate-500">Vacía toda la planificación del mes en curso y libera todas las reservas.</span>
+                </div>
+              </label>
+            </div>
+
+            <p className="text-[11px] text-slate-400 mb-6 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+              💡 Esta acción liberará automáticamente el stock reservado correspondiente en la base de datos de Supabase.
             </p>
+
             <div className="flex justify-end gap-3">
-              <button onClick={() => setResetModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
+              <button onClick={() => setResetModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-all">
                 Cancelar
               </button>
               <button onClick={handleReset} className="px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-sm transition-all">
-                Confirmar Reset
+                Confirmar Borrado
               </button>
             </div>
           </div>
