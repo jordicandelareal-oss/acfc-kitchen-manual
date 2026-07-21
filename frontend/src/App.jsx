@@ -40,14 +40,10 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   
-  // Estado de Rol (RBAC) dinámico vinculado a la sesión activa
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem('acfc_user_role');
-    if (stored === 'admin' || stored === 'chef' || stored === 'assistant') return stored;
-    return 'chef';
-  });
+  // Estado de Rol (RBAC) dictado estrictamente por Supabase Auth
+  const [role, setRole] = useState(null);
 
-  // Verificación de sesión real de Supabase Auth sin usuario default estático
+  // Verificación de sesión real de Supabase Auth
   useEffect(() => {
     async function checkAuthSession() {
       try {
@@ -60,12 +56,12 @@ function App() {
             .eq('user_id', session.user.id)
             .maybeSingle();
           
-          if (roleRow?.role) {
-            setRole(roleRow.role);
-            localStorage.setItem('acfc_user_role', roleRow.role);
-          }
+          const dbRole = roleRow?.role || 'assistant'; // Si no tiene rol asignado en DB, fallback restrictivo solo lectura
+          setRole(dbRole);
+          localStorage.setItem('acfc_user_role', dbRole);
         } else {
           setUserSession(null);
+          setRole(null);
         }
       } catch (err) {
         console.warn('[RBAC] Error al verificar sesión de Supabase Auth:', err);
@@ -84,12 +80,14 @@ function App() {
           .select('role')
           .eq('user_id', session.user.id)
           .maybeSingle();
-        if (roleRow?.role) {
-          setRole(roleRow.role);
-          localStorage.setItem('acfc_user_role', roleRow.role);
-        }
+        
+        const dbRole = roleRow?.role || 'assistant';
+        setRole(dbRole);
+        localStorage.setItem('acfc_user_role', dbRole);
       } else {
         setUserSession(null);
+        setRole(null);
+        localStorage.removeItem('acfc_user_role');
       }
     });
 
