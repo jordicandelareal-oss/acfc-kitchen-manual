@@ -18,27 +18,27 @@ DROP POLICY IF EXISTS "Permitir lectura de roles a usuarios autenticados y anon"
 CREATE POLICY "Permitir lectura de roles a usuarios autenticados y anon" 
 ON public.user_roles FOR SELECT USING (true);
 
--- Asignación manual o sincronización por email de cuentas preconfiguradas
+-- Asignación dinámica por coincidencia de patrón de correo (ej. alias con +admin, +chef, +assistant)
 DO $$
 BEGIN
-  -- Insertar o actualizar rol para Admin
+  -- Insertar o actualizar rol para Admin (coincidencia con '%admin%')
   INSERT INTO public.user_roles (user_id, role)
   SELECT id, 'admin'
   FROM auth.users
-  WHERE email = 'Adm@acfcacademy.com'
+  WHERE email LIKE '%admin%'
   ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
 
-  -- Insertar o actualizar rol para Jefe de Cocina
+  -- Insertar o actualizar rol para Chef (coincidencia con '%chef%')
   INSERT INTO public.user_roles (user_id, role)
   SELECT id, 'chef'
   FROM auth.users
-  WHERE email = 'Acfckitchen@gmail.com'
+  WHERE email LIKE '%chef%'
   ON CONFLICT (user_id) DO UPDATE SET role = 'chef';
 
-  -- Insertar o actualizar rol para Asistente
+  -- Insertar o actualizar rol para Asistente (coincidencia con '%assistant%')
   INSERT INTO public.user_roles (user_id, role)
   SELECT id, 'assistant'
   FROM auth.users
-  WHERE email IN ('kitchenassistant@acfcacademy.com', 'assistant@acfcacademy.com')
+  WHERE email LIKE '%assistant%'
   ON CONFLICT (user_id) DO UPDATE SET role = 'assistant';
 END $$;
