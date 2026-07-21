@@ -326,10 +326,12 @@ export default function PlannerTab({ recipes = [] }) {
     // Search plannerData using ISO date string first, then by numeric day
     const dayData = plannerData[dateISO] || plannerData[day] || {};
     
+    const defaultSideId = dayData.lunch_side_recipe_id || (sideRecipes.length > 0 ? sideRecipes[0].id : '');
+
     setDayForm({
       breakfast_recipe_id: dayData.breakfast_recipe_id || '',
       lunch_recipe_id: dayData.lunch_recipe_id || '',
-      lunch_side_recipe_id: dayData.lunch_side_recipe_id || '',
+      lunch_side_recipe_id: defaultSideId,
       dinner_recipe_id: dayData.dinner_recipe_id || '',
       lunch_players: dayData.lunch_players || 25,
       lunch_halal: dayData.lunch_halal || 0,
@@ -342,6 +344,12 @@ export default function PlannerTab({ recipes = [] }) {
       dinner_vegan: dayData.dinner_vegan || 0,
       dinner_allergies: dayData.dinner_allergies || ''
     });
+
+    // Run auto-suggest if a main meal exists but side wasn't stored
+    if (dayData.lunch_recipe_id && !dayData.lunch_side_recipe_id) {
+      setTimeout(() => autoSuggestSide(dayData.lunch_recipe_id), 50);
+    }
+
     setDayModalOpen(true);
   };
 
@@ -844,10 +852,7 @@ export default function PlannerTab({ recipes = [] }) {
                   onChange={e => {
                     const val = e.target.value;
                     setDayForm(prev => ({ ...prev, lunch_recipe_id: val }));
-                    // Auto-suggest matching side dish unless one is already set
-                    if (!dayForm.lunch_side_recipe_id) {
-                      autoSuggestSide(val);
-                    }
+                    autoSuggestSide(val);
                   }}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
                 >
