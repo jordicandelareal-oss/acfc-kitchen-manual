@@ -590,15 +590,16 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                 <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock')}>Stock Actual {sortKey === 'stock' && (sortDir === 1 ? '↑' : '↓')}</th>
                 <th className="px-4 py-3">Mínimo</th>
                 <th className="px-4 py-3">Máximo</th>
-                <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste/kg {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>
-                <th className="px-4 py-3 hidden lg:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
+                {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste/kg {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
+                <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
                 <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3"></th>
+                {!isAssistant && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 bg-white text-slate-700">
               {filteredInventory.map(item => (
                 <tr key={item.id} className="tr-hover cursor-pointer" onClick={() => openEditModal(item)}>
+                  {/* Ingrediente */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
@@ -614,7 +615,9 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       </div>
                     </div>
                   </td>
+                  {/* Categoría */}
                   <td className="px-4 py-4"><span className="badge badge-slate">{item.cat}</span></td>
+                  {/* Stock Actual */}
                   <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       <input
@@ -627,6 +630,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>
                   </td>
+                  {/* Mínimo */}
                   <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       <input
@@ -640,6 +644,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>
                   </td>
+                  {/* Máximo */}
                   <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       <input
@@ -653,8 +658,11 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                     </div>
                   </td>
+                  {/* Coste/Kg — solo chef/admin */}
                   {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
-                  {!isAssistant && <td className="px-4 py-4 text-slate-500 text-xs hidden lg:table-cell">{item.supplier}</td>}
+                  {/* Proveedor — visible para todos */}
+                  <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
+                  {/* Estado */}
                   <td className="px-4 py-4">
                     {item.critical ? (
                       <span className="badge badge-red pulse-red">REORDENAR</span>
@@ -662,6 +670,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                       <span className="badge badge-green">OK</span>
                     )}
                   </td>
+                  {/* Acciones — solo chef/admin */}
                   {!isAssistant && (
                     <td className="px-4 py-4">
                       <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
