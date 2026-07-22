@@ -18,7 +18,7 @@ export default function LoginScreen({ onLoginSuccess }) {
       
       // Mapeo transparente para la cuenta de Asistente de Cocina
       if (rawEmail.toLowerCase() === 'kitchenassistant' || rawEmail.toLowerCase() === 'asistente') {
-        rawEmail = 'kitchenassistant@acfcacademy.com';
+        rawEmail = 'jordicandelareal+assistant@gmail.com';
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({

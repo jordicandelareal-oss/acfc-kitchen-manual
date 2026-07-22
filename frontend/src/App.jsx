@@ -24,15 +24,12 @@ import {
 } from './components/GlobalModals';
 import NotificationsPanel from './components/NotificationsPanel';
 
-const DEFAULT_USER = { id: 'default-user', email: 'usuario@acfc.com' };
-const DEFAULT_ROLE = localStorage.getItem('acfc_user_role') || 'chef';
-
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('introPlayed');
   });
-  const [userSession, setUserSession] = useState(DEFAULT_USER);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [userSession, setUserSession] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [month, setMonth] = useState('Julio');
   const [data, setData] = useState([]);
@@ -43,8 +40,8 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   
-  // Estado de Rol (RBAC) dictado por Supabase Auth con fallback por defecto
-  const [role, setRole] = useState(DEFAULT_ROLE);
+  // Estado de Rol (RBAC) dictado estrictamente por auth.users y public.user_roles
+  const [role, setRole] = useState(null);
 
   // Verificación de sesión real de Supabase Auth con timeout de 1.5s
   useEffect(() => {
@@ -78,40 +75,44 @@ function App() {
             setRole(dbRole);
             localStorage.setItem('acfc_user_role', dbRole);
             console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
+              id: session.user.id,
               user: session.user.email,
               role: dbRole,
               status: 'authenticated'
             });
           } catch (e) {
-            setRole(DEFAULT_ROLE);
+            setRole('assistant');
             console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
+              id: session.user.id,
               user: session.user.email,
-              role: DEFAULT_ROLE,
+              role: 'assistant',
               status: 'authenticated (role fallback)'
             });
           }
         } else {
-          setUserSession(DEFAULT_USER);
-          setRole(DEFAULT_ROLE);
+          setUserSession(null);
+          setRole(null);
+          localStorage.removeItem('acfc_user_role');
           console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-            user: DEFAULT_USER.email,
-            role: DEFAULT_ROLE,
-            status: 'fallback (no session)'
+            user: null,
+            role: null,
+            status: 'unauthenticated'
           });
         }
       } catch (err) {
         if (!isMounted) return;
         console.warn('[Auth] Timeout o error en la verificación de sesión:', err?.message || err);
-        setUserSession(DEFAULT_USER);
-        setRole(DEFAULT_ROLE);
+        setUserSession(null);
+        setRole(null);
+        localStorage.removeItem('acfc_user_role');
         console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-          user: DEFAULT_USER.email,
-          role: DEFAULT_ROLE,
-          status: 'fallback (timeout or error)'
+          user: null,
+          role: null,
+          status: 'unauthenticated (timeout or error)'
         });
       } finally {
         if (isMounted) {
-          setIsVerifying(false);
+          setAuthChecking(false);
         }
       }
     }
@@ -133,11 +134,11 @@ function App() {
           setRole(dbRole);
           localStorage.setItem('acfc_user_role', dbRole);
         } catch (e) {
-          setRole(DEFAULT_ROLE);
+          setRole('assistant');
         }
-      } else if (event === 'SIGNED_OUT') {
-        setUserSession(DEFAULT_USER);
-        setRole(DEFAULT_ROLE);
+      } else {
+        setUserSession(null);
+        setRole(null);
         localStorage.removeItem('acfc_user_role');
       }
     });
@@ -269,13 +270,36 @@ function App() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      localStorage.removeItem('acfc_user_role');
-      setUserSession(DEFAULT_USER);
-      setRole(DEFAULT_ROLE);
     } catch (e) {
       console.error('Error al cerrar sesión:', e);
+    } finally {
+      localStorage.removeItem('acfc_user_role');
+      setUserSession(null);
+      setRole(null);
     }
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Verificando sesión segura con Supabase Auth...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userSession) {
+    return (
+      <LoginScreen 
+        onLoginSuccess={(user, userRole) => { 
+          setUserSession(user); 
+          setRole(userRole); 
+        }} 
+      />
+    );
+  }
 
   return (
     <>
