@@ -99,12 +99,115 @@ export function calcularCostePlato(recipeIngredients) {
  * @param {Array} meals Lista de comidas del planificador.
  * @returns {Object} Mapa de necesidades agrupadas.
  */
+export function isElCairoSupplier(supplierName, supplierId, ingName, providerRef) {
+  if (supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') return true;
+  const str = `${supplierName || ''} ${ingName || ''} ${providerRef || ''}`.toLowerCase();
+  return str.includes('cairo') || str.includes('samir');
+}
+
+/**
+ * Genera bandejas independientes cronológicas para Carnicería El Cairo.
+ * Aplica el stock físico actual disponible en la nevera de forma secuencial al primer plato que lo requiera.
+ * Si queda déficit o si el stock es 0, genera una línea/bandeja independiente.
+ */
+export function generarBandejasCairoCronologicas(menuPlannerDays) {
+  const sortedDays = [...(menuPlannerDays || [])].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const cairoStockMap = {};
+  const cairoTrays = [];
+
+  sortedDays.forEach(day => {
+    const dateStr = day.date || '';
+    const lunchPlayers = Number(day.lunch_players || day.lunch_players_count || 25);
+    const dinnerPlayers = Number(day.dinner_players || day.dinner_players_count || 20);
+    const breakfastPlayers = Number(day.breakfast_players || day.breakfast_players_count || 20);
+
+    const shifts = [
+      { label: 'Desayuno', recipe: day.breakfast_recipe, players: breakfastPlayers },
+      { label: 'Almuerzo', recipe: day.lunch_recipe, players: lunchPlayers },
+      { label: 'Guarnición', recipe: day.lunch_side_recipe, players: lunchPlayers },
+      { label: 'Cena', recipe: day.dinner_recipe, players: dinnerPlayers }
+    ];
+
+    shifts.forEach(shift => {
+      if (!shift.recipe || !shift.recipe.recipe_ingredients || shift.players <= 0) return;
+
+      shift.recipe.recipe_ingredients.forEach(ri => {
+        const ing = ri.ingredients || ri.ingredient;
+        if (!ing) return;
+
+        const ingId = ing.id || ri.ingredient_id;
+        const supplierObj = ing.suppliers || null;
+        const supplierId = ing.supplier_id || supplierObj?.id || 'no-supplier';
+        const supplierName = supplierObj?.name || ing.proveedor_principal || 'Carnicería El Cairo';
+        const isElCairo = isElCairoSupplier(supplierName, supplierId, ing.name, ing.provider_ref);
+
+        if (!isElCairo) return;
+
+        const qtyPerPortion = Number(ri.quantity_per_portion || ri.quantity || 0);
+        const dishNeeded = qtyPerPortion * shift.players;
+        if (dishNeeded <= 0) return;
+
+        if (cairoStockMap[ingId] === undefined) {
+          cairoStockMap[ingId] = Number(ing.stock_actual || 0);
+        }
+
+        let remStock = cairoStockMap[ingId];
+        let deficit = 0;
+
+        if (remStock >= dishNeeded) {
+          cairoStockMap[ingId] -= dishNeeded;
+          deficit = 0;
+        } else if (remStock > 0) {
+          deficit = dishNeeded - remStock;
+          cairoStockMap[ingId] = 0;
+        } else {
+          deficit = dishNeeded;
+        }
+
+        if (deficit > 0) {
+          const corte = ri.tipo_corte || 'Entera';
+          const cost = calcularCosteLineaIngrediente(ing, deficit);
+          const unitStr = ri.unit || ing.unit || 'GR';
+
+          cairoTrays.push({
+            id: `cairo_${ingId}_${dateStr}_${shift.label}_${cairoTrays.length}`,
+            ingredientId: ingId,
+            name: `${ing.name} (${corte})`,
+            rawName: ing.name,
+            tipoCorte: corte,
+            neededQuantity: deficit,
+            calculatedNeeded: deficit,
+            dishNeeded: dishNeeded,
+            unit: unitStr,
+            totalCost: cost,
+            unitPrice: Number(ing.calculated_net_cost_kg || ing.purchase_price || ing.precio_por_kg || 0),
+            date: dateStr,
+            mealLabel: shift.label,
+            dishName: shift.recipe.name || '',
+            supplierId: supplierId,
+            supplierName: supplierName || 'Carnicería El Cairo',
+            supplierObj: supplierObj,
+            isElCairo: true
+          });
+        }
+      });
+    });
+  });
+
+  return cairoTrays;
+}
+
+/**
+ * Agrupa insumos requeridos en la lista de la compra optimizando el algoritmo de Carnicería El Cairo.
+ * Utiliza un mapa indexado de complejidad O(n) para evitar agrupaciones costosas de forma óptima.
+ * Cada entrada incluye un array 'mealBreakdown' con el detalle por plato para simular
+ * el consumo secuencial de stock (Simulación de Despensa).
+ * @param {Array} meals Lista de comidas del planificador.
+ * @returns {Object} Mapa de necesidades agrupadas.
+ */
 export function agruparInsumos(meals) {
   const needs = {};
   let uniqueCounter = 0;
-  
-  const EL_CAIRO_UUID = 'd257d90b-ad0b-4f84-97a0-fee73612953c';
-  const checkCairo = (s) => s && s.toLowerCase().includes('cairo');
   
   meals.forEach(meal => {
     (meal.recipe_ingredients || []).forEach(ri => {
@@ -119,10 +222,7 @@ export function agruparInsumos(meals) {
       const supplierId = ing.supplier_id || (hasSupplierObj ? ing.suppliers.id : 'no-supplier');
       const supplierName = hasSupplierObj && ing.suppliers.name ? ing.suppliers.name : 'Sin Proveedor';
       
-      const isElCairo = supplierId === EL_CAIRO_UUID ||
-                        checkCairo(supplierName) ||
-                        checkCairo(ing.provider_name) ||
-                        checkCairo(ing.proveedor_principal);
+      const isElCairo = isElCairoSupplier(supplierName, supplierId, ing.name, ing.provider_ref || ing.proveedor_principal);
                         
       // El Cairo exige desglose por plato/corte sin agrupar por ingrediente general,
       // por lo que generamos una llave única para cada aparición de carne del Cairo.
@@ -131,7 +231,7 @@ export function agruparInsumos(meals) {
         : ingId;
         
       const displayName = isElCairo
-        ? `${ing.name} ${ri.tipo_corte || 'entera'}`
+        ? `${ing.name} (${ri.tipo_corte || 'Entera'})`
         : (ing.name || 'Sin nombre');
         
       const dayNames = {
@@ -157,7 +257,8 @@ export function agruparInsumos(meals) {
           supplierObj: hasSupplierObj ? ing.suppliers : null,
           isElCairo: isElCairo,
           ingName: ing.name,
-          tipoCorte: ri.tipo_corte || 'entera',
+          rawName: ing.name,
+          tipoCorte: ri.tipo_corte || 'Entera',
           destinations: [],
           // Per-dish breakdown for sequential stock simulation
           mealBreakdown: []
@@ -193,16 +294,26 @@ export function fmtU(n) {
 
 /**
  * Compila el mensaje formateado para enviar por WhatsApp o Email a un proveedor.
- * Para Carnicería El Cairo, elimina por completo el nombre del plato y envía únicamente:
- * [Ingrediente] [Tipo de Corte] - [Cantidad] [Unidad]
+ * Para Carnicería El Cairo, oculta el nombre de la receta y muestra cada línea por separado:
+ * [Ingrediente] ([Tipo de Corte]) - [Cantidad] [Unidad]
  */
 export function formatSupplierMessage(supplierName, itemsList, isElCairo = false) {
-  if (isElCairo) {
+  const isCairoSupplier = isElCairo || isElCairoSupplier(supplierName);
+  if (isCairoSupplier) {
     let msg = `Hola, pedido ACFC Kitchen (Carnicería El Cairo):\n\n`;
     (itemsList || []).forEach(item => {
-      const rawName = item.rawName || (item.name || '').replace(/\s*\([^)]*\)/g, '').trim();
-      const corte = item.tipoCorte || item.tipo_corte || 'entera';
-      const qtyStr = `${item.neededQuantity || item.quantity || 0} ${item.unit || 'Kg'}`;
+      const rawName = item.rawName || (item.name || item.nombre_ingrediente || '').replace(/\s*\([^)]*\)/g, '').trim();
+      const corte = item.tipoCorte || item.tipo_corte || item.corte || 'Entera';
+      const qtyVal = item.neededQuantity !== undefined ? item.neededQuantity : (item.a_comprar !== undefined ? item.a_comprar : (item.quantity || 0));
+      const unit = item.unit || 'Kg';
+      
+      let qtyStr = `${qtyVal} ${unit}`;
+      if ((unit.toLowerCase() === 'gr' || unit.toLowerCase() === 'g') && Number(qtyVal) >= 1000) {
+        qtyStr = `${(Number(qtyVal) / 1000).toFixed(2)} Kg`;
+      } else if (unit.toLowerCase() === 'gr' || unit.toLowerCase() === 'g') {
+        qtyStr = `${Number(qtyVal)} g`;
+      }
+
       msg += `- ${rawName} (${corte}) - ${qtyStr}\n`;
     });
     msg += `\nMuchas gracias!`;
@@ -210,11 +321,17 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
   } else {
     let msg = `Hola, pedido ACFC Kitchen (${supplierName || 'Proveedor'}):\n\n`;
     (itemsList || []).forEach(item => {
-      const qtyStr = `${item.neededQuantity || item.quantity || 0} ${item.unit || 'Kg'}`;
-      msg += `- ${item.name} - ${qtyStr}\n`;
+      const qtyVal = item.neededQuantity !== undefined ? item.neededQuantity : (item.a_comprar !== undefined ? item.a_comprar : (item.quantity || 0));
+      const unit = item.unit || 'Kg';
+      let qtyStr = `${qtyVal} ${unit}`;
+      if ((unit.toLowerCase() === 'gr' || unit.toLowerCase() === 'g') && Number(qtyVal) >= 1000) {
+        qtyStr = `${(Number(qtyVal) / 1000).toFixed(2)} Kg`;
+      }
+      msg += `- ${item.name || item.nombre_ingrediente} - ${qtyStr}\n`;
     });
     msg += `\nMuchas gracias!`;
     return msg;
   }
 }
+
 

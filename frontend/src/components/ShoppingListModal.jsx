@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, Copy, Printer, Package, ChevronDown, ChevronRight, MessageSquare, Mail, Loader2 } from 'lucide-react';
 import { generarListaComprasOptimizada } from '../api';
+import { isElCairoSupplier, formatSupplierMessage } from '../utils/mathUtils';
 
 const SUPPLIER_COLORS = {
   'Carnicería El Cairo': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700' },
@@ -8,7 +9,7 @@ const SUPPLIER_COLORS = {
 };
 
 function getSupplierColors(name) {
-  if (name && name.toLowerCase().includes('cairo')) return SUPPLIER_COLORS['Carnicería El Cairo'];
+  if (isElCairoSupplier(name)) return SUPPLIER_COLORS['Carnicería El Cairo'];
   return SUPPLIER_COLORS.default;
 }
 
@@ -42,11 +43,11 @@ export default function ShoppingListModal({ isOpen, onClose }) {
   const listaPorProveedor = React.useMemo(() => {
     // 1. Aislamos los ítems de Carnicería El Cairo sin aplicar ninguna reducción/agrupación por nombre
     const listaCairo = rawList
-      .filter(item => (item.proveedor || '').trim() === 'Carnicería El Cairo')
+      .filter(item => isElCairoSupplier(item.proveedor, null, item.nombre_ingrediente))
       .map(item => ({ ...item }));
 
     // 2. Aislamos los ítems del resto de proveedores
-    const listaGranelRaw = rawList.filter(item => (item.proveedor || '').trim() !== 'Carnicería El Cairo');
+    const listaGranelRaw = rawList.filter(item => !isElCairoSupplier(item.proveedor, null, item.nombre_ingrediente));
 
     // 3. Consolidamos los ítems a granel por nombre_ingrediente
     const listaGranelConsolidada = listaGranelRaw.reduce((acc, item) => {
@@ -80,8 +81,8 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     // Sort: El Cairo first, then alphabetical, then "Sin proveedor" last
     const sorted = {};
     const keys = Object.keys(grouped).sort((a, b) => {
-      if (a === 'Carnicería El Cairo') return -1;
-      if (b === 'Carnicería El Cairo') return 1;
+      if (isElCairoSupplier(a)) return -1;
+      if (isElCairoSupplier(b)) return 1;
       if (a === 'Sin proveedor asignado') return 1;
       if (b === 'Sin proveedor asignado') return -1;
       return a.localeCompare(b);
@@ -110,7 +111,7 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     Object.entries(listaPorProveedor).forEach(([prov, items]) => {
       lines.push(`\n=== ${prov.toUpperCase()} ===`);
       items.forEach(item => {
-        const isElCairo = prov.toLowerCase().includes('cairo');
+        const isElCairo = isElCairoSupplier(prov);
         const unit = inferUnit(item.nombre_ingrediente);
         
         const qty = isElCairo
@@ -128,31 +129,19 @@ export default function ShoppingListModal({ isOpen, onClose }) {
     const items = listaPorProveedor[provName] || [];
     if (items.length === 0) return;
 
-    // Obtener detalles mock/por defecto si no vienen del join
-    const phone = '+34600000000';
+    const phone = '+34678060043';
     const email = 'pedidos@proveedor.com';
+    const isElCairo = isElCairoSupplier(provName);
 
-    // Generar cuerpo del mensaje
-    const header = `📋 *PEDIDO DE COMPRA ACFC KITCHEN*\nProveedor: ${provName}\nFecha: ${new Date().toLocaleDateString()}\n\n*Productos a solicitar:*`;
-    const lines = items.map(item => {
-      const isElCairo = provName.toLowerCase().includes('cairo');
-      const unit = inferUnit(item.nombre_ingrediente);
-      
-      const qty = isElCairo
-        ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg`
-        : (unit === 'g' ? `${(Number(item.a_comprar) / 1000).toFixed(2)} kg` : `${Number(item.a_comprar).toFixed(0)} ${unit}`);
-        
-      return `• ${item.nombre_ingrediente}: *${qty}*`;
-    });
-    const messageText = `${header}\n${lines.join('\n')}\n\nPor favor confirmar recepción.`;
+    const messageText = formatSupplierMessage(provName, items, isElCairo);
 
     if (method === 'whatsapp') {
       const cleanPhone = phone.replace(/[^0-9+]/g, '');
       const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
       window.open(url, '_blank');
     } else if (method === 'email') {
-      const subject = encodeURIComponent(`Pedido de Suministros - ACFC Kitchen`);
-      const body = encodeURIComponent(messageText.replace(/\*/g, ''));
+      const subject = encodeURIComponent(`Pedido de Suministros - ACFC Kitchen (${provName})`);
+      const body = encodeURIComponent(messageText);
       const url = `mailto:${email}?subject=${subject}&body=${body}`;
       window.open(url, '_blank');
     }

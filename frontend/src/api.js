@@ -322,6 +322,16 @@ export const fetchPlannerDataDb = async () => {
   `);
 };
 
+export const fetchPlannerFullWithIngredients = async () => {
+  return supabase.from('menu_planner').select(`
+    *,
+    breakfast_recipe:recipes!breakfast_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
+    lunch_recipe:recipes!lunch_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
+    lunch_side_recipe:recipes!lunch_side_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
+    dinner_recipe:recipes!dinner_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*))))
+  `).order('date', { ascending: true });
+};
+
 export const upsertPlannerDays = async (upsertsArray) => {
   return supabase.from('menu_planner').upsert(upsertsArray, { onConflict: 'date' });
 };

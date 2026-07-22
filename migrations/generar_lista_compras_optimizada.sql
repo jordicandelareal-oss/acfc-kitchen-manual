@@ -39,34 +39,40 @@ BEGIN
     corte varchar,
     qty numeric,
     dest text,
-    meal_label text
+    meal_label text,
+    plan_date date,
+    shift_order int
   ) ON COMMIT DROP;
 
   -- 2. Recolectar necesidades de Desayuno, Almuerzo, Guarnición y Cena planificadas
-  -- Desayuno
-  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label)
+  -- Desayuno (shift_order = 1)
+  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label, plan_date, shift_order)
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
-    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
+    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR s.name ILIKE '%samir%' OR s.contact_name ILIKE '%samir%'),
     COALESCE(ri.tipo_corte::text, 'Entera'::text),
-    ri.quantity_per_portion * 20, -- Desayuno fijo 20 pax
+    ri.quantity_per_portion * COALESCE(mp.breakfast_players, 20),
     (r.name || ' (Desayuno)')::text,
-    'Desayuno'::text
+    'Desayuno'::text,
+    mp.date,
+    1
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.breakfast_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id;
 
-  -- Almuerzo (Plato Principal)
-  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label)
+  -- Almuerzo (shift_order = 2)
+  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label, plan_date, shift_order)
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
-    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
+    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR s.name ILIKE '%samir%' OR s.contact_name ILIKE '%samir%'),
     COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.lunch_players,
     (r.name || ' (Almuerzo)')::text,
-    'Almuerzo'::text
+    'Almuerzo'::text,
+    mp.date,
+    2
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.lunch_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -74,15 +80,17 @@ BEGIN
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
   WHERE mp.lunch_players > 0;
 
-  -- Guarnición
-  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label)
+  -- Guarnición (shift_order = 3)
+  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label, plan_date, shift_order)
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
-    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
+    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR s.name ILIKE '%samir%' OR s.contact_name ILIKE '%samir%'),
     COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.lunch_players,
     (r.name || ' (Guarnición)')::text,
-    'Guarnición'::text
+    'Guarnición'::text,
+    mp.date,
+    3
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.lunch_side_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -90,15 +98,17 @@ BEGIN
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
   WHERE mp.lunch_players > 0;
 
-  -- Cena
-  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label)
+  -- Cena (shift_order = 4)
+  INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest, meal_label, plan_date, shift_order)
   SELECT 
     ri.ingredient_id, i.name, ri.unit, s.name, s.id, s.phone, s.email,
-    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR i.name ILIKE '%corte%' OR i.name ILIKE '%filet%'),
+    (s.id = 'd257d90b-ad0b-4f84-97a0-fee73612953c' OR s.name ILIKE '%cairo%' OR s.name ILIKE '%samir%' OR s.contact_name ILIKE '%samir%'),
     COALESCE(ri.tipo_corte::text, 'Entera'::text),
     ri.quantity_per_portion * mp.dinner_players,
     (r.name || ' (Cena)')::text,
-    'Cena'::text
+    'Cena'::text,
+    mp.date,
+    4
   FROM public.menu_planner mp
   JOIN public.recipes r ON r.id = mp.dinner_recipe_id
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
@@ -106,12 +116,12 @@ BEGIN
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
   WHERE mp.dinner_players > 0;
 
-  -- ── FLUJO A: CARNICERÍA EL CAIRO (FILAS INDIVIDUALES / BANDEJAS SIN AGRUPAR) ──
+  -- ── FLUJO A: CARNICERÍA EL CAIRO (BANDEJAS INDEPENDIENTES EN ORDEN CRONOLÓGICO) ──
   FOR temp_row IN 
     SELECT tn.id, tn.ing_id, tn.ing_name, tn.supp_name, tn.corte, tn.qty, tn.dest
     FROM temp_needs tn
     WHERE tn.is_cairo = true
-    ORDER BY tn.ing_id, tn.id
+    ORDER BY tn.plan_date ASC, tn.shift_order ASC, tn.id ASC
   LOOP
     fila_id := temp_row.id;
     nombre_ingrediente := temp_row.ing_name::varchar;
@@ -163,3 +173,4 @@ BEGIN
   END LOOP;
 END;
 $$;
+

@@ -9,9 +9,15 @@ import {
   fetchPurchaseOrders, 
   createPurchaseOrder, 
   confirmOrderReception, 
-  validarRecepcionPedido 
+  validarRecepcionPedido,
+  fetchPlannerFullWithIngredients
 } from '../api';
-import { calcularCosteLineaIngrediente, formatSupplierMessage } from '../utils/mathUtils';
+import { 
+  calcularCosteLineaIngrediente, 
+  formatSupplierMessage, 
+  isElCairoSupplier, 
+  generarBandejasCairoCronologicas 
+} from '../utils/mathUtils';
 
 const StatusBadge = ({ status }) => {
   let label = 'Borrador';
@@ -36,6 +42,7 @@ const StatusBadge = ({ status }) => {
 const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canEdit }) => {
   const [internalIngredients, setInternalIngredients] = useState([]);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
+  const [plannerDays, setPlannerDays] = useState([]);
 
   // History / Active Orders State
   const [historyOrders, setHistoryOrders] = useState([]);
@@ -72,6 +79,18 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   }, []);
 
+  // Fetch full planner menu days to generate chronological Cairo trays
+  const loadPlannerData = useCallback(async () => {
+    try {
+      const { data: pDays, error } = await fetchPlannerFullWithIngredients();
+      if (!error && pDays) {
+        setPlannerDays(pDays);
+      }
+    } catch (e) {
+      console.error('Error cargando planner data en ComprasTab:', e);
+    }
+  }, []);
+
   // Load purchase orders history & pending orders from Supabase
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -89,8 +108,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
   useEffect(() => {
     loadIngredientsList();
+    loadPlannerData();
     loadHistory();
-  }, [loadIngredientsList, loadHistory]);
+  }, [loadIngredientsList, loadPlannerData, loadHistory]);
 
   const safeData = useMemo(() => {
     if (data && data.length > 0) return data;
@@ -122,21 +142,45 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return (historyOrders || []).filter(po => po.status === 'ordered' || po.status === 'pending' || po.status === 'sent');
   }, [historyOrders]);
 
-  // Calculate needed items for Active Order, subtracting already ordered pending quantities & filtered by justOrderedIds
+  // Calculate needed items for Active Order
+  // Rule 1: General suppliers consolidate globally: max(0, stock_reservado - stock_actual)
+  // Rule 2: Carnicería El Cairo DOES NOT CONSOLIDATE; generates chronological trays dish by dish.
   const activeOrderCalculatedItems = useMemo(() => {
-    return safeData.map(item => {
+    // 1. Algoritmo Cronológico de Bandejas para Carnicería El Cairo
+    const rawCairoTrays = generarBandejasCairoCronologicas(plannerDays);
+    const cairoItems = rawCairoTrays.map(tray => {
+      const neededQuantity = customQuantities[tray.id] !== undefined ? customQuantities[tray.id] : tray.neededQuantity;
+      const totalCost = calcularCosteLineaIngrediente({ unit: tray.unit, output_scenario: 'KG_LT', calculated_net_cost_kg: tray.unitPrice }, neededQuantity);
+      return {
+        ...tray,
+        stock: getStock(tray),
+        min: 0,
+        reserved: tray.dishNeeded,
+        alreadyOrdered: 0,
+        neededQuantity,
+        calculatedNeeded: tray.neededQuantity,
+        totalCost
+      };
+    }).filter(i => (!justOrderedIds.has(i.id)) && Number(i.neededQuantity) > 0);
+
+    // 2. Consolidación Global para Proveedores Generales (Mercadona, Makro, etc.)
+    const generalItems = safeData.map(item => {
+      const supplierObj = item.suppliers || null;
+      const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
+      const supplierId = supplierObj?.id || item.supplier_id || 'no-supplier';
+      const isElCairo = isElCairoSupplier(supplierName, supplierId, item.name, item.provider_ref);
+
+      if (isElCairo) return null; // Los ítems de El Cairo ya fueron generados secuencialmente arriba en cairoItems
+
       const stock = getStock(item);
       const min = getMin(item);
       const reserved = getReserved(item);
       const alreadyOrdered = orderedPendingMap[item.id] || 0;
 
-      // Formula: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual - ya_pedido_pendiente)
       const targetRequired = Math.max(reserved, min);
       const neededRaw = Math.max(0, targetRequired - stock - alreadyOrdered);
-
       const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
       
-      // Calculate total cost using exact net cost formula from mathUtils
       const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       
       const unit = (item.unit || '').toLowerCase();
@@ -152,13 +196,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_mas_bajo || 0);
       }
 
-      const supplierObj = item.suppliers || null;
-      const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
-      const supplierId = supplierObj?.id || item.supplier_id || 'no-supplier';
-      const isElCairo = (supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') || (supplierName.toLowerCase().includes('cairo'));
-
       return {
         ...item,
+        rawName: item.name,
         stock,
         min,
         reserved,
@@ -170,10 +210,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         supplierId,
         supplierName,
         supplierObj,
-        isElCairo
+        isElCairo: false
       };
-    }).filter(i => (!justOrderedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
-  }, [safeData, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds]);
+    }).filter(i => i && (!justOrderedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
+
+    return [...cairoItems, ...generalItems];
+  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -189,14 +231,16 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     const groupsMap = {};
 
     filteredItems.forEach(item => {
-      const sKey = item.supplierId || 'no-supplier';
+      const isCairoGroup = item.isElCairo || isElCairoSupplier(item.supplierName, item.supplierId, item.name);
+      const sKey = isCairoGroup ? 'cairo-supplier' : (item.supplierId || 'no-supplier');
+
       if (!groupsMap[sKey]) {
         groupsMap[sKey] = {
-          supplierId: item.supplierId,
-          supplierName: item.supplierName,
+          supplierId: isCairoGroup ? 'cairo-supplier' : item.supplierId,
+          supplierName: isCairoGroup ? 'Carnicería El Cairo' : item.supplierName,
           supplierPhone: item.supplierObj?.phone || null,
           supplierEmail: item.supplierObj?.email || null,
-          isElCairo: item.isElCairo,
+          isElCairo: isCairoGroup,
           items: [],
           totalGroupCost: 0
         };
