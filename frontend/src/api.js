@@ -804,13 +804,13 @@ export const createPurchaseOrder = async (orderData, itemsArray) => {
   }
 };
 
-export const fetchPurchaseOrders = async () => {
+export const fetchPurchaseOrders = async (statusFilter = null) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('purchase_orders')
       .select(`
         *,
-        suppliers ( id, name ),
+        suppliers ( id, name, phone, email ),
         purchase_order_items (
           id,
           ingredient_id,
@@ -823,6 +823,15 @@ export const fetchPurchaseOrders = async () => {
       `)
       .order('created_at', { ascending: false });
 
+    if (statusFilter) {
+      if (Array.isArray(statusFilter)) {
+        query = query.in('status', statusFilter);
+      } else {
+        query = query.eq('status', statusFilter);
+      }
+    }
+
+    const { data, error } = await query;
     return { data: data || [], error };
   } catch (err) {
     return { data: [], error: err };

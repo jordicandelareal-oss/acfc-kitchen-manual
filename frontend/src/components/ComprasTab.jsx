@@ -20,14 +20,14 @@ const StatusBadge = ({ status }) => {
   if (status === 'received') {
     label = 'Recibido';
     badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  } else if (status === 'ordered' || status === 'sent') {
-    label = 'Enviado';
+  } else if (status === 'ordered' || status === 'pending' || status === 'sent') {
+    label = 'Pendiente de Recepción';
     badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
   }
 
   return (
     <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${badgeStyle} inline-flex items-center gap-1`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'received' ? 'bg-emerald-500' : status === 'ordered' || status === 'sent' ? 'bg-blue-500' : 'bg-slate-400'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${status === 'received' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
       {label}
     </span>
   );
@@ -37,7 +37,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [internalIngredients, setInternalIngredients] = useState([]);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
 
-  // History State
+  // History / Active Orders State
   const [historyOrders, setHistoryOrders] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistorySection, setShowHistorySection] = useState(false);
@@ -70,11 +70,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   }, []);
 
-  useEffect(() => {
-    loadIngredientsList();
-  }, [loadIngredientsList]);
-
-  // Load purchase orders history
+  // Load purchase orders history & pending orders from Supabase
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
@@ -90,10 +86,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   }, []);
 
   useEffect(() => {
-    if (showHistorySection) {
-      loadHistory();
-    }
-  }, [showHistorySection, loadHistory]);
+    loadIngredientsList();
+    loadHistory();
+  }, [loadIngredientsList, loadHistory]);
 
   const safeData = useMemo(() => {
     if (data && data.length > 0) return data;
@@ -104,16 +99,38 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const getMin = useCallback(i => Number(i?.stock_minimo || 0), []);
   const getReserved = useCallback(i => Number(i?.stock_reservado || 0), []);
 
-  // Calculate needed items for Active Order with precise net cost formula
+  // Map of quantities already ordered in active pending purchase orders ('ordered' / 'pending' / 'sent')
+  const orderedPendingMap = useMemo(() => {
+    const map = {};
+    (historyOrders || []).forEach(po => {
+      if (po.status === 'ordered' || po.status === 'pending' || po.status === 'sent') {
+        (po.purchase_order_items || []).forEach(poi => {
+          const ingId = poi.ingredient_id;
+          if (ingId) {
+            map[ingId] = (map[ingId] || 0) + Number(poi.quantity || 0);
+          }
+        });
+      }
+    });
+    return map;
+  }, [historyOrders]);
+
+  // List of active pending orders ready for reception validation
+  const pendingOrdersForReception = useMemo(() => {
+    return (historyOrders || []).filter(po => po.status === 'ordered' || po.status === 'pending' || po.status === 'sent');
+  }, [historyOrders]);
+
+  // Calculate needed items for Active Order, subtracting already ordered pending quantities
   const activeOrderCalculatedItems = useMemo(() => {
     return safeData.map(item => {
       const stock = getStock(item);
       const min = getMin(item);
       const reserved = getReserved(item);
+      const alreadyOrdered = orderedPendingMap[item.id] || 0;
 
-      // Formula: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual)
+      // Formula: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual - ya_pedido_pendiente)
       const targetRequired = Math.max(reserved, min);
-      const neededRaw = Math.max(0, targetRequired - stock);
+      const neededRaw = Math.max(0, targetRequired - stock - alreadyOrdered);
 
       const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
       
@@ -143,6 +160,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         stock,
         min,
         reserved,
+        alreadyOrdered,
         neededQuantity,
         calculatedNeeded: neededRaw,
         unitPrice,
@@ -153,7 +171,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         isElCairo
       };
     }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
-  }, [safeData, getStock, getMin, getReserved, customQuantities]);
+  }, [safeData, getStock, getMin, getReserved, customQuantities, orderedPendingMap]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -192,7 +210,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return activeOrderCalculatedItems.reduce((acc, i) => acc + i.totalCost, 0);
   }, [activeOrderCalculatedItems]);
 
-  // Guardar Orden de Compra para un grupo específico de proveedor o para todos
+  // Guardar Orden de Compra: inserta en purchase_orders y limpia de la lista activa
   const handleSavePurchaseOrderForSupplier = async (supplierGroup = null) => {
     const itemsToOrder = supplierGroup 
       ? supplierGroup.items.filter(i => Number(i.neededQuantity) > 0)
@@ -224,15 +242,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (error) throw error;
 
       const groupName = supplierGroup ? supplierGroup.supplierName : 'General';
-      if (window.toast) window.toast(`✅ Orden de compra guardada para ${groupName} (Total: €${totalAmount.toFixed(2)})`);
+      if (window.toast) window.toast(`✅ Orden de compra registrada para ${groupName} (Los insumos se han movido a Pedidos Pendientes de Recepción)`);
       
-      setShowHistorySection(true);
-      loadHistory();
-      loadIngredientsList();
+      setCustomQuantities({});
+      await loadHistory();
+      await loadIngredientsList();
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
-      if (window.toast) window.toast('❌ Error al guardar la orden de compra: ' + e.message);
+      if (window.toast) window.toast('❌ Error al registrar la orden de compra: ' + e.message);
     } finally {
       setIsSavingOrder(false);
     }
@@ -263,7 +281,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     window.open(mailtoUrl, '_blank');
   };
 
-  // Modal de Recepción (Albarán)
+  // Modal de Validación de Recepción (Filtrado por órdenes pending/ordered/sent)
   const openReceptionModal = (order = null) => {
     if (order && order.id) {
       setActiveOrderForReception(order);
@@ -284,6 +302,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         qtyMap[i.ingredient_id] = i.orderedQty;
       });
       setReceivedQtyMap(qtyMap);
+    } else if (pendingOrdersForReception.length > 0) {
+      // Pick first pending order if available
+      openReceptionModal(pendingOrdersForReception[0]);
+      return;
     } else {
       setActiveOrderForReception(null);
       const itemsFormatted = activeOrderCalculatedItems.map(i => ({
@@ -331,13 +353,11 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         if (res.error) throw res.error;
       }
 
-      if (window.toast) window.toast(`✅ Entrada al almacén confirmada (${itemsToUpdate.length} insumos sumados a stock actual)`);
+      if (window.toast) window.toast(`✅ Entrada al almacén confirmada (${itemsToUpdate.length} insumos sumados al stock actual)`);
       setReceptionModalOpen(false);
       
-      loadIngredientsList();
-      if (showHistorySection) {
-        loadHistory();
-      }
+      await loadIngredientsList();
+      await loadHistory();
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
@@ -377,7 +397,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               <span>Módulo de Compras y Pedidos</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Cálculo automático agrupado por proveedores, envío de albaranes y recepción al almacén
+              Lista activa de necesidades sin duplicar, pedidos por proveedor y entrada al almacén
             </p>
           </div>
 
@@ -389,34 +409,37 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               className="flex-1 md:flex-none px-4 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-40"
             >
               <Save size={16} />
-              <span>{isSavingOrder ? 'Guardando...' : '💾 Registrar Todo el Pedido'}</span>
+              <span>{isSavingOrder ? 'Registrando...' : '💾 Registrar Todo el Pedido'}</span>
             </button>
 
             <button
               onClick={() => openReceptionModal(null)}
-              className="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all relative"
             >
               <PackageCheck size={16} />
-              <span>📦 Validar Recepción y Actualizar Stock</span>
+              <span>📦 Validar Recepción ({pendingOrdersForReception.length})</span>
+              {pendingOrdersForReception.length > 0 && (
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping absolute -top-1 -right-1" />
+              )}
             </button>
           </div>
         </div>
 
-        {/* BANNER INFORMATIVO */}
+        {/* BANNER INFORMATIVO DE CICLO DE PEDIDO */}
         <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
           <div className="flex items-center gap-2 text-xs text-slate-600">
             <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
             <span>
-              Fórmula de coste neto: <strong>(Gramos / 1000) * Coste Neto Real KG (con merma)</strong>
+              Ciclo de pedido: <strong>Al registrar una orden, los insumos se ocultan de compras hasta ser validados en almacén.</strong>
             </span>
           </div>
 
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
             <span className="text-xs text-slate-500 font-semibold">
-              Proveedores activos: <strong className="text-slate-900">{supplierGroups.length}</strong>
+              Pendientes de Pedido: <strong className="text-slate-900">{activeOrderCalculatedItems.length}</strong>
             </span>
             <span className="text-xs font-extrabold text-slate-900">
-              Total Global: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
+              Total Estimado: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
             </span>
           </div>
         </div>
@@ -427,7 +450,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por ingrediente o proveedor..."
+              placeholder="Buscar insumos pendientes por ingrediente o proveedor..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none"
@@ -460,14 +483,13 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                       )}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      {group.items.length} insumo(s) a pedir · Total Proveedor: <strong className="text-brand font-bold">€{group.totalGroupCost.toFixed(2)}</strong>
+                      {group.items.length} insumo(s) pendientes · Subtotal: <strong className="text-brand font-bold">€{group.totalGroupCost.toFixed(2)}</strong>
                     </p>
                   </div>
                 </div>
 
-                {/* BOTONES DE ACCIÓN POR PROVEEDOR (WHATSAPP, EMAIL, REGISTRAR) */}
+                {/* BOTONES DE ACCIÓN POR PROVEEDOR */}
                 <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  {/* WhatsApp Button */}
                   <button
                     onClick={() => handleSendWhatsApp(group)}
                     disabled={!hasPhone}
@@ -478,7 +500,6 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                     <span>WhatsApp</span>
                   </button>
 
-                  {/* Email Button */}
                   <button
                     onClick={() => handleSendEmail(group)}
                     disabled={!hasEmail}
@@ -489,7 +510,6 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                     <span>Correo</span>
                   </button>
 
-                  {/* Registrar Orden de Compra individual */}
                   <button
                     onClick={() => handleSavePurchaseOrderForSupplier(group)}
                     disabled={isSavingOrder}
@@ -501,7 +521,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                 </div>
               </div>
 
-              {/* TABLA DE INSUMOS DE ESTE PROVEEDOR */}
+              {/* TABLA DE INSUMOS PENDIENTES DE ESTE PROVEEDOR */}
               <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
@@ -510,7 +530,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                       <th className="py-3 px-3 text-center">Stock Actual</th>
                       <th className="py-3 px-3 text-center">Stock Reservado</th>
                       <th className="py-3 px-3 text-center">Cant. a Pedir</th>
-                      <th className="py-3 px-3 text-right">Coste Neto/Kg o U</th>
+                      <th className="py-3 px-3 text-right">Precio Unid.</th>
                       <th className="py-3 px-4 text-right">Coste Total</th>
                     </tr>
                   </thead>
@@ -562,13 +582,19 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         })}
 
         {supplierGroups.length === 0 && (
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-400 text-xs shadow-sm">
-            ✅ No hay necesidades de compra calculadas. El stock actual cubre todas las reservas del menú planificado.
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 text-xs shadow-sm space-y-2">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <CheckCircle2 size={24} />
+            </div>
+            <p className="font-bold text-slate-800 text-sm">¡No hay insumos pendientes de pedido!</p>
+            <p className="text-slate-400 max-w-md mx-auto">
+              Todos los insumos requeridos ya han sido registrados en órdenes de compra pendientes o el stock físico actual cubre las reservas del menú.
+            </p>
           </div>
         )}
       </div>
 
-      {/* SECCIÓN PLEGABLE DE HISTÓRICO DE PEDIDOS */}
+      {/* SECCIÓN PLEGABLE DE HISTÓRICO Y RECEPCIÓN DE PEDIDOS PENDIENTES */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
         <button
           onClick={() => setShowHistorySection(prev => !prev)}
@@ -576,14 +602,19 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         >
           <div className="flex items-center gap-2">
             <History size={18} className="text-slate-500" />
-            <h3 className="text-sm font-bold text-slate-900">Histórico de Pedidos Registrados</h3>
+            <h3 className="text-sm font-bold text-slate-900">Histórico de Pedidos y Recepción</h3>
             <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600 font-bold">
               {historyOrders.length}
             </span>
+            {pendingOrdersForReception.length > 0 && (
+              <span className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-800 font-extrabold">
+                {pendingOrdersForReception.length} pendientes
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs font-semibold text-brand">
-            <span>{showHistorySection ? 'Ocultar historial' : 'Ver historial'}</span>
+            <span>{showHistorySection ? 'Ocultar historial' : 'Ver historial de pedidos'}</span>
             {showHistorySection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </button>
@@ -646,7 +677,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                             ) : (
                               <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
                                 <CheckCircle2 size={14} className="text-emerald-500" />
-                                Ingresado
+                                Ingresado a Stock
                               </span>
                             )}
                           </td>
@@ -680,10 +711,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base leading-tight">
-                    Validar Recepción y Actualizar Stock (Entrada al Almacén)
+                    Validar Recepción y Entrada al Almacén
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Confirma las cantidades de mercancía recibidas para ingresar a stock actual y reducir reservas
+                    {activeOrderForReception 
+                      ? `Pedido del ${activeOrderForReception.order_date || 'reciente'} (${activeOrderForReception.suppliers?.name || 'Proveedor'})`
+                      : 'Recepción directa de mercancía pendiente'}
                   </p>
                 </div>
               </div>
@@ -691,6 +724,27 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                 <X size={18} />
               </button>
             </div>
+
+            {/* SELECTOR DE PEDIDO PENDIENTE DENTRO DEL MODAL */}
+            {pendingOrdersForReception.length > 0 && (
+              <div className="py-3 border-b border-slate-100 flex items-center gap-2">
+                <span className="text-xs text-slate-600 font-bold whitespace-nowrap">Seleccionar Pedido Pendiente:</span>
+                <select
+                  value={activeOrderForReception?.id || ''}
+                  onChange={e => {
+                    const selOrder = pendingOrdersForReception.find(po => po.id === e.target.value);
+                    if (selOrder) openReceptionModal(selOrder);
+                  }}
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-emerald-500 outline-none"
+                >
+                  {pendingOrdersForReception.map(po => (
+                    <option key={po.id} value={po.id}>
+                      {po.order_date || 'Pedido'} - {po.suppliers?.name || 'Varios'} (€{Number(po.total_amount || 0).toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Buscador dentro del modal */}
             <div className="py-3">
