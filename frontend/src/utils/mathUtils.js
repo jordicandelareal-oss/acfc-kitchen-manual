@@ -322,8 +322,11 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
         qtyStr = `${Number(qtyVal)} g`;
       }
 
-      const hasCorteInName = corte && rawName.toLowerCase().includes(corte.toLowerCase());
-      const label = (corte && !hasCorteInName && corte !== 'Entera') ? `${rawName} (${corte})` : rawName;
+      const lowerRaw = rawName.toLowerCase();
+      const lowerCorte = corte.toLowerCase();
+      const isEntera = lowerCorte.startsWith('entera') || lowerCorte.startsWith('entero') || lowerRaw.includes('entera') || lowerRaw.includes('entero');
+      const hasCorteInName = corte && lowerRaw.includes(lowerCorte);
+      const label = (corte && !hasCorteInName && !isEntera) ? `${rawName} (${corte})` : rawName;
 
       msg += `- ${label} - ${qtyStr}\n`;
     });
