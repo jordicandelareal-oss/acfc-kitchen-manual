@@ -68,7 +68,7 @@ export const fetchShoppingList = async () => {
   try {
     const { data, error } = await supabase
       .from('ingredients')
-      .select('id, name, unit, stock_actual, stock_reservado, stock_minimo, purchase_price, purchase_format_gr, waste_percentage, merma_percentage, process_type, calculated_net_cost_kg, coste_neto_calculado, precio_por_kg, precio_por_u, proveedor_principal, supplier_id, suppliers(id, name, phone, email)')
+      .select('id, name, unit, stock_actual, stock_reservado, stock_minimo, stock_maximo, purchase_price, purchase_format_gr, waste_percentage, calculated_net_cost_kg, precio_por_kg, precio_por_u, supplier_id, output_scenario, suppliers(id, name, phone, email)')
       .order('name', { ascending: true });
     if (error) throw error;
     return { success: true, items: data || [] };
