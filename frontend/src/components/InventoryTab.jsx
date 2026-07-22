@@ -525,16 +525,16 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sortedInventory]);
 
-  // Componente barra lateral A-Z
+  // Componente barra lateral A-Z (visible en móvil y escritorio)
   const AlphaIndex = () => (
     <div
-      className="fixed z-30 top-1/2 -translate-y-1/2 left-0 hidden sm:flex flex-col items-center gap-0 py-2 px-0.5"
+      className="fixed z-30 top-1/2 -translate-y-1/2 left-0 flex flex-col items-center gap-0 py-1 px-0.5 border-r border-y border-slate-200/80"
       style={{
-        width: '28px',
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(6px)',
+        width: '26px',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(8px)',
         borderRadius: '0 10px 10px 0',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.06)',
+        boxShadow: '2px 0 10px rgba(0,0,0,0.08)',
       }}
     >
       {ALPHABET.map(letter => {
@@ -544,14 +544,14 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
           <button
             key={letter}
             onClick={() => isActive && scrollToLetter(letter)}
-            className={`text-center leading-none font-bold transition-all rounded ${
+            className={`text-center leading-tight font-bold transition-all rounded ${
               isCurrent
-                ? 'text-white bg-brand scale-125 px-0.5'
+                ? 'text-white bg-brand scale-110'
                 : isActive
-                ? 'text-slate-600 hover:text-brand hover:bg-brand/10'
-                : 'text-slate-200 cursor-default'
+                ? 'text-slate-700 hover:text-brand hover:bg-brand/10'
+                : 'text-slate-300 cursor-default'
             }`}
-            style={{ fontSize: '9px', padding: isCurrent ? '2px 3px' : '2px 0', width: '24px', display: 'block' }}
+            style={{ fontSize: '9px', padding: isCurrent ? '1px 2px' : '1px 0', width: '22px', display: 'block' }}
             title={isActive ? `Ir a: ${letter}` : `Sin ingredientes en ${letter}`}
             aria-disabled={!isActive}
           >
@@ -667,8 +667,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       {/* Abecedario fijo lateral — fuera del flujo de la tabla */}
       <AlphaIndex />
 
-      {/* Main Stock Table — con margen izquierdo en sm+ para no solapar el abecedario */}
-      <div className="sm:ml-8">
+      {/* Main Stock Table — con margen izquierdo para no pisar el abecedario lateral */}
+      <div className="ml-7 sm:ml-8">
         {/* Contenido principal de la tabla */}
         <div className="card overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
@@ -813,32 +813,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
             </table>
           </div>
 
-          {/* Mobile View — con abecedario inline arriba */}
+          {/* Mobile View */}
           <div className="md:hidden">
-            {/* Abecedario horizontal compacto para móvil */}
-            <div className="px-3 pt-2 pb-1 flex flex-wrap gap-0.5 border-b border-slate-100 bg-slate-50">
-              {ALPHABET.map(letter => {
-                const isActive = activeLetters.has(letter);
-                const isCurrent = activeLetter === letter;
-                return (
-                  <button
-                    key={letter}
-                    onClick={() => isActive && scrollToLetter(letter)}
-                    className={`text-[9px] font-bold leading-none px-1 py-1 rounded transition-all ${
-                      isCurrent
-                        ? 'bg-brand text-white'
-                        : isActive
-                        ? 'text-slate-600 hover:text-brand hover:bg-brand/10'
-                        : 'text-slate-200 cursor-default'
-                    }`}
-                    aria-disabled={!isActive}
-                  >
-                    {letter}
-                  </button>
-                );
-              })}
-            </div>
-
             {/* Lista móvil con separadores de letra */}
             <div className="p-3 space-y-2">
               {sortedInventory.map((item, idx) => {
