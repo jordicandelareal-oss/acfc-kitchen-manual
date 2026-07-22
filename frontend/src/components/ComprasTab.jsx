@@ -53,6 +53,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   // Active generated purchase order state
   const [customQuantities, setCustomQuantities] = useState({});
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [savingSupplierMap, setSavingSupplierMap] = useState({});
+  const [justOrderedIds, setJustOrderedIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
   // Auto-fetch real-time ingredients from Supabase
@@ -107,7 +109,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         (po.purchase_order_items || []).forEach(poi => {
           const ingId = poi.ingredient_id;
           if (ingId) {
-            map[ingId] = (map[ingId] || 0) + Number(poi.quantity || 0);
+            map[ingId] = (map[ingId] || 0) + Number(poi.quantity_ordered || poi.quantity || 0);
           }
         });
       }
@@ -120,7 +122,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return (historyOrders || []).filter(po => po.status === 'ordered' || po.status === 'pending' || po.status === 'sent');
   }, [historyOrders]);
 
-  // Calculate needed items for Active Order, subtracting already ordered pending quantities
+  // Calculate needed items for Active Order, subtracting already ordered pending quantities & filtered by justOrderedIds
   const activeOrderCalculatedItems = useMemo(() => {
     return safeData.map(item => {
       const stock = getStock(item);
@@ -170,8 +172,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         supplierObj,
         isElCairo
       };
-    }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
-  }, [safeData, getStock, getMin, getReserved, customQuantities, orderedPendingMap]);
+    }).filter(i => (!justOrderedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
+  }, [safeData, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -210,11 +212,14 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return activeOrderCalculatedItems.reduce((acc, i) => acc + i.totalCost, 0);
   }, [activeOrderCalculatedItems]);
 
-  // Guardar Orden de Compra: inserta en purchase_orders y limpia de la lista activa
+  // Guardar Orden de Compra: inserta en purchase_orders y deshabilita botón para evitar doble submit
   const handleSavePurchaseOrderForSupplier = async (supplierGroup = null) => {
+    const sKey = supplierGroup ? supplierGroup.supplierId : 'global';
+    if (savingSupplierMap[sKey] || isSavingOrder) return; // Prevent concurrent submissions
+
     const itemsToOrder = supplierGroup 
-      ? supplierGroup.items.filter(i => Number(i.neededQuantity) > 0)
-      : activeOrderCalculatedItems.filter(i => Number(i.neededQuantity) > 0);
+      ? supplierGroup.items.filter(i => Number(i.neededQuantity) > 0 && !justOrderedIds.has(i.id))
+      : activeOrderCalculatedItems.filter(i => Number(i.neededQuantity) > 0 && !justOrderedIds.has(i.id));
 
     if (itemsToOrder.length === 0) {
       if (window.toast) window.toast('⚠️ No hay insumos con cantidad requerida para guardar');
@@ -222,6 +227,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
 
     setIsSavingOrder(true);
+    setSavingSupplierMap(prev => ({ ...prev, [sKey]: true, global: true }));
+
     try {
       const totalAmount = itemsToOrder.reduce((acc, i) => acc + i.totalCost, 0);
       const orderPayload = {
@@ -242,8 +249,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
 
+      // INSTANTLY remove saved ingredients from React UI state
+      setJustOrderedIds(prev => {
+        const next = new Set(prev);
+        itemsToOrder.forEach(i => next.add(i.id));
+        return next;
+      });
+
       const groupName = supplierGroup ? supplierGroup.supplierName : 'General';
-      if (window.toast) window.toast(`✅ Orden de compra registrada para ${groupName} (Los insumos se han movido a Pedidos Pendientes de Recepción)`);
+      if (window.toast) window.toast(`✅ Orden de compra registrada para ${groupName} (Los insumos se han movido a Pedidos Pendientes)`);
       
       setCustomQuantities({});
       await loadHistory();
@@ -254,6 +268,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (window.toast) window.toast('❌ Error al registrar la orden de compra: ' + (e.message || e.details || 'Fallo de base de datos'));
     } finally {
       setIsSavingOrder(false);
+      setSavingSupplierMap(prev => ({ ...prev, [sKey]: false, global: false }));
     }
   };
 
@@ -406,11 +421,20 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <button
               onClick={() => handleSavePurchaseOrderForSupplier(null)}
-              disabled={isSavingOrder || activeOrderCalculatedItems.length === 0}
-              className="flex-1 md:flex-none px-4 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-40"
+              disabled={isSavingOrder || savingSupplierMap.global || activeOrderCalculatedItems.length === 0}
+              className="flex-1 md:flex-none px-4 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Save size={16} />
-              <span>{isSavingOrder ? 'Registrando...' : '💾 Registrar Todo el Pedido'}</span>
+              {isSavingOrder || savingSupplierMap.global ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  <span>Registrando...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  <span>💾 Registrar Todo el Pedido</span>
+                </>
+              )}
             </button>
 
             <button
@@ -513,11 +537,20 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
                   <button
                     onClick={() => handleSavePurchaseOrderForSupplier(group)}
-                    disabled={isSavingOrder}
-                    className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-40"
+                    disabled={isSavingOrder || savingSupplierMap[group.supplierId] || savingSupplierMap.global}
+                    className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <Save size={15} />
-                    <span>💾 Registrar Orden</span>
+                    {savingSupplierMap[group.supplierId] ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" />
+                        <span>Registrando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={15} />
+                        <span>💾 Registrar Orden</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
