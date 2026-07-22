@@ -38,15 +38,35 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [internalIngredients, setInternalIngredients] = useState([]);
+
   // Active generated purchase order state
   const [customQuantities, setCustomQuantities] = useState({});
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
-  const safeData = useMemo(() => data || [], [data]);
+  const loadIngredientsList = useCallback(async () => {
+    try {
+      const { items } = await fetchShoppingList();
+      if (items && items.length > 0) {
+        setInternalIngredients(items);
+      }
+    } catch (e) {
+      console.error('Error cargando lista de compras:', e);
+    }
+  }, []);
 
-  const getStock = useCallback(i => i?.stock_actual !== undefined && i?.stock_actual !== null ? Number(i.stock_actual) : (Number(i?.current_stock) || 0), []);
-  const getMin = useCallback(i => i?.stock_minimo !== undefined && i?.stock_minimo !== null ? Number(i.stock_minimo) : (Number(i?.min_stock) || 0), []);
-  const getReserved = useCallback(i => Number(i?.stock_reservado) || 0, []);
+  useEffect(() => {
+    loadIngredientsList();
+  }, [loadIngredientsList]);
+
+  const safeData = useMemo(() => {
+    if (data && data.length > 0) return data;
+    return internalIngredients;
+  }, [data, internalIngredients]);
+
+  const getStock = useCallback(i => Number(i?.stock_actual || 0), []);
+  const getMin = useCallback(i => Number(i?.stock_minimo || 0), []);
+  const getReserved = useCallback(i => Number(i?.stock_reservado || 0), []);
 
   // Calculate needed items for Active Order tab
   const activeOrderCalculatedItems = useMemo(() => {
@@ -54,9 +74,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const stock = getStock(item);
       const min = getMin(item);
       const reserved = getReserved(item);
-      // Math.max(0, stock_reservado - stock_actual) with fallback for minimum stock if reserved is 0
-      const neededRaw = Math.max(0, (reserved > 0 ? reserved : min) - stock);
-      const price = Number(item.precio_compra || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+      // Strictly: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual)
+      const targetRequired = Math.max(reserved, min);
+      const neededRaw = Math.max(0, targetRequired - stock);
+      const price = Number(item.precio_compra || item.purchase_price || item.coste_neto_calculado || item.precio_por_kg || item.precio_por_u || 0);
 
       return {
         ...item,
@@ -68,7 +89,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         unitPrice: price,
         totalCost: (customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw) * price
       };
-    }).filter(i => i.neededQuantity > 0 || i.calculatedNeeded > 0);
+    }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
   }, [safeData, getStock, getMin, getReserved, customQuantities]);
 
   // Load purchase orders history from Supabase
@@ -209,6 +230,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (window.toast) window.toast(`✅ Entrada de almacén confirmada (${itemsToUpdate.length} insumos actualizados)`);
       setReceptionModalOpen(false);
       
+      loadIngredientsList();
       if (activeSubTab === 'history') {
         loadHistory();
       }
