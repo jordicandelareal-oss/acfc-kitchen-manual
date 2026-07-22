@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   ShoppingCart, PackageCheck, History, Save, CheckCircle2, 
-  Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw
+  Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { fetchPurchaseOrders, createPurchaseOrder, confirmOrderReception, validarRecepcionPedido } from '../api';
+import { 
+  fetchShoppingList, 
+  fetchPurchaseOrders, 
+  createPurchaseOrder, 
+  confirmOrderReception, 
+  validarRecepcionPedido 
+} from '../api';
 
 const StatusBadge = ({ status }) => {
   let label = 'Borrador';
@@ -26,9 +32,13 @@ const StatusBadge = ({ status }) => {
 };
 
 const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canEdit }) => {
-  const [activeSubTab, setActiveSubTab] = useState('active'); // 'active' | 'history'
+  const [internalIngredients, setInternalIngredients] = useState([]);
+  const [loadingIngredients, setLoadingIngredients] = useState(false);
+
+  // History State
   const [historyOrders, setHistoryOrders] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showHistorySection, setShowHistorySection] = useState(false);
 
   // Modal State for Order Reception
   const [receptionModalOpen, setReceptionModalOpen] = useState(false);
@@ -38,20 +48,23 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const [internalIngredients, setInternalIngredients] = useState([]);
-
   // Active generated purchase order state
   const [customQuantities, setCustomQuantities] = useState({});
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
+  // Auto-fetch real-time ingredients from Supabase
   const loadIngredientsList = useCallback(async () => {
+    setLoadingIngredients(true);
     try {
-      const { items } = await fetchShoppingList();
-      if (items && items.length > 0) {
-        setInternalIngredients(items);
+      const res = await fetchShoppingList();
+      if (res && res.items) {
+        setInternalIngredients(res.items);
       }
     } catch (e) {
       console.error('Error cargando lista de compras:', e);
+    } finally {
+      setLoadingIngredients(false);
     }
   }, []);
 
@@ -59,40 +72,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     loadIngredientsList();
   }, [loadIngredientsList]);
 
-  const safeData = useMemo(() => {
-    if (data && data.length > 0) return data;
-    return internalIngredients;
-  }, [data, internalIngredients]);
-
-  const getStock = useCallback(i => Number(i?.stock_actual || 0), []);
-  const getMin = useCallback(i => Number(i?.stock_minimo || 0), []);
-  const getReserved = useCallback(i => Number(i?.stock_reservado || 0), []);
-
-  // Calculate needed items for Active Order tab
-  const activeOrderCalculatedItems = useMemo(() => {
-    return safeData.map(item => {
-      const stock = getStock(item);
-      const min = getMin(item);
-      const reserved = getReserved(item);
-      // Strictly: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual)
-      const targetRequired = Math.max(reserved, min);
-      const neededRaw = Math.max(0, targetRequired - stock);
-      const price = Number(item.precio_compra || item.purchase_price || item.coste_neto_calculado || item.precio_por_kg || item.precio_por_u || 0);
-
-      return {
-        ...item,
-        stock,
-        min,
-        reserved,
-        neededQuantity: customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw,
-        calculatedNeeded: neededRaw,
-        unitPrice: price,
-        totalCost: (customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw) * price
-      };
-    }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
-  }, [safeData, getStock, getMin, getReserved, customQuantities]);
-
-  // Load purchase orders history from Supabase
+  // Load purchase orders history
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
@@ -108,12 +88,57 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   }, []);
 
   useEffect(() => {
-    if (activeSubTab === 'history') {
+    if (showHistorySection) {
       loadHistory();
     }
-  }, [activeSubTab, loadHistory]);
+  }, [showHistorySection, loadHistory]);
 
-  // Handle saving current generated order to purchase_orders and purchase_order_items
+  const safeData = useMemo(() => {
+    if (data && data.length > 0) return data;
+    return internalIngredients;
+  }, [data, internalIngredients]);
+
+  const getStock = useCallback(i => Number(i?.stock_actual || 0), []);
+  const getMin = useCallback(i => Number(i?.stock_minimo || 0), []);
+  const getReserved = useCallback(i => Number(i?.stock_reservado || 0), []);
+
+  // Calculate needed items for Active Order
+  const activeOrderCalculatedItems = useMemo(() => {
+    return safeData.map(item => {
+      const stock = getStock(item);
+      const min = getMin(item);
+      const reserved = getReserved(item);
+
+      // Formula: Math.max(0, Math.max(stock_reservado, stock_minimo) - stock_actual)
+      const targetRequired = Math.max(reserved, min);
+      const neededRaw = Math.max(0, targetRequired - stock);
+
+      const price = Number(item.purchase_price || item.precio_compra || item.coste_neto_calculado || item.precio_por_kg || item.precio_por_u || 0);
+
+      return {
+        ...item,
+        stock,
+        min,
+        reserved,
+        neededQuantity: customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw,
+        calculatedNeeded: neededRaw,
+        unitPrice: price,
+        totalCost: (customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw) * price
+      };
+    }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
+  }, [safeData, getStock, getMin, getReserved, customQuantities]);
+
+  const filteredItems = useMemo(() => {
+    if (!searchTerm.trim()) return activeOrderCalculatedItems;
+    const term = searchTerm.toLowerCase();
+    return activeOrderCalculatedItems.filter(i => (i.name || '').toLowerCase().includes(term));
+  }, [activeOrderCalculatedItems, searchTerm]);
+
+  const activeTotalCost = useMemo(() => {
+    return activeOrderCalculatedItems.reduce((acc, i) => acc + i.totalCost, 0);
+  }, [activeOrderCalculatedItems]);
+
+  // Botón de Acción 1: Guardar Orden de Compra
   const handleSavePurchaseOrder = async () => {
     const itemsToOrder = activeOrderCalculatedItems.filter(i => Number(i.neededQuantity) > 0);
     if (itemsToOrder.length === 0) {
@@ -126,7 +151,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const totalAmount = itemsToOrder.reduce((acc, i) => acc + i.totalCost, 0);
       const orderPayload = {
         order_date: new Date().toISOString().split('T')[0],
-        supplier_id: itemsToOrder[0]?.supplier_id || itemsToOrder[0]?.proveedor_id || null,
+        supplier_id: itemsToOrder[0]?.supplier_id || null,
         total_amount: totalAmount,
         status: 'ordered'
       };
@@ -141,12 +166,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
 
-      if (window.toast) window.toast(`✅ Orden de compra creada con éxito (Total: €${totalAmount.toFixed(2)})`);
+      if (window.toast) window.toast(`✅ Orden de compra guardada con éxito (Total: €${totalAmount.toFixed(2)})`);
       
-      // Reset custom edits and switch to history
       setCustomQuantities({});
-      setActiveSubTab('history');
+      setShowHistorySection(true);
       loadHistory();
+      loadIngredientsList();
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
@@ -156,10 +181,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   };
 
-  // Open Reception Modal for an order from history or current list
-  const openReceptionModalForOrder = (order = null) => {
-    if (order) {
-      // Order from history
+  // Botón de Acción 2: Validar Recepción y Actualizar Stock (Modal)
+  const openReceptionModal = (order = null) => {
+    if (order && order.id) {
+      // Historical order
       setActiveOrderForReception(order);
       const rawItems = order.purchase_order_items || [];
       const itemsFormatted = rawItems.map(poi => ({
@@ -179,7 +204,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       });
       setReceivedQtyMap(qtyMap);
     } else {
-      // Active calculated items modal
+      // Active calculated items
       setActiveOrderForReception(null);
       const itemsFormatted = activeOrderCalculatedItems.map(i => ({
         id: i.id,
@@ -222,22 +247,21 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         const res = await confirmOrderReception(activeOrderForReception.id, itemsToUpdate);
         if (res.error) throw res.error;
       } else {
-        // Active calculation reception
         const res = await validarRecepcionPedido(itemsToUpdate);
         if (res.error) throw res.error;
       }
 
-      if (window.toast) window.toast(`✅ Entrada de almacén confirmada (${itemsToUpdate.length} insumos actualizados)`);
+      if (window.toast) window.toast(`✅ Entrada de almacén confirmada (${itemsToUpdate.length} insumos ingresados al stock actual)`);
       setReceptionModalOpen(false);
       
       loadIngredientsList();
-      if (activeSubTab === 'history') {
+      if (showHistorySection) {
         loadHistory();
       }
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
-      if (window.toast) window.toast('❌ Error al validar recepción de pedido: ' + e.message);
+      if (window.toast) window.toast('❌ Error al validar la recepción de pedido: ' + e.message);
     } finally {
       setSubmitting(false);
     }
@@ -249,16 +273,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return receptionItems.filter(i => (i.name || '').toLowerCase().includes(term));
   }, [receptionItems, modalSearchTerm]);
 
-  const activeTotalCost = useMemo(() => {
-    return activeOrderCalculatedItems.reduce((acc, i) => acc + i.totalCost, 0);
-  }, [activeOrderCalculatedItems]);
-
-  if (loading) {
+  if (loading || loadingIngredients) {
     return (
-      <div className="space-y-3 p-4">
-        <div className="h-6 w-1/3 bg-slate-200 rounded animate-pulse" />
+      <div className="space-y-4 p-4">
+        <div className="h-7 w-1/3 bg-slate-200 rounded-lg animate-pulse" />
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -266,181 +286,173 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
   return (
     <div className="space-y-5">
-      {/* HEADER PRINCIPAL */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* CABECERA Y PANEL DE CONTROL UNIFICADO DE COMPRAS */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-5">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <ShoppingCart className="text-brand" size={24} />
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center font-bold">
+                <ShoppingCart size={22} />
+              </div>
               <span>Módulo de Compras y Pedidos</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cálculo de necesidades de stock, registro de órdenes e ingreso de albaranes al almacén
+            <p className="text-xs text-slate-500 mt-1">
+              Cálculo automático de necesidades de stock y registro directo de entradas al almacén
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-stretch sm:self-auto">
-            {month && onMonthChange && (
-              <select className="month-select text-xs font-semibold" value={month} onChange={e => onMonthChange(e.target.value)}>
-                {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',
-                  'Septiembre','Octubre','Noviembre','Diciembre'].map(m =>
-                  <option key={m}>{m}</option>
-                )}
-              </select>
-            )}
+          {/* BOTONES DE ACCIÓN PRINCIPALES */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            {/* BOTÓN DE ACCIÓN 1 */}
             <button
-              onClick={() => openReceptionModalForOrder(null)}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all"
+              onClick={handleSavePurchaseOrder}
+              disabled={isSavingOrder || activeOrderCalculatedItems.length === 0}
+              className="flex-1 md:flex-none px-4 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-40"
+            >
+              <Save size={16} />
+              <span>{isSavingOrder ? 'Guardando...' : '💾 Guardar Orden de Compra'}</span>
+            </button>
+
+            {/* BOTÓN DE ACCIÓN 2 */}
+            <button
+              onClick={() => openReceptionModal(null)}
+              className="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
             >
               <PackageCheck size={16} />
-              <span>Validar Recepción Directa</span>
+              <span>📦 Validar Recepción y Actualizar Stock</span>
             </button>
           </div>
         </div>
 
-        {/* SUB-PESTAÑAS (BUCKETS): Generar / Pedido Activo VS Histórico de Pedidos */}
-        <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pb-px">
-          <button
-            onClick={() => setActiveSubTab('active')}
-            className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-2 ${
-              activeSubTab === 'active'
-                ? 'border-brand text-brand bg-brand/5 rounded-t-xl'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <ShoppingCart size={16} />
-            <span>📦 Generar / Pedido Activo</span>
-            <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 font-extrabold text-slate-700">
-              {activeOrderCalculatedItems.length}
+        {/* INDICADOR DE FÓRMULA Y RESUMEN */}
+        <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
+            <span>
+              Fórmula de cálculo: <strong>Math.max(0, Stock Reservado - Stock Actual)</strong>
             </span>
-          </button>
+          </div>
 
-          <button
-            onClick={() => setActiveSubTab('history')}
-            className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-2 ${
-              activeSubTab === 'history'
-                ? 'border-brand text-brand bg-brand/5 rounded-t-xl'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <History size={16} />
-            <span>📜 Histórico de Pedidos</span>
-          </button>
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="text-xs text-slate-500 font-semibold">
+              Insumos requeridos: <strong className="text-slate-900">{activeOrderCalculatedItems.length}</strong>
+            </span>
+            <span className="text-xs font-extrabold text-slate-900">
+              Coste Total: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
+            </span>
+          </div>
         </div>
 
-        {/* SUB-PESTAÑA A: GENERAR / PEDIDO ACTIVO */}
-        {activeSubTab === 'active' && (
-          <div className="pt-5 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
-              <div className="flex items-center gap-2 text-xs text-slate-600">
-                <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
-                <span>
-                  Fórmula aplicada: <strong>Math.max(0, Stock Reservado - Stock Actual)</strong>
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                <span className="text-xs font-extrabold text-slate-900">
-                  Total Estimado: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
-                </span>
-
-                <button
-                  onClick={handleSavePurchaseOrder}
-                  disabled={isSavingOrder || activeOrderCalculatedItems.length === 0}
-                  className="px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all disabled:opacity-40"
-                >
-                  <Save size={16} />
-                  <span>{isSavingOrder ? 'Guardando...' : '💾 Guardar Orden de Compra'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* TABLA DE INSUMOS A PEDIR */}
-            <div className="overflow-x-auto border border-slate-200/80 rounded-xl shadow-2xs">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Ingrediente</th>
-                    <th className="py-3 px-3 text-center">Stock Actual</th>
-                    <th className="py-3 px-3 text-center">Stock Reservado</th>
-                    <th className="py-3 px-3 text-center">Cant. a Pedir</th>
-                    <th className="py-3 px-3 text-right">Precio Unid.</th>
-                    <th className="py-3 px-4 text-right">Coste Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white font-medium">
-                  {activeOrderCalculatedItems.map(item => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4">
-                        <span className="font-bold text-slate-900 block">{item.name}</span>
-                        <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold">
-                          {item.stock} {item.unit}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold">
-                          {item.reserved} {item.unit}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <input
-                          type="number"
-                          step="any"
-                          value={item.neededQuantity}
-                          onChange={e => {
-                            const val = parseFloat(e.target.value);
-                            setCustomQuantities(prev => ({
-                              ...prev,
-                              [item.id]: isNaN(val) ? 0 : val
-                            }));
-                          }}
-                          className="w-20 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand outline-none"
-                        />
-                      </td>
-                      <td className="py-3 px-3 text-right text-slate-600">
-                        €{item.unitPrice.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4 text-right font-extrabold text-slate-900">
-                        €{item.totalCost.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {activeOrderCalculatedItems.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                        ✅ No hay necesidades de compra calculadas en este momento. El stock actual cubre todas las reservas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        {/* BUSCADOR DENTRO DE COMPRAS */}
+        <div className="mt-4">
+          <div className="relative">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Filtrar necesidad de compra por ingrediente..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none"
+            />
           </div>
-        )}
+        </div>
 
-        {/* SUB-PESTAÑA B: HISTÓRICO DE PEDIDOS */}
-        {activeSubTab === 'history' && (
-          <div className="pt-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">Órdenes de Compra Registradas</h3>
-              <button
-                onClick={loadHistory}
-                disabled={loadingHistory}
-                className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-semibold flex items-center gap-1.5"
-              >
-                <RefreshCw size={14} className={loadingHistory ? 'animate-spin' : ''} />
-                <span>Actualizar</span>
-              </button>
-            </div>
+        {/* TABLA PRINCIPAL: LISTA DE COMPRAS CALCULADA */}
+        <div className="mt-4 overflow-x-auto border border-slate-200/80 rounded-xl shadow-2xs">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
+              <tr>
+                <th className="py-3.5 px-4">Ingrediente</th>
+                <th className="py-3.5 px-3">Proveedor</th>
+                <th className="py-3.5 px-3 text-center">Stock Actual</th>
+                <th className="py-3.5 px-3 text-center">Stock Reservado</th>
+                <th className="py-3.5 px-3 text-center">Cant. a Pedir</th>
+                <th className="py-3.5 px-3 text-right">Precio Unid.</th>
+                <th className="py-3.5 px-4 text-right">Coste Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white font-medium">
+              {filteredItems.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-3 px-4">
+                    <span className="font-bold text-slate-900 block text-sm">{item.name}</span>
+                    <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
+                  </td>
+                  <td className="py-3 px-3 text-slate-600 font-medium">
+                    {item.proveedor_principal || 'Varios'}
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg font-bold">
+                      {item.stock} {item.unit}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-extrabold">
+                      {item.reserved} {item.unit}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center">
+                    <input
+                      type="number"
+                      step="any"
+                      value={item.neededQuantity}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value);
+                        setCustomQuantities(prev => ({
+                          ...prev,
+                          [item.id]: isNaN(val) ? 0 : val
+                        }));
+                      }}
+                      className="w-22 px-2 py-1.5 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
+                    />
+                  </td>
+                  <td className="py-3 px-3 text-right text-slate-600 font-medium">
+                    €{item.unitPrice.toFixed(2)}
+                  </td>
+                  <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">
+                    €{item.totalCost.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
 
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                    ✅ No hay necesidades de compra calculadas en este momento. El stock actual cubre todas las reservas del menú.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECCIÓN SECUNDARIA: HISTÓRICO DE PEDIDOS (PLEGABLE) */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+        <button
+          onClick={() => setShowHistorySection(prev => !prev)}
+          className="w-full flex items-center justify-between text-left focus:outline-none"
+        >
+          <div className="flex items-center gap-2">
+            <History size={18} className="text-slate-500" />
+            <h3 className="text-sm font-bold text-slate-900">Histórico de Pedidos Registrados</h3>
+            <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600 font-bold">
+              {historyOrders.length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-semibold text-brand">
+            <span>{showHistorySection ? 'Ocultar historial' : 'Ver historial'}</span>
+            {showHistorySection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
+
+        {showHistorySection && (
+          <div className="pt-4 border-t border-slate-100 mt-4 space-y-3">
             {loadingHistory ? (
-              <div className="space-y-2 py-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="space-y-2 py-2">
+                {[1, 2].map(i => (
+                  <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : (
@@ -464,27 +476,27 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
                       return (
                         <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-slate-900">
+                          <td className="py-3 px-4 font-bold text-slate-900">
                             {formattedDate}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-700 font-medium">
+                          <td className="py-3 px-4 text-slate-700 font-medium">
                             {supplierName}
                           </td>
-                          <td className="py-3.5 px-3 text-center">
+                          <td className="py-3 px-3 text-center">
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold text-[11px]">
                               {itemsCount} insumos
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-extrabold text-slate-900">
+                          <td className="py-3 px-4 text-right font-extrabold text-slate-900">
                             €{Number(order.total_amount || 0).toFixed(2)}
                           </td>
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3 px-4 text-center">
                             <StatusBadge status={order.status} />
                           </td>
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3 px-4 text-right">
                             {order.status !== 'received' ? (
                               <button
-                                onClick={() => openReceptionModalForOrder(order)}
+                                onClick={() => openReceptionModal(order)}
                                 className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
                               >
                                 <PackageCheck size={14} />
@@ -503,8 +515,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
                     {historyOrders.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                          📜 No hay órdenes de compra registradas en el historial.
+                        <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                          📜 No hay órdenes guardadas en el historial.
                         </td>
                       </tr>
                     )}
@@ -527,10 +539,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base leading-tight">
-                    Validar Recepción de Pedido (Entrada al Almacén)
+                    Validar Recepción y Actualizar Stock (Entrada al Almacén)
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Confirma las cantidades de insumos realmente recibidas para sumar a stock físico
+                    Confirma las cantidades de mercancía recibidas para ingresar a stock actual y reducir reservas
                   </p>
                 </div>
               </div>
@@ -539,7 +551,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               </button>
             </div>
 
-            {/* Buscador de insumos en el modal */}
+            {/* Buscador dentro del modal */}
             <div className="py-3">
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -553,7 +565,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               </div>
             </div>
 
-            {/* Lista de insumos del albarán */}
+            {/* Lista de insumos a ingresar */}
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100 pr-1 my-2">
               {filteredModalItems.map(item => {
                 const qtyVal = receivedQtyMap[item.ingredient_id] !== undefined ? receivedQtyMap[item.ingredient_id] : item.orderedQty;
@@ -588,14 +600,14 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               })}
 
               {filteredModalItems.length === 0 && (
-                <p className="text-center py-6 text-xs text-slate-400">No hay items en la orden.</p>
+                <p className="text-center py-6 text-xs text-slate-400">No hay insumos para recepcionar.</p>
               )}
             </div>
 
-            {/* Footer con botón de confirmación de entrada al almacén */}
+            {/* Acciones de confirmación */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
               <span className="text-xs text-slate-500">
-                {Object.values(receivedQtyMap).filter(v => Number(v) > 0).length} insumo(s) listos para sumar a stock físico
+                {Object.values(receivedQtyMap).filter(v => Number(v) > 0).length} insumo(s) listos para ingresar a stock
               </span>
 
               <div className="flex items-center gap-2">
@@ -613,7 +625,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition-all"
                 >
                   <CheckCircle2 size={16} />
-                  <span>{submitting ? 'Guardando Entrada...' : '📦 Confirmar Entrada al Almacén'}</span>
+                  <span>{submitting ? 'Ingresando mercancía...' : '📦 Confirmar Entrada al Almacén'}</span>
                 </button>
               </div>
             </div>
