@@ -522,3 +522,22 @@ body {
 .animate-slide-in-right {
   animation: slideInRight 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ─── Restablecer Scroll Vertical Nativo en Escritorio (>= 768px) ─── */
+@media (min-width: 768px) {
+  html, body {
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  #root, .app-container {
+    min-height: 100vh;
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .content {
+    overflow-y: visible;
+    padding-bottom: 40px;
+  }
+}
