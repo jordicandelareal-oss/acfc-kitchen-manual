@@ -1,5 +1,13 @@
 -- MIGRATION 016: Stock Reservation Rules, Order Reception & Testing Toolbar RPCs
 
+-- Drop existing functions to allow return type and signature changes
+DROP FUNCTION IF EXISTS guardar_menu_borrador(jsonb);
+DROP FUNCTION IF EXISTS guardar_y_confirmar_menu(jsonb);
+DROP FUNCTION IF EXISTS eliminar_menu_y_liberar_stock(date[]);
+DROP FUNCTION IF EXISTS validar_recepcion_pedido(jsonb);
+DROP FUNCTION IF EXISTS simular_cierre_turno(date, text);
+DROP FUNCTION IF EXISTS resetear_entorno_pruebas();
+
 -- 1. RPC: guardar_menu_borrador
 -- Saves menu planner items as draft WITHOUT touching ingredients.stock_reservado
 CREATE OR REPLACE FUNCTION guardar_menu_borrador(p_menu_days JSONB)
