@@ -1,7 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import useRecipeCalculations, { calculateRecipe } from '../hooks/useRecipeCalculations';
-import { fetchRecipesWithIngredients, fetchRecipes, fetchRecipeCategories, fetchIngredients } from '../api';
+import { 
+  fetchRecipesWithIngredients, 
+  fetchRecipes, 
+  fetchRecipeCategories, 
+  fetchIngredients,
+  updateRecipe,
+  insertRecipe,
+  deleteRecipe,
+  deleteRecipeIngredients,
+  insertRecipeIngredients,
+  updateRecipeCategory,
+  deleteRecipeCategory,
+  insertRecipeCategory
+} from '../api';
 import { supabase } from '../supabaseClient';
+
+if (typeof window !== 'undefined') {
+  window.updateRecipe = updateRecipe;
+  window.insertRecipe = insertRecipe;
+  window.deleteRecipe = deleteRecipe;
+  window.deleteRecipeIngredients = deleteRecipeIngredients;
+  window.insertRecipeIngredients = insertRecipeIngredients;
+  window.updateRecipeCategory = updateRecipeCategory;
+  window.deleteRecipeCategory = deleteRecipeCategory;
+  window.insertRecipeCategory = insertRecipeCategory;
+}
 
 export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit = true }) {
   const [recipeCategories, setRecipeCategories] = useState([]);
@@ -239,6 +263,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
 
     const catObj = recipeCategories.find(c => c.id === recipeCategoryId);
     const categoryName = catObj ? catObj.name : 'General';
+    const existingRecipe = recipes.find(r => r.id === editingRecipeId);
 
     try {
       const payload = {
@@ -248,21 +273,27 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         category_id: recipeCategoryId || null,
         instructions: recipeInstructions.trim(),
         image_url: recipeImageUrl || null,
+        valoracion: existingRecipe?.valoracion || 1,
+        dificultad: existingRecipe?.dificultad || 1,
+        tiempo_elaboracion: existingRecipe?.tiempo_elaboracion || 1,
         updated_at: new Date().toISOString()
       };
 
       let recipeId = editingRecipeId;
       if (editingRecipeId) {
-        const { error } = await window.updateRecipe(editingRecipeId, payload);
+        const fnUpdate = window.updateRecipe || updateRecipe;
+        const { error } = await fnUpdate(editingRecipeId, payload);
         if (error) throw error;
       } else {
-        const { data, error } = await window.insertRecipe(payload);
+        const fnInsert = window.insertRecipe || insertRecipe;
+        const { data, error } = await fnInsert(payload);
         if (error) throw error;
         recipeId = data.id;
       }
 
       // Delete ingredients
-      const { error: delErr } = await window.deleteRecipeIngredients(recipeId);
+      const fnDelIng = window.deleteRecipeIngredients || deleteRecipeIngredients;
+      const { error: delErr } = await fnDelIng(recipeId);
       if (delErr) throw delErr;
 
       // Group duplicates
@@ -284,14 +315,19 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         }
       });
 
-      const { error: insErr } = await window.insertRecipeIngredients(Object.values(grouped));
+      const fnInsIng = window.insertRecipeIngredients || insertRecipeIngredients;
+      const { error: insErr } = await fnInsIng(Object.values(grouped));
       if (insErr) throw insErr;
 
       window.toast && window.toast(`✅ Receta "${recipeName}" guardada con éxito.`);
       setRecipeModalOpen(false);
-      loadAllData();
+
+      if (typeof reloadRecipes === 'function') {
+        await reloadRecipes();
+      }
+      await loadAllData();
     } catch (err) {
-      console.error(err);
+      console.error('Error al guardar receta:', err);
       window.toast && window.toast('❌ Error al guardar receta: ' + err.message);
     }
   };
@@ -300,12 +336,14 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   const handleDeleteRecipe = async (id) => {
     if (!confirm('¿Seguro que deseas eliminar esta receta permanentemente?')) return;
     try {
-      if (window.deleteRecipe) {
-        const { error } = await window.deleteRecipe(id);
-        if (error) throw error;
-        window.toast && window.toast('✅ Receta eliminada correctamente');
-        loadAllData();
+      const fnDelete = window.deleteRecipe || deleteRecipe;
+      const { error } = await fnDelete(id);
+      if (error) throw error;
+      window.toast && window.toast('✅ Receta eliminada correctamente');
+      if (typeof reloadRecipes === 'function') {
+        await reloadRecipes();
       }
+      await loadAllData();
     } catch (e) {
       window.toast && window.toast('❌ Error al eliminar receta: ' + e.message);
     }
@@ -315,14 +353,13 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   const handleSaveCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
-      if (window.insertRecipeCategory) {
-        const { error } = await window.insertRecipeCategory(newCategoryName.trim());
-        if (error) throw error;
-        window.toast && window.toast(`✅ Familia "${newCategoryName}" creada.`);
-        setNewCategoryName('');
-        setCatAddFormOpen(false);
-        loadAllData();
-      }
+      const fnInsertCat = window.insertRecipeCategory || insertRecipeCategory;
+      const { error } = await fnInsertCat(newCategoryName.trim());
+      if (error) throw error;
+      window.toast && window.toast(`✅ Familia "${newCategoryName}" creada.`);
+      setNewCategoryName('');
+      setCatAddFormOpen(false);
+      await loadAllData();
     } catch (err) {
       window.toast && window.toast('❌ Error: ' + err.message);
     }
@@ -332,26 +369,24 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
     const newName = prompt(`Renombrar familia "${oldName}" a:`, oldName);
     if (!newName || newName.trim() === oldName) return;
     try {
-      if (window.updateRecipeCategory) {
-        const { error } = await window.updateRecipeCategory(id, newName.trim());
-        if (error) throw error;
-        window.toast && window.toast('✅ Familia renombrada.');
-        loadAllData();
-      }
+      const fnUpdateCat = window.updateRecipeCategory || updateRecipeCategory;
+      const { error } = await fnUpdateCat(id, newName.trim());
+      if (error) throw error;
+      window.toast && window.toast('✅ Familia renombrada.');
+      await loadAllData();
     } catch (err) {
       window.toast && window.toast('❌ Error: ' + err.message);
     }
   };
 
   const handleDeleteCategory = async (id, name) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar la familia "${name}"?`)) return;
+    if (!confirm(`¿Eliminar la familia "${name}"? Las recetas asociadas pasarán a Sin Categoría.`)) return;
     try {
-      if (window.deleteRecipeCategory) {
-        const { error } = await window.deleteRecipeCategory(id);
-        if (error) throw error;
-        window.toast && window.toast('✅ Familia eliminada.');
-        loadAllData();
-      }
+      const fnDelCat = window.deleteRecipeCategory || deleteRecipeCategory;
+      const { error } = await fnDelCat(id);
+      if (error) throw error;
+      window.toast && window.toast('✅ Familia eliminada.');
+      await loadAllData();
     } catch (err) {
       window.toast && window.toast('❌ Error: ' + err.message);
     }

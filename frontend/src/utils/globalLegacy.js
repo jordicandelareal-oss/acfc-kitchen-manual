@@ -146,6 +146,16 @@ if (typeof window !== 'undefined') {
   window.renderCalendar = renderCalendar;
   window.mathUtils = mathUtils;
 
+  // Recipe API bindings on window
+  window.updateRecipe = api.updateRecipe;
+  window.insertRecipe = api.insertRecipe;
+  window.deleteRecipe = api.deleteRecipe;
+  window.deleteRecipeIngredients = api.deleteRecipeIngredients;
+  window.insertRecipeIngredients = api.insertRecipeIngredients;
+  window.updateRecipeCategory = api.updateRecipeCategory;
+  window.deleteRecipeCategory = api.deleteRecipeCategory;
+  window.insertRecipeCategory = api.insertRecipeCategory;
+
   // Modern Toast notification system
   window.toast = window.toast || function(message) {
     console.log('Toast message:', message);
