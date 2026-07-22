@@ -144,11 +144,13 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
   // Calculate needed items for Active Order
   // Rule 1: General suppliers consolidate globally: max(0, stock_reservado - stock_actual)
-  // Rule 2: Carnicería El Cairo DOES NOT CONSOLIDATE; generates chronological trays dish by dish.
+  // Rule 2: Carnicería El Cairo independent cut ingredients calculate: max(0, stock_reservado - stock_actual) per cut ingredient.
   const activeOrderCalculatedItems = useMemo(() => {
-    // 1. Algoritmo Cronológico de Bandejas para Carnicería El Cairo
+    // 1. Cronológicos Trays de El Cairo si existe plannerData
     const rawCairoTrays = generarBandejasCairoCronologicas(plannerDays);
-    const cairoItems = rawCairoTrays.map(tray => {
+    const cairoTrayIds = new Set(rawCairoTrays.map(t => t.ingredientId));
+
+    const cairoItemsFromTrays = rawCairoTrays.map(tray => {
       const neededQuantity = customQuantities[tray.id] !== undefined ? customQuantities[tray.id] : tray.neededQuantity;
       const totalCost = calcularCosteLineaIngrediente({ unit: tray.unit, output_scenario: 'KG_LT', calculated_net_cost_kg: tray.unitPrice }, neededQuantity);
       return {
@@ -163,14 +165,58 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
     }).filter(i => (!justOrderedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
-    // 2. Consolidación Global para Proveedores Generales (Mercadona, Makro, etc.)
+    // 2. Insumos independientes de El Cairo en catálogo que no estén en trays pero tengan stock_reservado > stock_actual
+    const cairoItemsFromCatalog = safeData.map(item => {
+      const supplierObj = item.suppliers || null;
+      const supplierName = supplierObj?.name || item.proveedor_principal || 'Carnicería El Cairo';
+      const supplierId = supplierObj?.id || item.supplier_id || 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+      const isElCairo = isElCairoSupplier(supplierName, supplierId, item.name, item.provider_ref);
+
+      if (!isElCairo || cairoTrayIds.has(item.id)) return null;
+
+      const stock = getStock(item);
+      const min = getMin(item);
+      const reserved = getReserved(item);
+      const alreadyOrdered = orderedPendingMap[item.id] || 0;
+
+      const targetRequired = Math.max(reserved, min);
+      const neededRaw = Math.max(0, targetRequired - stock - alreadyOrdered);
+      const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
+
+      const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
+      const unit = (item.unit || '').toLowerCase();
+      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+      
+      let unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+
+      return {
+        ...item,
+        rawName: item.name,
+        stock,
+        min,
+        reserved,
+        alreadyOrdered,
+        neededQuantity,
+        calculatedNeeded: neededRaw,
+        unitPrice,
+        totalCost,
+        supplierId,
+        supplierName,
+        supplierObj,
+        isElCairo: true
+      };
+    }).filter(i => i && (!justOrderedIds.has(i.id)) && Number(i.neededQuantity) > 0);
+
+    const allCairoItems = [...cairoItemsFromTrays, ...cairoItemsFromCatalog];
+
+    // 3. Consolidación Global para Proveedores Generales (Mercadona, Makro, etc.)
     const generalItems = safeData.map(item => {
       const supplierObj = item.suppliers || null;
       const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
       const supplierId = supplierObj?.id || item.supplier_id || 'no-supplier';
       const isElCairo = isElCairoSupplier(supplierName, supplierId, item.name, item.provider_ref);
 
-      if (isElCairo) return null; // Los ítems de El Cairo ya fueron generados secuencialmente arriba en cairoItems
+      if (isElCairo) return null; // Los ítems de El Cairo ya fueron generados arriba en allCairoItems
 
       const stock = getStock(item);
       const min = getMin(item);
@@ -214,7 +260,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
     }).filter(i => i && (!justOrderedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
 
-    return [...cairoItems, ...generalItems];
+    return [...allCairoItems, ...generalItems];
   }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds]);
 
   const filteredItems = useMemo(() => {

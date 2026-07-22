@@ -303,7 +303,7 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
     let msg = `Hola, pedido ACFC Kitchen (Carnicería El Cairo):\n\n`;
     (itemsList || []).forEach(item => {
       const rawName = item.rawName || (item.name || item.nombre_ingrediente || '').replace(/\s*\([^)]*\)/g, '').trim();
-      const corte = item.tipoCorte || item.tipo_corte || item.corte || 'Entera';
+      const corte = item.tipoCorte || item.tipo_corte || item.corte || '';
       const qtyVal = item.neededQuantity !== undefined ? item.neededQuantity : (item.a_comprar !== undefined ? item.a_comprar : (item.quantity || 0));
       const unit = item.unit || 'Kg';
       
@@ -314,7 +314,10 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
         qtyStr = `${Number(qtyVal)} g`;
       }
 
-      msg += `- ${rawName} (${corte}) - ${qtyStr}\n`;
+      const hasCorteInName = corte && rawName.toLowerCase().includes(corte.toLowerCase());
+      const label = (corte && !hasCorteInName && corte !== 'Entera') ? `${rawName} (${corte})` : rawName;
+
+      msg += `- ${label} - ${qtyStr}\n`;
     });
     msg += `\nMuchas gracias!`;
     return msg;
