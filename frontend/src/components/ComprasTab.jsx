@@ -172,7 +172,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const supplierId = supplierObj?.id || item.supplier_id || 'd257d90b-ad0b-4f84-97a0-fee73612953c';
       const isElCairo = isElCairoSupplier(supplierName, supplierId, item.name, item.provider_ref);
 
-      if (!isElCairo || cairoTrayIds.has(item.id)) return null;
+      const isGenericParent = ['pechuga de pollo', 'contramuslo pollo', 'contra muslo pollo s/h'].includes((item.name || '').toLowerCase());
+      if (!isElCairo || cairoTrayIds.has(item.id) || isGenericParent) return null;
 
       const stock = getStock(item);
       const min = getMin(item);

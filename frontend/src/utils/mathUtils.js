@@ -165,16 +165,21 @@ export function generarBandejasCairoCronologicas(menuPlannerDays) {
         }
 
         if (deficit > 0) {
-          const corte = ri.tipo_corte || 'Entera';
+          const corte = ri.tipo_corte || '';
+          const rawName = ing.name || '';
+          const hasCorteInName = corte && rawName.toLowerCase().includes(corte.toLowerCase());
+          const displayName = (corte && !hasCorteInName && corte !== 'Entera' && corte !== 'Entero/a')
+            ? `${rawName} (${corte})`
+            : rawName;
           const cost = calcularCosteLineaIngrediente(ing, deficit);
           const unitStr = ri.unit || ing.unit || 'GR';
 
           cairoTrays.push({
             id: `cairo_${ingId}_${dateStr}_${shift.label}_${cairoTrays.length}`,
             ingredientId: ingId,
-            name: `${ing.name} (${corte})`,
-            rawName: ing.name,
-            tipoCorte: corte,
+            name: displayName,
+            rawName: rawName,
+            tipoCorte: corte || 'Entera',
             neededQuantity: deficit,
             calculatedNeeded: deficit,
             dishNeeded: dishNeeded,
@@ -230,9 +235,12 @@ export function agruparInsumos(meals) {
         ? `elcairo_${ingId}_${uniqueCounter++}` 
         : ingId;
         
-      const displayName = isElCairo
-        ? `${ing.name} (${ri.tipo_corte || 'Entera'})`
-        : (ing.name || 'Sin nombre');
+      const corte = ri.tipo_corte || '';
+      const rawName = ing.name || 'Sin nombre';
+      const hasCorteInName = corte && rawName.toLowerCase().includes(corte.toLowerCase());
+      const displayName = (corte && !hasCorteInName && corte !== 'Entera' && corte !== 'Entero/a')
+        ? `${rawName} (${corte})`
+        : rawName;
         
       const dayNames = {
         6: 'Lunes',
