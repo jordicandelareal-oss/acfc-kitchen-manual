@@ -687,7 +687,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       )}
 
       {/* Filters Card — Sticky Header Fijo */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-slate-900 shadow-md p-3 transition-all rounded-2xl mb-4 border border-slate-200/80">
+      <div className="sticky top-[68px] z-20 bg-white dark:bg-slate-900 shadow-md p-3 transform-gpu will-change-transform isolate transition-none rounded-2xl mb-4 border border-slate-200/80">
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-end">
           <div className="relative col-span-2">
             <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400" style={{ fontSize: '18px' }}>search</span>
