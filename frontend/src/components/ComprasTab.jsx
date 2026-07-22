@@ -228,14 +228,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         order_date: new Date().toISOString().split('T')[0],
         supplier_id: supplierGroup && supplierGroup.supplierId !== 'no-supplier' ? supplierGroup.supplierId : itemsToOrder[0]?.supplierId || null,
         total_amount: totalAmount,
-        status: 'ordered'
+        status: 'pending'
       };
 
       const itemsPayload = itemsToOrder.map(i => ({
         ingredient_id: i.id,
-        quantity: Number(i.neededQuantity) || 0,
-        unit: i.unit || 'Kg',
-        price_per_unit: Number(i.unitPrice) || 0
+        ingredient_name: i.name,
+        quantity_ordered: Number(i.neededQuantity) || 0,
+        unit_price: Number(i.unitPrice) || 0,
+        tipo_corte: i.tipoCorte || i.tipo_corte || null
       }));
 
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
@@ -249,8 +250,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       await loadIngredientsList();
       if (onRefresh) onRefresh();
     } catch (e) {
-      console.error(e);
-      if (window.toast) window.toast('❌ Error al registrar la orden de compra: ' + e.message);
+      console.error('Error guardando orden de compra:', e);
+      if (window.toast) window.toast('❌ Error al registrar la orden de compra: ' + (e.message || e.details || 'Fallo de base de datos'));
     } finally {
       setIsSavingOrder(false);
     }
@@ -289,9 +290,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const itemsFormatted = rawItems.map(poi => ({
         id: poi.ingredient_id || poi.id,
         ingredient_id: poi.ingredient_id,
-        name: poi.ingredients?.name || 'Ingrediente',
-        unit: poi.unit || poi.ingredients?.unit || 'Kg',
-        orderedQty: Number(poi.quantity) || 0,
+        name: poi.ingredient_name || poi.ingredients?.name || 'Ingrediente',
+        unit: poi.ingredients?.unit || 'Kg',
+        orderedQty: Number(poi.quantity_ordered || poi.quantity) || 0,
         stock_actual: poi.ingredients?.stock_actual || 0,
         stock_reservado: poi.ingredients?.stock_reservado || 0
       }));

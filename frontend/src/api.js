@@ -763,44 +763,53 @@ export const procesarDescuentosAutomaticosTurnos = async () => {
 // ── Órdenes de Compra (Purchase Orders) ──
 export const createPurchaseOrder = async (orderData, itemsArray) => {
   try {
+    const poPayload = {
+      order_date: orderData.order_date || new Date().toISOString().split('T')[0],
+      supplier_id: orderData.supplier_id || null,
+      total_amount: Number(orderData.total_amount || 0),
+      status: orderData.status || 'pending',
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('📝 Insertando orden de compra en Supabase:', poPayload);
+
     const { data: poData, error: poErr } = await supabase
       .from('purchase_orders')
-      .insert([{
-        order_date: orderData.order_date || new Date().toISOString().split('T')[0],
-        supplier_id: orderData.supplier_id || null,
-        total_amount: orderData.total_amount || 0,
-        status: orderData.status || 'ordered',
-        updated_at: new Date().toISOString()
-      }])
+      .insert([poPayload])
       .select()
       .single();
 
     if (poErr || !poData) {
-      console.error('Error insertando purchase_orders:', poErr);
-      return { error: poErr || new Error('No se pudo crear la orden') };
+      console.error('❌ Error crítico insertando purchase_orders en Supabase:', poErr);
+      throw poErr || new Error('Error al insertar en purchase_orders');
     }
 
     if (itemsArray && itemsArray.length > 0) {
       const poiRecords = itemsArray.map(item => ({
         purchase_order_id: poData.id,
-        ingredient_id: item.ingredient_id,
-        quantity: Number(item.quantity) || 0,
-        unit: item.unit || 'Kg',
-        price_per_unit: Number(item.price_per_unit) || 0
+        ingredient_id: item.ingredient_id || item.id,
+        ingredient_name: item.ingredient_name || item.name || 'Ingrediente',
+        quantity_ordered: Number(item.quantity_ordered || item.quantity || item.neededQuantity || 0),
+        unit_price: Number(item.unit_price || item.price_per_unit || item.unitPrice || 0),
+        tipo_corte: item.tipo_corte || item.tipoCorte || null
       }));
+
+      console.log(`📝 Insertando ${poiRecords.length} líneas en purchase_order_items:`, poiRecords);
 
       const { error: poiErr } = await supabase
         .from('purchase_order_items')
         .insert(poiRecords);
 
       if (poiErr) {
-        console.error('Error insertando purchase_order_items:', poiErr);
+        console.error('❌ Error crítico insertando purchase_order_items en Supabase:', poiErr);
+        throw poiErr;
       }
     }
 
     return { data: poData, error: null };
   } catch (err) {
-    return { error: err };
+    console.error('❌ Fallo al procesar la orden de compra:', err);
+    return { data: null, error: err };
   }
 };
 
@@ -810,14 +819,15 @@ export const fetchPurchaseOrders = async (statusFilter = null) => {
       .from('purchase_orders')
       .select(`
         *,
-        suppliers ( id, name, phone, email ),
         purchase_order_items (
           id,
+          purchase_order_id,
           ingredient_id,
-          quantity,
-          unit,
-          price_per_unit,
-          total_cost,
+          ingredient_name,
+          quantity_ordered,
+          quantity_received,
+          unit_price,
+          tipo_corte,
           ingredients ( id, name, unit, purchase_price, purchase_format_gr, stock_actual, stock_reservado )
         )
       `)
@@ -832,8 +842,20 @@ export const fetchPurchaseOrders = async (statusFilter = null) => {
     }
 
     const { data, error } = await query;
-    return { data: data || [], error };
+    if (error) throw error;
+
+    const { data: suppliersList } = await supabase.from('suppliers').select('id, name, phone, email');
+    const supplierMap = {};
+    (suppliersList || []).forEach(s => { supplierMap[s.id] = s; });
+
+    const hydratedData = (data || []).map(po => ({
+      ...po,
+      suppliers: supplierMap[po.supplier_id] || (po.suppliers ? po.suppliers : null)
+    }));
+
+    return { data: hydratedData, error: null };
   } catch (err) {
+    console.error('fetchPurchaseOrders error:', err);
     return { data: [], error: err };
   }
 };
