@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   ShoppingCart, PackageCheck, History, Save, CheckCircle2, 
-  Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw, ChevronDown, ChevronUp
+  Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw, 
+  MessageCircle, Mail, ChevronDown, ChevronUp, Store
 } from 'lucide-react';
 import { 
   fetchShoppingList, 
@@ -10,6 +11,7 @@ import {
   confirmOrderReception, 
   validarRecepcionPedido 
 } from '../api';
+import { calcularCosteLineaIngrediente, formatSupplierMessage } from '../utils/mathUtils';
 
 const StatusBadge = ({ status }) => {
   let label = 'Borrador';
@@ -102,7 +104,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const getMin = useCallback(i => Number(i?.stock_minimo || 0), []);
   const getReserved = useCallback(i => Number(i?.stock_reservado || 0), []);
 
-  // Calculate needed items for Active Order
+  // Calculate needed items for Active Order with precise net cost formula
   const activeOrderCalculatedItems = useMemo(() => {
     return safeData.map(item => {
       const stock = getStock(item);
@@ -113,17 +115,42 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const targetRequired = Math.max(reserved, min);
       const neededRaw = Math.max(0, targetRequired - stock);
 
-      const price = Number(item.purchase_price || item.precio_compra || item.coste_neto_calculado || item.precio_por_kg || item.precio_por_u || 0);
+      const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
+      
+      // Calculate total cost using exact net cost formula from mathUtils
+      const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
+      
+      const unit = (item.unit || '').toLowerCase();
+      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+      
+      let unitPrice = 0;
+      if (isKgLt) {
+        unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+        if (unitPrice <= 0 && neededQuantity > 0 && totalCost > 0) {
+          unitPrice = totalCost / (neededQuantity / 1000);
+        }
+      } else {
+        unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_mas_bajo || 0);
+      }
+
+      const supplierObj = item.suppliers || null;
+      const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
+      const supplierId = supplierObj?.id || item.supplier_id || 'no-supplier';
+      const isElCairo = (supplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') || (supplierName.toLowerCase().includes('cairo'));
 
       return {
         ...item,
         stock,
         min,
         reserved,
-        neededQuantity: customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw,
+        neededQuantity,
         calculatedNeeded: neededRaw,
-        unitPrice: price,
-        totalCost: (customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw) * price
+        unitPrice,
+        totalCost,
+        supplierId,
+        supplierName,
+        supplierObj,
+        isElCairo
       };
     }).filter(i => Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0);
   }, [safeData, getStock, getMin, getReserved, customQuantities]);
@@ -131,18 +158,48 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
     const term = searchTerm.toLowerCase();
-    return activeOrderCalculatedItems.filter(i => (i.name || '').toLowerCase().includes(term));
+    return activeOrderCalculatedItems.filter(i => 
+      (i.name || '').toLowerCase().includes(term) || 
+      (i.supplierName || '').toLowerCase().includes(term)
+    );
   }, [activeOrderCalculatedItems, searchTerm]);
+
+  // Group calculated purchase items by Supplier
+  const supplierGroups = useMemo(() => {
+    const groupsMap = {};
+
+    filteredItems.forEach(item => {
+      const sKey = item.supplierId || 'no-supplier';
+      if (!groupsMap[sKey]) {
+        groupsMap[sKey] = {
+          supplierId: item.supplierId,
+          supplierName: item.supplierName,
+          supplierPhone: item.supplierObj?.phone || null,
+          supplierEmail: item.supplierObj?.email || null,
+          isElCairo: item.isElCairo,
+          items: [],
+          totalGroupCost: 0
+        };
+      }
+      groupsMap[sKey].items.push(item);
+      groupsMap[sKey].totalGroupCost += item.totalCost;
+    });
+
+    return Object.values(groupsMap);
+  }, [filteredItems]);
 
   const activeTotalCost = useMemo(() => {
     return activeOrderCalculatedItems.reduce((acc, i) => acc + i.totalCost, 0);
   }, [activeOrderCalculatedItems]);
 
-  // Botón de Acción 1: Guardar Orden de Compra
-  const handleSavePurchaseOrder = async () => {
-    const itemsToOrder = activeOrderCalculatedItems.filter(i => Number(i.neededQuantity) > 0);
+  // Guardar Orden de Compra para un grupo específico de proveedor o para todos
+  const handleSavePurchaseOrderForSupplier = async (supplierGroup = null) => {
+    const itemsToOrder = supplierGroup 
+      ? supplierGroup.items.filter(i => Number(i.neededQuantity) > 0)
+      : activeOrderCalculatedItems.filter(i => Number(i.neededQuantity) > 0);
+
     if (itemsToOrder.length === 0) {
-      if (window.toast) window.toast('⚠️ No hay insumos con cantidad requerida para guardar en el pedido');
+      if (window.toast) window.toast('⚠️ No hay insumos con cantidad requerida para guardar');
       return;
     }
 
@@ -151,7 +208,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const totalAmount = itemsToOrder.reduce((acc, i) => acc + i.totalCost, 0);
       const orderPayload = {
         order_date: new Date().toISOString().split('T')[0],
-        supplier_id: itemsToOrder[0]?.supplier_id || null,
+        supplier_id: supplierGroup && supplierGroup.supplierId !== 'no-supplier' ? supplierGroup.supplierId : itemsToOrder[0]?.supplierId || null,
         total_amount: totalAmount,
         status: 'ordered'
       };
@@ -166,9 +223,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
 
-      if (window.toast) window.toast(`✅ Orden de compra guardada con éxito (Total: €${totalAmount.toFixed(2)})`);
+      const groupName = supplierGroup ? supplierGroup.supplierName : 'General';
+      if (window.toast) window.toast(`✅ Orden de compra guardada para ${groupName} (Total: €${totalAmount.toFixed(2)})`);
       
-      setCustomQuantities({});
       setShowHistorySection(true);
       loadHistory();
       loadIngredientsList();
@@ -181,10 +238,34 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   };
 
-  // Botón de Acción 2: Validar Recepción y Actualizar Stock (Modal)
+  // Enviar por WhatsApp
+  const handleSendWhatsApp = (supplierGroup) => {
+    if (!supplierGroup.supplierPhone) {
+      if (window.toast) window.toast('⚠️ Este proveedor no tiene número de teléfono de WhatsApp configurado.');
+      return;
+    }
+
+    const cleanPhone = supplierGroup.supplierPhone.replace(/[^0-9]/g, '');
+    const msg = formatSupplierMessage(supplierGroup.supplierName, supplierGroup.items, supplierGroup.isElCairo);
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+  };
+
+  // Enviar por Email
+  const handleSendEmail = (supplierGroup) => {
+    if (!supplierGroup.supplierEmail) {
+      if (window.toast) window.toast('⚠️ Este proveedor no tiene correo electrónico configurado.');
+      return;
+    }
+
+    const msg = formatSupplierMessage(supplierGroup.supplierName, supplierGroup.items, supplierGroup.isElCairo);
+    const mailtoUrl = `mailto:${supplierGroup.supplierEmail}?subject=${encodeURIComponent('Pedido ACFC Kitchen - ' + supplierGroup.supplierName)}&body=${encodeURIComponent(msg)}`;
+    window.open(mailtoUrl, '_blank');
+  };
+
+  // Modal de Recepción (Albarán)
   const openReceptionModal = (order = null) => {
     if (order && order.id) {
-      // Historical order
       setActiveOrderForReception(order);
       const rawItems = order.purchase_order_items || [];
       const itemsFormatted = rawItems.map(poi => ({
@@ -204,7 +285,6 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       });
       setReceivedQtyMap(qtyMap);
     } else {
-      // Active calculated items
       setActiveOrderForReception(null);
       const itemsFormatted = activeOrderCalculatedItems.map(i => ({
         id: i.id,
@@ -251,7 +331,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         if (res.error) throw res.error;
       }
 
-      if (window.toast) window.toast(`✅ Entrada de almacén confirmada (${itemsToUpdate.length} insumos ingresados al stock actual)`);
+      if (window.toast) window.toast(`✅ Entrada al almacén confirmada (${itemsToUpdate.length} insumos sumados a stock actual)`);
       setReceptionModalOpen(false);
       
       loadIngredientsList();
@@ -261,7 +341,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (onRefresh) onRefresh();
     } catch (e) {
       console.error(e);
-      if (window.toast) window.toast('❌ Error al validar la recepción de pedido: ' + e.message);
+      if (window.toast) window.toast('❌ Error al validar recepción de pedido: ' + e.message);
     } finally {
       setSubmitting(false);
     }
@@ -285,8 +365,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   }
 
   return (
-    <div className="space-y-5">
-      {/* CABECERA Y PANEL DE CONTROL UNIFICADO DE COMPRAS */}
+    <div className="space-y-6">
+      {/* CABECERA Y PANEL PRINCIPAL DE COMPRAS */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-5">
           <div>
@@ -297,23 +377,21 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               <span>Módulo de Compras y Pedidos</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Cálculo automático de necesidades de stock y registro directo de entradas al almacén
+              Cálculo automático agrupado por proveedores, envío de albaranes y recepción al almacén
             </p>
           </div>
 
-          {/* BOTONES DE ACCIÓN PRINCIPALES */}
+          {/* ACCIONES GLOBALES */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            {/* BOTÓN DE ACCIÓN 1 */}
             <button
-              onClick={handleSavePurchaseOrder}
+              onClick={() => handleSavePurchaseOrderForSupplier(null)}
               disabled={isSavingOrder || activeOrderCalculatedItems.length === 0}
               className="flex-1 md:flex-none px-4 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-40"
             >
               <Save size={16} />
-              <span>{isSavingOrder ? 'Guardando...' : '💾 Guardar Orden de Compra'}</span>
+              <span>{isSavingOrder ? 'Guardando...' : '💾 Registrar Todo el Pedido'}</span>
             </button>
 
-            {/* BOTÓN DE ACCIÓN 2 */}
             <button
               onClick={() => openReceptionModal(null)}
               className="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
@@ -324,110 +402,173 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
           </div>
         </div>
 
-        {/* INDICADOR DE FÓRMULA Y RESUMEN */}
+        {/* BANNER INFORMATIVO */}
         <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
           <div className="flex items-center gap-2 text-xs text-slate-600">
             <AlertCircle size={16} className="text-amber-500 flex-shrink-0" />
             <span>
-              Fórmula de cálculo: <strong>Math.max(0, Stock Reservado - Stock Actual)</strong>
+              Fórmula de coste neto: <strong>(Gramos / 1000) * Coste Neto Real KG (con merma)</strong>
             </span>
           </div>
 
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
             <span className="text-xs text-slate-500 font-semibold">
-              Insumos requeridos: <strong className="text-slate-900">{activeOrderCalculatedItems.length}</strong>
+              Proveedores activos: <strong className="text-slate-900">{supplierGroups.length}</strong>
             </span>
             <span className="text-xs font-extrabold text-slate-900">
-              Coste Total: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
+              Total Global: <strong className="text-brand text-sm">€{activeTotalCost.toFixed(2)}</strong>
             </span>
           </div>
         </div>
 
-        {/* BUSCADOR DENTRO DE COMPRAS */}
+        {/* FILTRADO RÁPIDO */}
         <div className="mt-4">
           <div className="relative">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Filtrar necesidad de compra por ingrediente..."
+              placeholder="Buscar por ingrediente o proveedor..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand/20 focus:border-brand outline-none"
             />
           </div>
         </div>
-
-        {/* TABLA PRINCIPAL: LISTA DE COMPRAS CALCULADA */}
-        <div className="mt-4 overflow-x-auto border border-slate-200/80 rounded-xl shadow-2xs">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100/80 text-slate-600 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3.5 px-4">Ingrediente</th>
-                <th className="py-3.5 px-3">Proveedor</th>
-                <th className="py-3.5 px-3 text-center">Stock Actual</th>
-                <th className="py-3.5 px-3 text-center">Stock Reservado</th>
-                <th className="py-3.5 px-3 text-center">Cant. a Pedir</th>
-                <th className="py-3.5 px-3 text-right">Precio Unid.</th>
-                <th className="py-3.5 px-4 text-right">Coste Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white font-medium">
-              {filteredItems.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3 px-4">
-                    <span className="font-bold text-slate-900 block text-sm">{item.name}</span>
-                    <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 font-medium">
-                    {item.proveedor_principal || 'Varios'}
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg font-bold">
-                      {item.stock} {item.unit}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-extrabold">
-                      {item.reserved} {item.unit}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <input
-                      type="number"
-                      step="any"
-                      value={item.neededQuantity}
-                      onChange={e => {
-                        const val = parseFloat(e.target.value);
-                        setCustomQuantities(prev => ({
-                          ...prev,
-                          [item.id]: isNaN(val) ? 0 : val
-                        }));
-                      }}
-                      className="w-22 px-2 py-1.5 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
-                    />
-                  </td>
-                  <td className="py-3 px-3 text-right text-slate-600 font-medium">
-                    €{item.unitPrice.toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">
-                    €{item.totalCost.toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-
-              {filteredItems.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                    ✅ No hay necesidades de compra calculadas en este momento. El stock actual cubre todas las reservas del menú.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* SECCIÓN SECUNDARIA: HISTÓRICO DE PEDIDOS (PLEGABLE) */}
+      {/* BLOQUES AGRUPADOS POR PROVEEDOR */}
+      <div className="space-y-5">
+        {supplierGroups.map(group => {
+          const hasPhone = !!group.supplierPhone;
+          const hasEmail = !!group.supplierEmail;
+
+          return (
+            <div key={group.supplierId} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+              {/* CABECERA DEL PROVEEDOR */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold flex-shrink-0">
+                    <Store size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                      <span>{group.supplierName}</span>
+                      {group.isElCairo && (
+                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                          🥩 Regla Carnicería El Cairo (Desglose)
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {group.items.length} insumo(s) a pedir · Total Proveedor: <strong className="text-brand font-bold">€{group.totalGroupCost.toFixed(2)}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* BOTONES DE ACCIÓN POR PROVEEDOR (WHATSAPP, EMAIL, REGISTRAR) */}
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  {/* WhatsApp Button */}
+                  <button
+                    onClick={() => handleSendWhatsApp(group)}
+                    disabled={!hasPhone}
+                    title={hasPhone ? `Enviar pedido por WhatsApp a ${group.supplierPhone}` : 'Sin teléfono configurado'}
+                    className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <MessageCircle size={15} />
+                    <span>WhatsApp</span>
+                  </button>
+
+                  {/* Email Button */}
+                  <button
+                    onClick={() => handleSendEmail(group)}
+                    disabled={!hasEmail}
+                    title={hasEmail ? `Enviar pedido por Email a ${group.supplierEmail}` : 'Sin correo configurado'}
+                    className="flex-1 sm:flex-none px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Mail size={15} />
+                    <span>Correo</span>
+                  </button>
+
+                  {/* Registrar Orden de Compra individual */}
+                  <button
+                    onClick={() => handleSavePurchaseOrderForSupplier(group)}
+                    disabled={isSavingOrder}
+                    className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-40"
+                  >
+                    <Save size={15} />
+                    <span>💾 Registrar Orden</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* TABLA DE INSUMOS DE ESTE PROVEEDOR */}
+              <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">Ingrediente</th>
+                      <th className="py-3 px-3 text-center">Stock Actual</th>
+                      <th className="py-3 px-3 text-center">Stock Reservado</th>
+                      <th className="py-3 px-3 text-center">Cant. a Pedir</th>
+                      <th className="py-3 px-3 text-right">Coste Neto/Kg o U</th>
+                      <th className="py-3 px-4 text-right">Coste Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white font-medium">
+                    {group.items.map(item => (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-slate-900 block text-xs">{item.name}</span>
+                          <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">
+                            {item.stock} {item.unit}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded font-extrabold text-[11px]">
+                            {item.reserved} {item.unit}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <input
+                            type="number"
+                            step="any"
+                            value={item.neededQuantity}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value);
+                              setCustomQuantities(prev => ({
+                                ...prev,
+                                [item.id]: isNaN(val) ? 0 : val
+                              }));
+                            }}
+                            className="w-20 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand outline-none text-xs"
+                          />
+                        </td>
+                        <td className="py-3 px-3 text-right text-slate-600 font-medium">
+                          €{item.unitPrice.toFixed(2)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-xs">
+                          €{item.totalCost.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
+
+        {supplierGroups.length === 0 && (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-400 text-xs shadow-sm">
+            ✅ No hay necesidades de compra calculadas. El stock actual cubre todas las reservas del menú planificado.
+          </div>
+        )}
+      </div>
+
+      {/* SECCIÓN PLEGABLE DE HISTÓRICO DE PEDIDOS */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
         <button
           onClick={() => setShowHistorySection(prev => !prev)}

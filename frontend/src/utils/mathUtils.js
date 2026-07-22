@@ -34,6 +34,42 @@ export function calcularCosteNeto(baseCost, pct, processType) {
 }
 
 /**
+ * Calcula el coste total por línea de un ingrediente según su tipo de salida (KG/LT vs UNIDADES)
+ * contemplando el precio neto por KG real (con merma/hidratación) o precio por unidad.
+ * @param {Object} item Objeto del ingrediente
+ * @param {number} qtyToBuy Cantidad a comprar en gramos/ml o unidades
+ * @returns {number} Coste total de la línea
+ */
+export function calcularCosteLineaIngrediente(item, qtyToBuy) {
+  const qty = Number(qtyToBuy) || 0;
+  if (qty <= 0) return 0;
+
+  const unit = (item?.unit || '').toLowerCase();
+  const scenario = item?.output_scenario || (['gr', 'g', 'kg', 'ml', 'l'].includes(unit) ? 'KG_LT' : 'UNIDADES');
+
+  if (scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit)) {
+    let netCostKg = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || 0);
+
+    if (netCostKg <= 0) {
+      const price = Number(item.purchase_price || item.precio_compra || item.precio_por_kg || item.precio_mas_bajo || 0);
+      const formatGr = Number(item.purchase_format_gr || 1000);
+      const baseCost = formatGr > 0 ? price / (formatGr / 1000) : price;
+      
+      const mermaPct = Number(item.waste_percentage || item.merma_percentage || 0);
+      const processType = item.process_type || 'MERMA';
+
+      netCostKg = calcularCosteNeto(baseCost, mermaPct, processType);
+      if (netCostKg <= 0) netCostKg = baseCost;
+    }
+
+    return (qty / 1000) * netCostKg;
+  } else {
+    const unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+    return qty * unitPrice;
+  }
+}
+
+/**
  * Calcula el coste de una ración de plato basándose en sus ingredientes.
  * @param {Array} recipeIngredients Array de ingredientes de la receta.
  * @returns {number} Coste calculado.
@@ -153,5 +189,31 @@ export function fmtKg(n) {
 
 export function fmtU(n) {
   return n != null && !isNaN(n) ? `€${Number(n).toFixed(2)}/u` : null;
+}
+
+/**
+ * Compila el mensaje formateado para enviar por WhatsApp o Email a un proveedor.
+ * Para Carnicería El Cairo, elimina por completo el nombre del plato y envía únicamente:
+ * [Ingrediente] [Tipo de Corte] - [Cantidad] [Unidad]
+ */
+export function formatSupplierMessage(supplierName, itemsList, isElCairo = false) {
+  if (isElCairo) {
+    let msg = `Hola, pedido ACFC Kitchen (Carnicería El Cairo):\n\n`;
+    (itemsList || []).forEach(item => {
+      const corteStr = item.tipoCorte || item.tipo_corte ? ` (${item.tipoCorte || item.tipo_corte})` : '';
+      const qtyStr = `${item.neededQuantity || item.quantity || 0} ${item.unit || 'Kg'}`;
+      msg += `- ${item.name}${corteStr} - ${qtyStr}\n`;
+    });
+    msg += `\nMuchas gracias!`;
+    return msg;
+  } else {
+    let msg = `Hola, pedido ACFC Kitchen (${supplierName || 'Proveedor'}):\n\n`;
+    (itemsList || []).forEach(item => {
+      const qtyStr = `${item.neededQuantity || item.quantity || 0} ${item.unit || 'Kg'}`;
+      msg += `- ${item.name} - ${qtyStr}\n`;
+    });
+    msg += `\nMuchas gracias!`;
+    return msg;
+  }
 }
 
