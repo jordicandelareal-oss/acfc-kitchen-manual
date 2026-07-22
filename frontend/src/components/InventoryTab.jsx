@@ -479,6 +479,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
 
     const [activeLetter, setActiveLetter] = useState('');
     const [collapsedLetters, setCollapsedLetters] = useState({});
+    const [showKPIs, setShowKPIs] = useState(false);
 
     // Agrupación por letra inicial
     const inventoryByLetter = useMemo(() => {
@@ -608,7 +609,25 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
           <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Control de Inventario</h1>
           <p className="text-sm text-slate-500 mt-1">Live Stock Matrix — datos en tiempo real</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          {/* Botón Conmutador de KPIs (Colapsable por defecto) */}
+          <button
+            type="button"
+            onClick={() => setShowKPIs(prev => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 border rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+              showKPIs
+                ? 'bg-brand/10 border-brand text-brand shadow-xs'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+            }`}
+            title={showKPIs ? "Ocultar métricas e indicadores KPIs" : "Mostrar métricas e indicadores KPIs"}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>bar_chart</span>
+            <span>KPIs</span>
+            <span className="material-symbols-outlined transition-transform duration-200" style={{ fontSize: '18px' }}>
+              {showKPIs ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
+
           <input
             type="file"
             id="ai-stock-file-input"
@@ -633,37 +652,39 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
 
       </div>
 
-      {/* Stats row */}
-      <div className={`grid gap-2.5 sm:gap-4 ${isAssistant ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
-        <div className="card p-3 sm:p-4 text-center">
-          <p className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : statsTotal}
-          </p>
-          <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Total líneas</p>
-        </div>
-        <div className="card p-3 sm:p-4 text-center">
-          <p className="text-xl sm:text-2xl font-bold text-red-500" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : statsCritical}
-          </p>
-          <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Stock crítico</p>
-        </div>
-        {!isAssistant && (
-          <div className="card p-3 sm:p-4 text-center">
-            <p className="text-xl sm:text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
-              {loading ? '—' : statsFillRate + '%'}
-            </p>
-            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Fill rate</p>
-          </div>
-        )}
-        {!isAssistant && (
+      {/* Panel de Métricas KPIs (Colapsable por defecto) */}
+      {showKPIs && (
+        <div className={`grid gap-2.5 sm:gap-4 ${isAssistant ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'} animate-fade-in`}>
           <div className="card p-3 sm:p-4 text-center">
             <p className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
-              {loading ? '—' : formatEuro(statsValue)}
+              {loading ? '—' : statsTotal}
             </p>
-            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Valor stock</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Total líneas</p>
           </div>
-        )}
-      </div>
+          <div className="card p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-red-500" style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : statsCritical}
+            </p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Stock crítico</p>
+          </div>
+          {!isAssistant && (
+            <div className="card p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
+                {loading ? '—' : statsFillRate + '%'}
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Fill rate</p>
+            </div>
+          )}
+          {!isAssistant && (
+            <div className="card p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+                {loading ? '—' : formatEuro(statsValue)}
+              </p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Valor stock</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters Card — Sticky Header Fijo */}
       <div className="card p-3 sm:p-4 sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-md border border-slate-200/80 mb-4 transition-all">
