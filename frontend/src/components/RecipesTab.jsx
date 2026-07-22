@@ -460,7 +460,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
       </div>
 
       {/* Filters Bar — Sticky Header Fijo */}
-      <div className="sticky top-0 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 rounded-2xl p-2.5 sm:p-4 shadow-md my-3 flex flex-wrap items-center justify-between gap-3 sm:gap-4 transition-all">
+      <div className="sticky top-0 z-30 bg-white dark:bg-slate-900 shadow-md p-3 transition-all rounded-2xl my-3 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"

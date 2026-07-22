@@ -21,7 +21,7 @@
 
 html, body {
   touch-action: manipulation;
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
 }
 
@@ -39,8 +39,8 @@ body {
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
-  overscroll-behavior-y: none;
-  overflow-x: hidden;
+  overscroll-behavior-y: auto;
+  overflow-x: clip;
   touch-action: manipulation;
 }
 
@@ -50,7 +50,7 @@ body {
   flex-direction: column;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
 }
 
@@ -60,7 +60,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .header {
@@ -166,7 +166,8 @@ body {
   flex: 1;
   padding: 16px;
   padding-bottom: calc(var(--nav-height) + 16px);
-  overflow-y: auto;
+  overflow-y: visible;
+  overflow-x: clip;
 }
 
 /* ─── Cards ──────────────────────────────────────────────── */
