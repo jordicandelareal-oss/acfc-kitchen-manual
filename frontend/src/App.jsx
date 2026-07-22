@@ -15,6 +15,7 @@ import PlannerTab from './components/PlannerTab';
 import MenusTab from './components/MenusTab';
 import ComprasTab from './components/ComprasTab';
 import InsumosTab from './components/InsumosTab';
+import TestingToolbar from './components/TestingToolbar';
 
 import LoginScreen from './components/LoginScreen';
 import {
@@ -406,7 +407,7 @@ function App() {
           {activeTab === 'suppliers' && <SuppliersTab role={role} canEdit={role === 'admin' || role === 'chef'} />}
           {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} />}
           {activeTab === 'menus' && <MenusTab data={data} loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} onRefresh={loadData} role={role} canEdit={role === 'admin' || role === 'chef'} />}
           {activeTab === 'insumos' && <InsumosTab loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
         </main>
 
@@ -451,6 +452,9 @@ function App() {
           role={role} 
           onLogout={handleLogout}
         />
+
+        {/* BARRA DE PRUEBAS Y SIMULACIÓN (TESTING TOOLBAR) */}
+        <TestingToolbar onRefresh={() => { loadGlobalRecipes(); loadData(); }} />
       </div>
     </>
   );

@@ -787,7 +787,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                   <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock')}>Stock Actual {sortKey === 'stock' && (sortDir === 1 ? '↑' : '↓')}</th>
                   <th className="px-4 py-3">Mínimo</th>
                   <th className="px-4 py-3">Máximo</th>
-                  {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste/kg {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
+                  {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
                   <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
                   <th className="px-4 py-3">Estado</th>
                   {!isAssistant && <th className="px-4 py-3"></th>}
@@ -886,8 +886,12 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                               <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
                             </div>
                           </td>
-                          {/* Coste/Kg — solo chef/admin */}
-                          {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
+                          {/* Coste/Kg o Coste/U — solo chef/admin */}
+                          {!isAssistant && (
+                            <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">
+                              {(Number(item.cost) || 0).toFixed(2)} {item.output_scenario === 'UNIDADES' || ['ud', 'u', 'pieza', 'piezas', 'unidad', 'unidades'].includes(String(item.unit || '').toLowerCase()) ? '€/U' : '€/KG'}
+                            </td>
+                          )}
                           {/* Proveedor — visible para todos */}
                           <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
                           {/* Estado */}
@@ -998,8 +1002,10 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                               </div>
                               {!isAssistant && (
                                 <div>
-                                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / {item.unit}</p>
-                                  <p className="font-bold text-slate-900">{(item.cost || 0).toFixed(2)}€</p>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto</p>
+                                  <p className="font-bold text-slate-900">
+                                    {(Number(item.cost) || 0).toFixed(2)} {item.output_scenario === 'UNIDADES' || ['ud', 'u', 'pieza', 'piezas', 'unidad', 'unidades'].includes(String(item.unit || '').toLowerCase()) ? '€/U' : '€/KG'}
+                                  </p>
                                 </div>
                               )}
                             </div>
@@ -1096,7 +1102,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                   </div>
                   <div className="flex-1 text-center bg-white border rounded-lg p-2">
                     <p className="text-[10px] text-slate-400 uppercase font-semibold">Coste Neto Estimado</p>
-                    <p className="text-base font-bold text-slate-900">{modalNetCost.toFixed(2)} €/kg</p>
+                    <p className="text-base font-bold text-slate-900">{modalNetCost.toFixed(2)} {ingOutputScenario === 'UNIDADES' ? '€/U' : '€/KG'}</p>
                   </div>
                 </div>
               </div>

@@ -314,7 +314,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       
       console.log('Depurando objeto a guardar:', payload);
       
-      const { error } = await api.guardarMenuYReservarStock([payload]);
+      const { error } = await api.guardarMenuBorrador([payload]);
       if (error) throw error;
 
       // Actualizar estado local inmediatamente para refrescar la tarjeta visual al instante
@@ -531,7 +531,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         }
       });
 
-      const { error } = await api.guardarMenuYReservarStock(upserts);
+      const { error } = await api.guardarMenuBorrador(upserts);
       if (error) throw error;
       
       addLog(`Menú semanal autogenerado para semanas ${selectedWeeks.join(', ')}`, 'success');
