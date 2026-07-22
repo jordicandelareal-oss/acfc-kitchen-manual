@@ -686,40 +686,45 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
         </div>
       )}
 
-      {/* Filters Card — Sticky Header Fijo */}
-      <div className="sticky top-[68px] z-20 bg-white dark:bg-slate-900 shadow-md p-3 transform-gpu will-change-transform isolate transition-none rounded-2xl mb-4 border border-slate-200/80">
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-end">
-          <div className="relative col-span-2">
-            <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400" style={{ fontSize: '18px' }}>search</span>
-            <input
-              type="text"
-              placeholder="Buscar ingrediente, marca, ref..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"
-            />
-          </div>
-          <select value={selectedCat} onChange={e => setSelectedCat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
-            <option value="">Todas las categorías</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={selectedSubcat} onChange={e => setSelectedSubcat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
-            <option value="">Todas las subcategorías</option>
-            {subcategories.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
-            <option value="">Todos los proveedores</option>
-            {providers.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <div className="col-span-1 flex gap-1.5">
-            <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand">
-              <option value="">Cualquier estado</option>
-              <option value="critical">⚠️ Crítico</option>
-              <option value="ok">✅ Óptimo</option>
+      {/* Filters Card — Contenedor Rígido Sticky Plano para Eliminar Jittering */}
+      <div
+        className="sticky top-[68px] z-20 pb-2 pt-1 transition-none transform-gpu"
+        style={{ contain: 'paint', backfaceVisibility: 'hidden' }}
+      >
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-end">
+            <div className="relative col-span-2">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400" style={{ fontSize: '18px' }}>search</span>
+              <input
+                type="text"
+                placeholder="Buscar ingrediente, marca, ref..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"
+              />
+            </div>
+            <select value={selectedCat} onChange={e => setSelectedCat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
+              <option value="">Todas las categorías</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <button onClick={() => { setSearchQuery(''); setSelectedCat(''); setSelectedSubcat(''); setSelectedProvider(''); setSelectedStatus(''); }} title="Limpiar filtros" className="flex-shrink-0 p-2 border border-slate-200 rounded-xl text-slate-400 hover:text-brand hover:border-brand hover:bg-brand-muted transition-all">
-              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_alt_off</span>
-            </button>
+            <select value={selectedSubcat} onChange={e => setSelectedSubcat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
+              <option value="">Todas las subcategorías</option>
+              {subcategories.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
+              <option value="">Todos los proveedores</option>
+              {providers.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <div className="col-span-1 flex gap-1.5">
+              <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand">
+                <option value="">Cualquier estado</option>
+                <option value="critical">⚠️ Crítico</option>
+                <option value="ok">✅ Óptimo</option>
+              </select>
+              <button onClick={() => { setSearchQuery(''); setSelectedCat(''); setSelectedSubcat(''); setSelectedProvider(''); setSelectedStatus(''); }} title="Limpiar filtros" className="flex-shrink-0 p-2 border border-slate-200 rounded-xl text-slate-400 hover:text-brand hover:border-brand hover:bg-brand-muted transition-all">
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_alt_off</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

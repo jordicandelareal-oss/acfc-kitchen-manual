@@ -459,118 +459,128 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         </div>
       </div>
 
-      {/* Filters Bar — Sticky Header Fijo */}
-      <div className="sticky top-[68px] z-20 bg-white dark:bg-slate-900 shadow-md p-2.5 sm:p-3.5 transform-gpu will-change-transform isolate transition-none rounded-2xl my-3 border border-slate-200/80 space-y-2.5">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <input
-            type="text"
-            placeholder="Buscar receta..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400 w-full sm:w-60"
-          />
-          
-          <select
-            value={selectedCategory}
-            onChange={e => setSelectedCategory(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-600 outline-none select-custom pr-8"
-          >
-            <option value="">Todas las familias</option>
-            {recipeCategories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+      {/* Filters Bar — Contenedor Rígido Sticky Plano para Eliminar Jittering */}
+      <div
+        className="sticky top-[68px] z-20 pb-2 pt-1 transition-none transform-gpu"
+        style={{ contain: 'paint', backfaceVisibility: 'hidden' }}
+      >
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 rounded-2xl p-2.5 sm:p-3.5 shadow-xs space-y-2">
+          {/* Fila 1: Buscador + Selector Familias + Botón Familias + Botón Limpiar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <input
+                type="text"
+                placeholder="Buscar receta..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400 flex-1 min-w-[130px] sm:w-60"
+              />
+              
+              <select
+                value={selectedCategory}
+                onChange={e => setSelectedCategory(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-600 outline-none select-custom pr-8"
+              >
+                <option value="">Todas las familias</option>
+                {recipeCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
 
-          <button
-            onClick={() => setCategoriesModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder</span>Familias
-          </button>
-        </div>
-
-        {/* Fila de Filtros Avanzados + Botón Nueva Receta compactado en Móvil */}
-        <div className="flex items-center justify-between gap-2 w-full flex-wrap sm:flex-nowrap pt-1 border-t border-slate-100/80">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {/* Rating */}
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Val:</span>
-              {[3, 2, 1].map(val => (
+              <div className="flex items-center gap-2">
                 <button
-                  key={val}
-                  onClick={() => toggleAdvancedFilter('valoracion', val)}
-                  className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
-                    advancedFilters.valoracion.includes(val)
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-200'
-                  }`}
+                  onClick={() => setCategoriesModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
-                  {val}★
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>folder</span>Familias
                 </button>
-              ))}
-            </div>
 
-            {/* Difficulty */}
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Dif:</span>
-              {[
-                { label: 'Fác', val: 1 },
-                { label: 'Med', val: 2 },
-                { label: 'Alt', val: 3 }
-              ].map(item => (
                 <button
-                  key={item.val}
-                  onClick={() => toggleAdvancedFilter('dificultad', item.val)}
-                  className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
-                    advancedFilters.dificultad.includes(item.val)
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-200'
-                  }`}
+                  onClick={clearAdvancedFilters}
+                  className="text-[11px] text-slate-400 hover:text-red-500 hover:underline transition-colors font-semibold px-1"
                 >
-                  {item.label}
+                  Limpiar
                 </button>
-              ))}
+              </div>
             </div>
-
-            {/* Time */}
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Tiem:</span>
-              {[
-                { label: 'Rap', val: 1 },
-                { label: 'Med', val: 2 },
-                { label: 'Lar', val: 3 }
-              ].map(item => (
-                <button
-                  key={item.val}
-                  onClick={() => toggleAdvancedFilter('tiempo_elaboracion', item.val)}
-                  className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
-                    advancedFilters.tiempo_elaboracion.includes(item.val)
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={clearAdvancedFilters}
-              className="text-[10px] text-slate-400 hover:text-red-500 hover:underline transition-colors font-semibold px-1"
-            >
-              Limpiar
-            </button>
           </div>
 
-          {canEdit && (
-            <button
-              onClick={() => openNewRecipeModal()}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-brand text-white rounded-lg sm:rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors shadow-xs whitespace-nowrap min-w-max ml-auto"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
-              <span>Nueva receta</span>
-            </button>
-          )}
+          {/* Fila 2: Val / Dif / Tiem + Botón Nueva Receta en la misma línea */}
+          <div className="flex items-center justify-between gap-2 w-full flex-wrap sm:flex-nowrap pt-1.5 border-t border-slate-100/80">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Rating */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Val:</span>
+                {[3, 2, 1].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => toggleAdvancedFilter('valoracion', val)}
+                    className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
+                      advancedFilters.valoracion.includes(val)
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {val}★
+                  </button>
+                ))}
+              </div>
+
+              {/* Difficulty */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Dif:</span>
+                {[
+                  { label: 'Fác', val: 1 },
+                  { label: 'Med', val: 2 },
+                  { label: 'Alt', val: 3 }
+                ].map(item => (
+                  <button
+                    key={item.val}
+                    onClick={() => toggleAdvancedFilter('dificultad', item.val)}
+                    className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
+                      advancedFilters.dificultad.includes(item.val)
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Time */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5 sm:p-1">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Tiem:</span>
+                {[
+                  { label: 'Rap', val: 1 },
+                  { label: 'Med', val: 2 },
+                  { label: 'Lar', val: 3 }
+                ].map(item => (
+                  <button
+                    key={item.val}
+                    onClick={() => toggleAdvancedFilter('tiempo_elaboracion', item.val)}
+                    className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[10px] font-bold transition-all select-none ${
+                      advancedFilters.tiempo_elaboracion.includes(item.val)
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {canEdit && (
+              <button
+                onClick={() => openNewRecipeModal()}
+                className="flex items-center gap-1 py-1.5 px-3 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors shadow-xs whitespace-nowrap min-w-max ml-auto"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>add</span>
+                <span>Nueva receta</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
