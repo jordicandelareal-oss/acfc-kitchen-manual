@@ -200,9 +200,10 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
   if (isElCairo) {
     let msg = `Hola, pedido ACFC Kitchen (Carnicería El Cairo):\n\n`;
     (itemsList || []).forEach(item => {
-      const corteStr = item.tipoCorte || item.tipo_corte ? ` (${item.tipoCorte || item.tipo_corte})` : '';
+      const rawName = item.rawName || (item.name || '').replace(/\s*\([^)]*\)/g, '').trim();
+      const corte = item.tipoCorte || item.tipo_corte || 'entera';
       const qtyStr = `${item.neededQuantity || item.quantity || 0} ${item.unit || 'Kg'}`;
-      msg += `- ${item.name}${corteStr} - ${qtyStr}\n`;
+      msg += `- ${rawName} (${corte}) - ${qtyStr}\n`;
     });
     msg += `\nMuchas gracias!`;
     return msg;
