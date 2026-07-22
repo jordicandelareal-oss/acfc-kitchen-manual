@@ -25,7 +25,7 @@ function AuditConsole({ logs, onClear }) {
   };
 
   return (
-    <div className="xl:col-span-1 border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-xl flex flex-col h-full min-h-[400px]">
+    <div className="hidden md:flex xl:col-span-1 border border-slate-800 rounded-xl bg-slate-900 overflow-hidden shadow-xl flex-col h-full min-h-[400px]">
       <div className="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-slate-800 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -62,6 +62,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState([1]);
+  const [viewMode, setViewMode] = useState('week'); // 'day' | 'week' | 'month'
   const [logs, setLogs] = useState([
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
   ]);
@@ -625,6 +626,37 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         </div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
           
+          {/* View Mode Selector (Día | Semana | Mes) */}
+          <div className="col-span-2 sm:col-span-1 flex items-center justify-center bg-slate-200/80 p-0.5 rounded-xl border border-slate-300">
+            <button
+              type="button"
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'day' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Día
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'week' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('month')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'month' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Mes
+            </button>
+          </div>
+
           {/* Reset button */}
           {canEdit && (
             <button 
@@ -780,232 +812,441 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       {/* ── GRID + DIAGNOSTIC CONSOLE ── */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
         
-        {/* Calendar Grid */}
+        {/* Calendar Grid & View Selector */}
         <div className="xl:col-span-3 space-y-4">
-          <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-brand inline-block" /> Hoy
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-brand inline-block" /> Hoy
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200 inline-block" /> Planificado
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-white border border-slate-200 inline-block" /> Sin planificar
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-indigo-50 border border-indigo-200 inline-block" /> Menú planificado
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-white border border-slate-200 inline-block" /> Sin planificar
-            </div>
+
+            <span className="font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+              Modo: {viewMode === 'day' ? 'Vista por Día' : viewMode === 'week' ? `Semana ${selectedWeeks[0] || 1}` : 'Vista Mensual'}
+            </span>
           </div>
 
-          {/* Mobile Compact Calendar Grid (7 columns matrix) */}
-          <div className="md:hidden space-y-2">
-            <div className="grid grid-cols-7 gap-1">
-              {['L','M','X','J','V','S','D'].map(d => (
-                <div key={d} className="text-center text-[11px] font-bold text-slate-400 uppercase py-1">{d}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
+          {/* ── VISTA DÍA ── */}
+          {viewMode === 'day' && (
+            <div className="card p-5 bg-white border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDay(prev => Math.max(1, (prev || new Date().getDate()) - 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+                      Día {selectedDay || new Date().getDate()} — Servicio Diario
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDay(prev => Math.min(31, (prev || new Date().getDate()) + 1))}
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => openDayEditor(selectedDay || new Date().getDate())}
+                    className="px-4 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit2 size={14} />
+                    <span>Editar Día</span>
+                  </button>
+                )}
+              </div>
+
               {(() => {
+                const activeDayNum = selectedDay || new Date().getDate();
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const rawFirstDay = new Date(year, month, 1).getDay();
-                const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
-                const now = new Date();
-                const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
-
-                const mobElements = [];
-
-                for (let empty = 0; empty < firstDayOffset; empty++) {
-                  mobElements.push(
-                    <div key={`m-empty-${empty}`} className="h-16 bg-slate-50/30 border border-dashed border-slate-100 rounded-lg" />
-                  );
-                }
-
-                for (let d = 1; d <= daysInMonth; d++) {
-                  const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                  const isToday = isCurrentMonthYear && d === now.getDate();
-                  const menu = plannerData[dateISO] || plannerData[d] || null;
-
-                  const hasLunch = !!(menu?.lunch_recipe_id || menu?.lunch_recipe);
-                  const hasSide = !!(menu?.lunch_side_recipe_id || menu?.lunch_side_recipe);
-                  const hasDinner = !!(menu?.dinner_recipe_id || menu?.dinner_recipe);
-                  const hasMeal = hasLunch || hasDinner;
-
-                  mobElements.push(
-                    <div 
-                      key={`m-day-${d}`}
-                      onClick={() => openDayEditor(d)}
-                      className={`p-1.5 h-16 rounded-xl border flex flex-col justify-between cursor-pointer transition-all ${
-                        isToday 
-                          ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' 
-                          : hasMeal 
-                            ? 'bg-indigo-50/70 border-indigo-200 shadow-xs' 
-                            : 'bg-white border-slate-200'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
-                        {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
-                      </div>
-
-                      <div className="flex flex-col gap-0.5 mt-0.5">
-                        {hasLunch ? (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 truncate">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                            <span className="truncate">{menu?.lunch_recipe?.name || 'Almuerzo'}</span>
-                          </div>
-                        ) : null}
-                        {hasSide ? (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-700 truncate">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                            <span className="truncate">{menu?.lunch_side_recipe?.name || 'Guarnición'}</span>
-                          </div>
-                        ) : null}
-                        {hasDinner ? (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-700 truncate">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
-                            <span className="truncate">{menu?.dinner_recipe?.name || 'Cena'}</span>
-                          </div>
-                        ) : null}
-                        {!hasMeal && (
-                          <span className="text-[9px] text-slate-300 italic truncate">Vacío</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return mobElements;
-              })()}
-            </div>
-          </div>
-
-          <div className="hidden md:grid grid-cols-7 gap-2">
-            {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => (
-              <div key={d} className="text-center text-xs font-semibold text-slate-400 uppercase py-1">{d}</div>
-            ))}
-          </div>
-
-          {/* Desktop Days Grid - Dynamic Calendar Alignment */}
-          <div className="hidden md:grid grid-cols-7 gap-2">
-            {(() => {
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth();
-              
-              // Days in month
-              const daysInMonth = new Date(year, month + 1, 0).getDate();
-              
-              // First day of month (0 = Sun, 1 = Mon, ..., 6 = Sat)
-              // Convert to Spanish Monday-first index: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
-              const rawFirstDay = new Date(year, month, 1).getDay();
-              const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
-              
-              const now = new Date();
-              const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
-
-              const elements = [];
-
-              // Render empty offset cells
-              for (let empty = 0; empty < firstDayOffset; empty++) {
-                elements.push(
-                  <div key={`empty-${empty}`} className="min-h-[140px] bg-slate-50/40 border border-dashed border-slate-100 rounded-xl" />
-                );
-              }
-
-              // Render days
-              for (let d = 1; d <= daysInMonth; d++) {
-                const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const isToday = isCurrentMonthYear && d === now.getDate();
-                const menu = plannerData[dateISO] || plannerData[d] || null;
+                const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(activeDayNum).padStart(2, '0')}`;
+                const menu = plannerData[dateISO] || plannerData[activeDayNum] || null;
 
                 const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
                 const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
-                const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, 'Sin guarnición'));
                 const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
 
-                const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+                const currentWeekNum = Math.ceil(activeDayNum / 7);
+                const players = weeklyPlayers[currentWeekNum] || { lunch: 25, dinner: 20 };
 
-                elements.push(
-                  <div 
-                    key={d}
-                    className={`card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
-                      isToday 
-                        ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
-                        : hasMeal 
-                          ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
-                          : 'bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
-                      {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
-                    </div>
-
-                    <div className="mt-2 space-y-1 flex-grow overflow-hidden">
-                      {/* 1. Almuerzo / Plato Principal */}
-                      <div 
-                        title={`Almuerzo: ${lunchName}`}
-                        className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
-                          menu?.lunch_recipe_id 
-                            ? 'bg-amber-50/90 border-amber-200 text-amber-950' 
-                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
-                        }`}
-                      >
-                        <div className="font-bold text-amber-700 text-[9px] uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                          <span>☀️ Almuerzo</span>
-                        </div>
-                        <span className="font-semibold block truncate">{lunchName}</span>
-                      </div>
-
-                      {/* 2. Guarnición (BLOQUE FIJO INCONDICIONAL) */}
-                      <div 
-                        title={`Guarnición: ${lunchSideName || 'Sin guarnición asignada'}`}
-                        className={`p-1 rounded-md text-[10px] leading-tight border flex items-center gap-1 overflow-hidden ${
-                          lunchSideName 
-                            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' 
-                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
-                        }`}
-                      >
-                        <span className="font-bold text-emerald-600 flex-shrink-0 text-[9px]">🥗</span>
-                        <span className="font-semibold block truncate">
-                          {lunchSideName || 'Sin guarnición asignada'}
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+                          ☀️ Almuerzo
                         </span>
+                        <span className="badge badge-amber text-[10px]">{players.lunch} pax</span>
                       </div>
-
-                      {/* 3. Cena */}
-                      <div 
-                        title={`Cena: ${dinnerName}`}
-                        className={`p-1.5 rounded-md text-[10px] font-medium leading-snug border overflow-hidden ${
-                          menu?.dinner_recipe_id 
-                            ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950' 
-                            : 'bg-slate-50/60 border-slate-100 text-slate-400 italic'
-                        }`}
-                      >
-                        <div className="font-bold text-indigo-700 text-[9px] uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                          <span>🌙 Cena</span>
-                        </div>
-                        <span className="font-semibold block truncate">{dinnerName}</span>
-                      </div>
+                      <p className="font-bold text-slate-800 text-base">{lunchName}</p>
+                      {lunchSideName && lunchSideName !== 'Sin guarnición' && (
+                        <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                          <span>🥗 Guarnición:</span> {lunchSideName}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-100/50 flex justify-between items-center text-[10px] text-slate-400">
-                      <span>👥 {menu?.lunch_players || 0}</span>
-                      {canEdit ? (
-                        <button 
-                          onClick={() => openDayEditor(d)} 
-                          className="text-brand hover:underline font-bold transition-all cursor-pointer"
-                        >
-                          Editar
-                        </button>
-                      ) : (
-                        <span className="text-slate-400 font-semibold italic">Lectura</span>
-                      )}
+                    <div className="p-4 rounded-xl bg-indigo-50/60 border border-indigo-200/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1">
+                          🌙 Cena
+                        </span>
+                        <span className="badge badge-indigo text-[10px]">{players.dinner} pax</span>
+                      </div>
+                      <p className="font-bold text-slate-800 text-base">{dinnerName}</p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
+                        👥 Resumen Comensales
+                      </span>
+                      <div className="text-xs space-y-1 text-slate-600">
+                        <div className="flex justify-between">
+                          <span>Almuerzos:</span>
+                          <span className="font-bold text-slate-900">{players.lunch}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Cenas:</span>
+                          <span className="font-bold text-slate-900">{players.dinner}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-slate-200 pt-1">
+                          <span>Total Día:</span>
+                          <span className="font-extrabold text-brand">{players.lunch + players.dinner} pax</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
-              }
+              })()}
+            </div>
+          )}
 
-              return elements;
-            })()}
-          </div>
+          {/* ── VISTA SEMANA ── */}
+          {viewMode === 'week' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
+                <h3 className="font-bold text-indigo-900 text-sm">
+                  Semana {selectedWeeks[0] || 1} (Días {((selectedWeeks[0] || 1) - 1) * 7 + 1} a {Math.min(31, (selectedWeeks[0] || 1) * 7)})
+                </h3>
+                <span className="text-xs text-indigo-600 font-semibold">
+                  {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2.5">
+                {(() => {
+                  const weekNum = selectedWeeks[0] || 1;
+                  const startDay = (weekNum - 1) * 7 + 1;
+                  const endDay = Math.min(31, weekNum * 7);
+                  const year = currentDate.getFullYear();
+                  const month = currentDate.getMonth();
+                  const now = new Date();
+                  const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
+                  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+                  const cards = [];
+                  for (let d = startDay; d <= endDay; d++) {
+                    const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isToday = isCurrentMonthYear && d === now.getDate();
+                    const menu = plannerData[dateISO] || plannerData[d] || null;
+
+                    const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
+                    const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
+                    const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                    const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
+                    const dayNameIndex = (d - 1) % 7;
+
+                    cards.push(
+                      <div 
+                        key={`week-card-${d}`}
+                        onClick={() => openDayEditor(d)}
+                        className={`card p-3 min-h-[160px] flex flex-col justify-between cursor-pointer transition-all ${
+                          isToday ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' : 'bg-white hover:border-brand/40 shadow-xs'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-2">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase">{weekDays[dayNameIndex]}</span>
+                            <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div>
+                              <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                              <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
+                            </div>
+
+                            {lunchSideName && (
+                              <div>
+                                <span className="text-[9px] font-bold text-emerald-700 block uppercase">Guarnición</span>
+                                <p className="text-[11px] font-medium text-slate-600 truncate">{lunchSideName}</p>
+                              </div>
+                            )}
+
+                            <div>
+                              <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                              <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
+                          <span>Editar</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return cards;
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* ── VISTA MES (CALENDARIO COMPLETO) ── */}
+          {viewMode === 'month' && (
+            <>
+              {/* Mobile Compact Calendar Grid (7 columns matrix) */}
+              <div className="md:hidden space-y-2">
+                <div className="grid grid-cols-7 gap-1">
+                  {['L','M','X','J','V','S','D'].map(d => (
+                    <div key={d} className="text-center text-[11px] font-bold text-slate-400 uppercase py-1">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {(() => {
+                    const year = currentDate.getFullYear();
+                    const month = currentDate.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const rawFirstDay = new Date(year, month, 1).getDay();
+                    const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
+                    const now = new Date();
+                    const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
+
+                    const mobElements = [];
+
+                    for (let empty = 0; empty < firstDayOffset; empty++) {
+                      mobElements.push(
+                        <div key={`m-empty-${empty}`} className="h-16 bg-slate-50/30 border border-dashed border-slate-100 rounded-lg" />
+                      );
+                    }
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                      const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                      const isToday = isCurrentMonthYear && d === now.getDate();
+                      const menu = plannerData[dateISO] || plannerData[d] || null;
+
+                      const hasLunch = !!(menu?.lunch_recipe_id || menu?.lunch_recipe);
+                      const hasSide = !!(menu?.lunch_side_recipe_id || menu?.lunch_side_recipe);
+                      const hasDinner = !!(menu?.dinner_recipe_id || menu?.dinner_recipe);
+                      const hasMeal = hasLunch || hasDinner;
+
+                      mobElements.push(
+                        <div 
+                          key={`m-day-${d}`}
+                          onClick={() => openDayEditor(d)}
+                          className={`p-1.5 h-16 rounded-xl border flex flex-col justify-between cursor-pointer transition-all ${
+                            isToday 
+                              ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' 
+                              : hasMeal 
+                                ? 'bg-indigo-50/70 border-indigo-200 shadow-xs' 
+                                : 'bg-white border-slate-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
+                            {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                          </div>
+
+                          <div className="flex flex-col gap-0.5 mt-0.5">
+                            {hasLunch ? (
+                              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                                <span className="truncate">{menu?.lunch_recipe?.name || 'Almuerzo'}</span>
+                              </div>
+                            ) : null}
+                            {hasSide ? (
+                              <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-700 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                                <span className="truncate">{menu?.lunch_side_recipe?.name || 'Guarnición'}</span>
+                              </div>
+                            ) : null}
+                            {hasDinner ? (
+                              <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-700 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                                <span className="truncate">{menu?.dinner_recipe?.name || 'Cena'}</span>
+                              </div>
+                            ) : null}
+                            {!hasMeal && (
+                              <span className="text-[9px] text-slate-300 italic truncate">Vacío</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return mobElements;
+                  })()}
+                </div>
+              </div>
+
+              <div className="hidden md:grid grid-cols-7 gap-2">
+                {['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => (
+                  <div key={d} className="text-center text-xs font-semibold text-slate-400 uppercase py-1">{d}</div>
+                ))}
+              </div>
+
+              {/* Desktop Days Grid - Dynamic Calendar Alignment */}
+              <div className="hidden md:grid grid-cols-7 gap-2">
+                {(() => {
+                  const year = currentDate.getFullYear();
+                  const month = currentDate.getMonth();
+                  
+                  // Days in month
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+                  
+                  // First day of month (0 = Sun, 1 = Mon, ..., 6 = Sat)
+                  // Convert to Spanish Monday-first index: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
+                  const rawFirstDay = new Date(year, month, 1).getDay();
+                  const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
+                  
+                  const now = new Date();
+                  const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
+
+                  const elements = [];
+
+                  // Render empty offset cells
+                  for (let empty = 0; empty < firstDayOffset; empty++) {
+                    elements.push(
+                      <div key={`empty-${empty}`} className="min-h-[140px] bg-slate-50/40 border border-dashed border-slate-100 rounded-xl" />
+                    );
+                  }
+
+                  // Render days
+                  for (let d = 1; d <= daysInMonth; d++) {
+                    const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isToday = isCurrentMonthYear && d === now.getDate();
+                    const menu = plannerData[dateISO] || plannerData[d] || null;
+
+                    const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
+                    const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
+                    const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                    const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
+
+                    const hasMeal = menu && (menu.lunch_recipe_id || menu.dinner_recipe_id);
+
+                    elements.push(
+                      <div 
+                        key={d}
+                        className={`card p-3 min-h-[140px] flex flex-col justify-between transition-all ${
+                          isToday 
+                            ? 'ring-2 ring-brand ring-offset-2 bg-brand-muted/20 border-brand' 
+                            : hasMeal 
+                              ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' 
+                              : 'bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
+                          {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                        </div>
+
+                        <div className="mt-2 space-y-1 flex-grow overflow-hidden">
+                          {/* 1. Almuerzo / Plato Principal */}
+                          <div 
+                            title={`Almuerzo: ${lunchName}`}
+                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
+                              menu?.lunch_recipe_id 
+                                ? 'bg-amber-50/90 border-amber-200 text-amber-950' 
+                                : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                              <span className="font-extrabold uppercase text-[9px] text-amber-800">Almuerzo</span>
+                            </div>
+                            <p className="truncate font-semibold">{lunchName}</p>
+                          </div>
+
+                          {/* 2. Guarnición Almuerzo */}
+                          {lunchSideName ? (
+                            <div 
+                              title={`Guarnición: ${lunchSideName}`}
+                              className="p-1 rounded-md text-[10px] font-medium leading-tight bg-emerald-50/90 border border-emerald-200 text-emerald-950 overflow-hidden"
+                            >
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                                <span className="font-extrabold uppercase text-[8px] text-emerald-800">Guarnición</span>
+                              </div>
+                              <p className="truncate text-[10px]">{lunchSideName}</p>
+                            </div>
+                          ) : null}
+
+                          {/* 3. Cena */}
+                          <div 
+                            title={`Cena: ${dinnerName}`}
+                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
+                              menu?.dinner_recipe_id 
+                                ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950' 
+                                : 'bg-slate-50 border-slate-100 text-slate-400 italic'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                              <span className="font-extrabold uppercase text-[9px] text-indigo-800">Cena</span>
+                            </div>
+                            <p className="truncate font-semibold">{dinnerName}</p>
+                          </div>
+                        </div>
+
+                        {canEdit && (
+                          <div className="pt-2 mt-2 border-t border-slate-100/80 flex items-center justify-between">
+                            <button
+                              onClick={() => openDayEditor(d)}
+                              className="text-[10px] font-semibold text-slate-400 hover:text-brand transition-colors flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>edit</span>
+                              <span>Editar</span>
+                            </button>
+                            {hasMeal && (
+                              <button
+                                onClick={() => handleClearDay(d)}
+                                className="text-[10px] font-semibold text-slate-300 hover:text-red-500 transition-colors"
+                                title="Vaciar día"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>delete</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return elements;
+                })()}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Audit Diagnostics Console */}

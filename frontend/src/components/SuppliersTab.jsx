@@ -5,6 +5,7 @@ export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expandedSupplierIds, setExpandedSupplierIds] = useState({});
 
   // Modals state
@@ -18,11 +19,12 @@ export default function SuppliersTab() {
   // Fetch suppliers
   const loadSuppliers = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data, error: fetchErr } = await fetchSuppliers();
       if (fetchErr) throw fetchErr;
 
-      const list = data || [];
+      const list = Array.isArray(data) ? data : [];
       setSuppliers(list);
       setError(null);
 
@@ -33,7 +35,8 @@ export default function SuppliersTab() {
       }
     } catch (err) {
       console.error('Error loading suppliers in React:', err);
-      setError(err.message || 'Error al conectar con Supabase');
+      setError(err?.message || 'Error al conectar con Supabase');
+      setSuppliers([]);
     } finally {
       setLoading(false);
     }
