@@ -263,7 +263,8 @@ function App() {
     { id: 'inventory', icon: <Package size={18} />,         label: 'Inventario' },
     { id: 'recipes',   icon: <Utensils size={18} />,        label: 'Recetas' },
     { id: 'suppliers', icon: <Truck size={18} />,           label: 'Proveedores' },
-    { id: 'planner',   icon: <ShoppingCart size={18} />,     label: 'Planificador' },
+    { id: 'planner',   icon: <Utensils size={18} />,        label: 'Planificador' },
+    { id: 'compras',   icon: <ShoppingCart size={18} />,     label: 'Compras' },
   ];
 
   const tabs = allTabs.filter(t => role !== 'assistant' || t.id !== 'suppliers');

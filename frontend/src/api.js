@@ -759,3 +759,93 @@ export const procesarDescuentosAutomaticosTurnos = async () => {
     return { data: { processed_count: 0 }, error: null };
   }
 };
+
+// ── Órdenes de Compra (Purchase Orders) ──
+export const createPurchaseOrder = async (orderData, itemsArray) => {
+  try {
+    const { data: poData, error: poErr } = await supabase
+      .from('purchase_orders')
+      .insert([{
+        order_date: orderData.order_date || new Date().toISOString().split('T')[0],
+        supplier_id: orderData.supplier_id || null,
+        total_amount: orderData.total_amount || 0,
+        status: orderData.status || 'ordered',
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (poErr || !poData) {
+      console.error('Error insertando purchase_orders:', poErr);
+      return { error: poErr || new Error('No se pudo crear la orden') };
+    }
+
+    if (itemsArray && itemsArray.length > 0) {
+      const poiRecords = itemsArray.map(item => ({
+        purchase_order_id: poData.id,
+        ingredient_id: item.ingredient_id,
+        quantity: Number(item.quantity) || 0,
+        unit: item.unit || 'Kg',
+        price_per_unit: Number(item.price_per_unit) || 0
+      }));
+
+      const { error: poiErr } = await supabase
+        .from('purchase_order_items')
+        .insert(poiRecords);
+
+      if (poiErr) {
+        console.error('Error insertando purchase_order_items:', poiErr);
+      }
+    }
+
+    return { data: poData, error: null };
+  } catch (err) {
+    return { error: err };
+  }
+};
+
+export const fetchPurchaseOrders = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select(`
+        *,
+        suppliers ( id, name ),
+        purchase_order_items (
+          id,
+          ingredient_id,
+          quantity,
+          unit,
+          price_per_unit,
+          total_cost,
+          ingredients ( id, name, unit, purchase_price, purchase_format_gr, stock_actual, stock_reservado )
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    return { data: data || [], error };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+};
+
+export const confirmOrderReception = async (orderId, itemsArray) => {
+  try {
+    // 1. Update purchase order status to 'received'
+    const { error: updateErr } = await supabase
+      .from('purchase_orders')
+      .update({ status: 'received', updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+
+    if (updateErr) {
+      console.error('Error actualizando estado de la orden:', updateErr);
+    }
+
+    // 2. Update ingredient stock_actual & stock_reservado
+    const resVal = await validarRecepcionPedido(itemsArray);
+    return resVal;
+  } catch (err) {
+    return { error: err };
+  }
+};
+
