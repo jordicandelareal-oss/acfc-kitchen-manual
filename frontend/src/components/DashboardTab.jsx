@@ -525,89 +525,88 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid — 2 columnas compactas en móviles */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Total Ingredients */}
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden">
+        <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-              <Package size={22} />
+            <div className="p-1.5 sm:p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+              <Package className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="badge badge-indigo">+{stats.totalIngredients}</span>
+            <span className="badge badge-indigo text-[10px] py-0.5 px-1.5">+{stats.totalIngredients}</span>
           </div>
-          <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : stats.totalIngredients}
-          </p>
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Ingredientes</p>
+          <div>
+            <p className="text-lg sm:text-2xl font-extrabold text-slate-800 mt-2 sm:mt-4" style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : stats.totalIngredients}
+            </p>
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Ingredientes</p>
+          </div>
         </div>
 
         {/* Low Stock Alerts */}
         <div 
           onClick={() => onNavigate('inventory')}
-          className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden cursor-pointer group"
+          className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden cursor-pointer group flex flex-col justify-between"
         >
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
-              <AlertTriangle size={22} />
+            <div className="p-1.5 sm:p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-colors">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className={`badge ${stats.lowStockAlerts > 0 ? 'badge-danger pulse-red' : 'badge-ok'}`}>
+            <span className={`badge text-[10px] py-0.5 px-1.5 ${stats.lowStockAlerts > 0 ? 'badge-danger pulse-red' : 'badge-ok'}`}>
               {stats.lowStockAlerts > 0 ? 'CRÍTICO' : 'OK'}
             </span>
           </div>
-          <p className={`text-2xl font-extrabold mt-4 ${stats.lowStockAlerts > 0 ? 'text-red-600' : 'text-slate-800'}`} style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : stats.lowStockAlerts}
-          </p>
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Stock Crítico</p>
+          <div>
+            <p className={`text-lg sm:text-2xl font-extrabold mt-2 sm:mt-4 ${stats.lowStockAlerts > 0 ? 'text-red-600' : 'text-slate-800'}`} style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : stats.lowStockAlerts}
+            </p>
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Stock Crítico</p>
+          </div>
         </div>
 
         {/* Total Recipes */}
-        <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden">
+        <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
-              <Utensils size={22} />
+            <div className="p-1.5 sm:p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+              <Utensils className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="badge badge-ok">Catálogo</span>
+            <span className="badge badge-ok text-[10px] py-0.5 px-1.5">Catálogo</span>
           </div>
-          <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
-            {loading ? '—' : recipes.length}
-          </p>
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Total Recetas</p>
+          <div>
+            <p className="text-lg sm:text-2xl font-extrabold text-slate-800 mt-2 sm:mt-4" style={{ fontFamily: 'Outfit' }}>
+              {loading ? '—' : recipes.length}
+            </p>
+            <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Total Recetas</p>
+          </div>
         </div>
 
         {/* KPI: Coste Teórico Planificado */}
-        <div className={`p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden ${role === 'admin' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
+        <div className={`p-3.5 sm:p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden flex flex-col justify-between ${role === 'admin' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
           <div className="flex justify-between items-start">
-            <div className="p-2.5 bg-indigo-50 text-brand rounded-xl">
-              <Euro size={22} />
+            <div className="p-1.5 sm:p-2.5 bg-indigo-50 text-brand rounded-xl">
+              <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="badge badge-indigo">
+            <span className="badge badge-indigo text-[10px] py-0.5 px-1.5">
               Planificado
             </span>
           </div>
           
           {role === 'admin' ? (
-            <>
-              <p className="text-2xl font-extrabold text-slate-800 mt-4" style={{ fontFamily: 'Outfit' }}>
-                {loading ? '—' : weeklyPlannedCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })}
+            <div>
+              <p className="text-lg sm:text-2xl font-extrabold text-slate-800 mt-2 sm:mt-4" style={{ fontFamily: 'Outfit' }}>
+                {loading ? '—' : weeklyPlannedCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
               </p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-500">Total Mensual Planificado:</span>
-                <span className="text-xs font-bold text-brand">
-                  {totalPlannedCostMonthly.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1 leading-tight">Calculado según raciones y escandallos activos.</p>
-            </>
+              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Semanal</p>
+            </div>
           ) : (
-            <div className="mt-4 py-2">
-              <p className="text-xs font-bold text-slate-400 flex items-center gap-1">
-                <Shield size={12} />
-                <span>Restringido a Admin</span>
+            <div className="mt-2 sm:mt-4">
+              <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                <Shield size={10} />
+                <span>Solo Admin</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-1 leading-normal">Los costes financieros están reservados al perfil Administrador.</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Semanal</p>
             </div>
           )}
-          <p className="text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Teórico Semanal</p>
         </div>
       </div>
 

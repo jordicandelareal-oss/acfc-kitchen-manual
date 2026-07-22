@@ -623,24 +623,24 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           <h1 className="text-3xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Planificador Mensual</h1>
           <p className="text-xs text-slate-500 mt-0.5">Julio 2026 — Menú diario almuerzo + cena</p>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
           
           {/* Reset button */}
           {canEdit && (
             <button 
               onClick={() => setResetModalOpen(true)}
-              className="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-semibold px-4 py-2 rounded-xl flex items-center gap-2 transition-all text-xs whitespace-nowrap"
+              className="border border-red-200 text-red-600 bg-white hover:bg-red-50 font-semibold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all text-xs whitespace-nowrap"
             >
-              <Trash2 size={15} />
+              <Trash2 size={14} />
               <span>Resetear</span>
             </button>
           )}
 
           {/* Week selector */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-500 uppercase px-2">Sem:</span>
+          <div className="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Sem:</span>
             {[1, 2, 3, 4].map(w => (
-              <label key={w} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
+              <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
                 <input 
                   type="checkbox" 
                   checked={selectedWeeks.includes(w)}
@@ -653,58 +653,62 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           </div>
 
           {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}
-          <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
-            <Users size={14} className="text-indigo-600 ml-1" />
-            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight hidden lg:inline">
-              Sem {selectedWeeks[0] || 1}:
-            </span>
-            
-            {/* Comida / Lunch */}
-            <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
-              <span className="text-[10px] font-bold text-brand">🌞</span>
-              {canEdit && (
-                <button 
-                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
-                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                >
-                  -
-                </button>
-              )}
-              <span className="font-extrabold text-xs text-slate-800 min-w-[20px] text-center">
-                {weeklyPlayers[selectedWeeks[0] || 1]?.lunch ?? 25}
+          <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+            <div className="flex items-center gap-1">
+              <Users size={14} className="text-indigo-600 ml-1" />
+              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
+                Sem {selectedWeeks[0] || 1}:
               </span>
-              {canEdit && (
-                <button 
-                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
-                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                >
-                  +
-                </button>
-              )}
             </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Comida / Lunch */}
+              <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
+                <span className="text-[10px] font-bold text-brand">☀️</span>
+                {canEdit && (
+                  <button 
+                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
+                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                  >
+                    -
+                  </button>
+                )}
+                <span className="font-extrabold text-xs text-slate-800 min-w-[18px] text-center">
+                  {weeklyPlayers[selectedWeeks[0] || 1]?.lunch ?? 25}
+                </span>
+                {canEdit && (
+                  <button 
+                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
+                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
 
-            {/* Cena / Dinner */}
-            <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
-              <span className="text-[10px] font-bold text-indigo-600">🌙</span>
-              {canEdit && (
-                <button 
-                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
-                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                >
-                  -
-                </button>
-              )}
-              <span className="font-extrabold text-xs text-indigo-950 min-w-[20px] text-center">
-                {weeklyPlayers[selectedWeeks[0] || 1]?.dinner ?? 20}
-              </span>
-              {canEdit && (
-                <button 
-                  onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
-                  className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                >
-                  +
-                </button>
-              )}
+              {/* Cena / Dinner */}
+              <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
+                <span className="text-[10px] font-bold text-indigo-600">🌙</span>
+                {canEdit && (
+                  <button 
+                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
+                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                  >
+                    -
+                  </button>
+                )}
+                <span className="font-extrabold text-xs text-indigo-950 min-w-[18px] text-center">
+                  {weeklyPlayers[selectedWeeks[0] || 1]?.dinner ?? 20}
+                </span>
+                {canEdit && (
+                  <button 
+                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
+                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -712,10 +716,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           {canEdit && (
             <button 
               onClick={handleGenerateWeekly}
-              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
             >
               <RefreshCw size={14} className="animate-pulse" />
-              <span>Generar Menú Semanal</span>
+              <span>Generar Menú</span>
             </button>
           )}
 
@@ -723,17 +727,17 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           {canEdit && (
             <button 
               onClick={handleSaveAndConfirm}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
             >
               <Check size={14} />
-              <span>Guardar Planificación</span>
+              <span>Guardar</span>
             </button>
           )}
 
           {/* Shopping list button */}
           <button 
             onClick={() => setShoppingModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-all whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-all whitespace-nowrap"
           >
             <ShoppingCart size={14} />
             <span>Lista compra</span>
@@ -743,15 +747,15 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           {canEdit && (
             <button 
               onClick={() => setSettingsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-all whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-all whitespace-nowrap"
             >
               <Settings size={14} />
-              <span>Ajustes Menú</span>
+              <span>Ajustes</span>
             </button>
           )}
 
           {/* Month Navigator */}
-          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+          <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 flex-shrink-0">
             <button 
               onClick={handlePrevMonth}
               className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer"
@@ -787,6 +791,90 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-white border border-slate-200 inline-block" /> Sin planificar
+            </div>
+          </div>
+
+          {/* Mobile Compact Calendar Grid (7 columns matrix) */}
+          <div className="md:hidden space-y-2">
+            <div className="grid grid-cols-7 gap-1">
+              {['L','M','X','J','V','S','D'].map(d => (
+                <div key={d} className="text-center text-[11px] font-bold text-slate-400 uppercase py-1">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {(() => {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const rawFirstDay = new Date(year, month, 1).getDay();
+                const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
+                const now = new Date();
+                const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
+
+                const mobElements = [];
+
+                for (let empty = 0; empty < firstDayOffset; empty++) {
+                  mobElements.push(
+                    <div key={`m-empty-${empty}`} className="h-16 bg-slate-50/30 border border-dashed border-slate-100 rounded-lg" />
+                  );
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  const isToday = isCurrentMonthYear && d === now.getDate();
+                  const menu = plannerData[dateISO] || plannerData[d] || null;
+
+                  const hasLunch = !!(menu?.lunch_recipe_id || menu?.lunch_recipe);
+                  const hasSide = !!(menu?.lunch_side_recipe_id || menu?.lunch_side_recipe);
+                  const hasDinner = !!(menu?.dinner_recipe_id || menu?.dinner_recipe);
+                  const hasMeal = hasLunch || hasDinner;
+
+                  mobElements.push(
+                    <div 
+                      key={`m-day-${d}`}
+                      onClick={() => openDayEditor(d)}
+                      className={`p-1.5 h-16 rounded-xl border flex flex-col justify-between cursor-pointer transition-all ${
+                        isToday 
+                          ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' 
+                          : hasMeal 
+                            ? 'bg-indigo-50/70 border-indigo-200 shadow-xs' 
+                            : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
+                        {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                      </div>
+
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        {hasLunch ? (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 truncate">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                            <span className="truncate">{menu?.lunch_recipe?.name || 'Almuerzo'}</span>
+                          </div>
+                        ) : null}
+                        {hasSide ? (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-700 truncate">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="truncate">{menu?.lunch_side_recipe?.name || 'Guarnición'}</span>
+                          </div>
+                        ) : null}
+                        {hasDinner ? (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-700 truncate">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                            <span className="truncate">{menu?.dinner_recipe?.name || 'Cena'}</span>
+                          </div>
+                        ) : null}
+                        {!hasMeal && (
+                          <span className="text-[9px] text-slate-300 italic truncate">Vacío</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return mobElements;
+              })()}
             </div>
           </div>
 

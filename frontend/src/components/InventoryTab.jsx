@@ -595,69 +595,69 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       </div>
 
       {/* Stats row */}
-      <div className={`grid gap-4 ${isAssistant ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
-        <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+      <div className={`grid gap-2.5 sm:gap-4 ${isAssistant ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
+        <div className="card p-3 sm:p-4 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
             {loading ? '—' : statsTotal}
           </p>
-          <p className="text-xs text-slate-400 mt-0.5">Total líneas</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Total líneas</p>
         </div>
-        <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-red-500" style={{ fontFamily: 'Outfit' }}>
+        <div className="card p-3 sm:p-4 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-red-500" style={{ fontFamily: 'Outfit' }}>
             {loading ? '—' : statsCritical}
           </p>
-          <p className="text-xs text-slate-400 mt-0.5">Stock crítico</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Stock crítico</p>
         </div>
         {!isAssistant && (
-          <div className="card p-4 text-center">
-            <p className="text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
+          <div className="card p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-success" style={{ fontFamily: 'Outfit' }}>
               {loading ? '—' : statsFillRate + '%'}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">Fill rate</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Fill rate</p>
           </div>
         )}
         {!isAssistant && (
-          <div className="card p-4 text-center">
-            <p className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+          <div className="card p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
               {loading ? '—' : formatEuro(statsValue)}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">Valor stock</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Valor stock</p>
           </div>
         )}
       </div>
 
-      {/* Filters Card */}
-      <div className="card p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-          <div className="relative lg:col-span-2">
-            <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400" style={{ fontSize: '18px' }}>search</span>
+      {/* Filters Card — 2 filtros por fila en móviles */}
+      <div className="card p-3 sm:p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 items-end">
+          <div className="relative col-span-2">
+            <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400" style={{ fontSize: '18px' }}>search</span>
             <input
               type="text"
               placeholder="Buscar ingrediente, marca, ref..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400"
             />
           </div>
-          <select value={selectedCat} onChange={e => setSelectedCat(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full">
+          <select value={selectedCat} onChange={e => setSelectedCat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
             <option value="">Todas las categorías</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={selectedSubcat} onChange={e => setSelectedSubcat(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full">
+          <select value={selectedSubcat} onChange={e => setSelectedSubcat(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
             <option value="">Todas las subcategorías</option>
             {subcategories.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand w-full">
+          <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
             <option value="">Todos los proveedores</option>
             {providers.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <div className="flex gap-2">
-            <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 outline-none focus:border-brand">
+          <div className="col-span-1 flex gap-1.5">
+            <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand">
               <option value="">Cualquier estado</option>
-              <option value="critical">⚠️ Stock crítico</option>
-              <option value="ok">✅ Stock óptimo</option>
+              <option value="critical">⚠️ Crítico</option>
+              <option value="ok">✅ Óptimo</option>
             </select>
-            <button onClick={() => { setSearchQuery(''); setSelectedCat(''); setSelectedSubcat(''); setSelectedProvider(''); setSelectedStatus(''); }} title="Limpiar filtros" className="flex-shrink-0 p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:text-brand hover:border-brand hover:bg-brand-muted transition-all">
+            <button onClick={() => { setSearchQuery(''); setSelectedCat(''); setSelectedSubcat(''); setSelectedProvider(''); setSelectedStatus(''); }} title="Limpiar filtros" className="flex-shrink-0 p-2 border border-slate-200 rounded-xl text-slate-400 hover:text-brand hover:border-brand hover:bg-brand-muted transition-all">
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_alt_off</span>
             </button>
           </div>
@@ -864,7 +864,15 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                     )}
 
                     <div className="border border-slate-100 rounded-xl overflow-hidden bg-white">
-                      <div className="flex items-center py-2.5 px-3 gap-2">
+                      <div className="flex items-center py-2.5 px-3 gap-2.5">
+                        {/* Thumbnail miniatura para móvil */}
+                        <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
+                          {item.image_url ? (
+                            <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
+                          )}
+                        </div>
                         <div className="flex flex-col min-w-0 flex-1 cursor-pointer" onClick={toggleDetail}>
                           <span className="font-medium text-slate-800 text-sm truncate leading-tight">{item.name}</span>
                           <span className="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">{item.cat}</span>

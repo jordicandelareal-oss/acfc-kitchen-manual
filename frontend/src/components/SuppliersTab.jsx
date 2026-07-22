@@ -5,7 +5,7 @@ export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [expandedSupplierIds, setExpandedSupplierIds] = useState({});
 
   // Modals state
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -190,76 +190,104 @@ export default function SuppliersTab() {
           <p className="text-sm mt-1">Haz clic en «Añadir» para crear el primero</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
           {filteredSuppliers.map(s => {
             const waText = encodeURIComponent(`Hola ${s.contact_name || s.name}, te adjunto el pedido de ACFC Kitchen:`);
             const rawPhone = (s.phone || '').replace(/[\s\-().]/g, '');
             const waUrl = s.phone ? `https://wa.me/${rawPhone}?text=${waText}` : '';
             const mailtoUrl = s.email ? `mailto:${s.email}?subject=${encodeURIComponent('Pedido ACFC Kitchen')}&body=${waText}` : '';
+            const isExpanded = !!expandedSupplierIds[s.id];
+
+            const toggleExpanded = () => {
+              setExpandedSupplierIds(prev => ({ ...prev, [s.id]: !prev[s.id] }));
+            };
 
             return (
-              <div key={s.id} className="card p-6 flex flex-col gap-4 supplier-active hover:-translate-y-0.5 transition-transform">
-                <div className="flex justify-between items-start">
+              <div key={s.id} className="card p-4 flex flex-col gap-3 supplier-active transition-all border border-slate-200">
+                {/* Header compacto siempre visible */}
+                <div className="flex items-center justify-between gap-2 cursor-pointer" onClick={toggleExpanded}>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900 text-base truncate" style={{ fontFamily: 'Outfit' }}>{s.name}</h3>
-                    {s.contact_name ? (
-                      <p className="text-xs text-slate-400 mt-0.5">Contacto: {s.contact_name}</p>
-                    ) : (
-                      <p className="text-xs text-slate-300 mt-0.5 italic">Sin contacto</p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 text-base truncate" style={{ fontFamily: 'Outfit' }}>{s.name}</h3>
+                      <span className="badge badge-ok text-[10px] py-0.5 px-2">Activo</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                      {s.phone && <span className="font-medium text-slate-700">📞 {s.phone}</span>}
+                      {s.contact_name && <span className="truncate">👤 {s.contact_name}</span>}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setEditSupplier({
-                        id: s.id,
-                        name: s.name,
-                        contact: s.contact_name || '',
-                        email: s.email || '',
-                        phone: s.phone || '',
-                        notes: s.notes || ''
-                      });
-                      setEditModalOpen(true);
-                    }}
-                    title="Editar proveedor"
-                    className="ml-2 p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-brand hover:border-brand transition-colors flex-shrink-0"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-                  </button>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <div>
-                    <span className="font-semibold text-slate-700 block">Email</span>
-                    {s.email ? <span className="truncate block">{s.email}</span> : <span className="text-slate-300 italic">No registrado</span>}
-                  </div>
-                  <div>
-                    <span className="font-semibold text-slate-700 block">Teléfono</span>
-                    {s.phone ? <span>{s.phone}</span> : <span className="text-slate-300 italic">No registrado</span>}
-                  </div>
-                </div>
-
-                {s.notes && <p className="text-sm text-slate-500 leading-relaxed">{s.notes}</p>}
-
-                <div className="flex gap-2 pt-1 border-t border-slate-100">
-                  {waUrl ? (
-                    <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-colors text-xs font-semibold">
-                      WhatsApp
-                    </a>
-                  ) : (
-                    <button disabled className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
-                      WhatsApp
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditSupplier({
+                          id: s.id,
+                          name: s.name,
+                          contact: s.contact_name || '',
+                          email: s.email || '',
+                          phone: s.phone || '',
+                          notes: s.notes || ''
+                        });
+                        setEditModalOpen(true);
+                      }}
+                      title="Editar proveedor"
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-brand hover:border-brand transition-colors"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
                     </button>
-                  )}
-                  {mailtoUrl ? (
-                    <a href={mailtoUrl} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-colors text-xs font-semibold">
-                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>mail</span> Correo
-                    </a>
-                  ) : (
-                    <button disabled className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
-                      <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>mail</span> Correo
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded();
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                        {isExpanded ? 'expand_less' : 'expand_more'}
+                      </span>
                     </button>
-                  )}
+                  </div>
                 </div>
+
+                {/* Detalles colapsables */}
+                {isExpanded && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100 animate-fadeIn">
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div>
+                        <span className="font-semibold text-slate-700 block text-[10px] uppercase">Email</span>
+                        {s.email ? <span className="truncate block">{s.email}</span> : <span className="text-slate-300 italic">No registrado</span>}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-700 block text-[10px] uppercase">Contacto</span>
+                        {s.contact_name ? <span>{s.contact_name}</span> : <span className="text-slate-300 italic">No registrado</span>}
+                      </div>
+                    </div>
+
+                    {s.notes && <p className="text-xs text-slate-500 leading-relaxed bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">{s.notes}</p>}
+
+                    <div className="flex gap-2 pt-1">
+                      {waUrl ? (
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition-colors text-xs font-semibold">
+                          <span>💬 WhatsApp</span>
+                        </a>
+                      ) : (
+                        <button disabled className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
+                          <span>💬 WhatsApp</span>
+                        </button>
+                      )}
+                      {mailtoUrl ? (
+                        <a href={mailtoUrl} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors text-xs font-semibold">
+                          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>mail</span> Correo
+                        </a>
+                      ) : (
+                        <button disabled className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-100 text-slate-300 cursor-not-allowed text-xs font-semibold">
+                          <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>mail</span> Correo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
