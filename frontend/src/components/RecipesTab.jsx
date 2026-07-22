@@ -34,6 +34,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
+  const [ingredientSearchQuery, setIngredientSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [advancedFilters, setAdvancedFilters] = useState({
     valoracion: [],
@@ -155,12 +156,23 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   // Filtering Recipes
   const filteredRecipes = useMemo(() => {
     return recipes.filter(r => {
-      // Search text
+      // Search text by name or category
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const nameMatch = (r.name || '').toLowerCase().includes(q);
         const categoryMatch = (r.category || '').toLowerCase().includes(q);
         if (!nameMatch && !categoryMatch) return false;
+      }
+
+      // Search by ingredient name or cut
+      if (ingredientSearchQuery.trim()) {
+        const ingQ = ingredientSearchQuery.toLowerCase().trim();
+        const hasMatchingIng = (r.recipe_ingredients || []).some(ri => {
+          const ingName = (ri.ingredients?.name || ri.name || '').toLowerCase();
+          const corte = (ri.tipo_corte || '').toLowerCase();
+          return ingName.includes(ingQ) || corte.includes(ingQ);
+        });
+        if (!hasMatchingIng) return false;
       }
 
       // Family/Category Select
@@ -181,7 +193,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
 
       return true;
     });
-  }, [recipes, searchQuery, selectedCategory, advancedFilters, recipeCategories]);
+  }, [recipes, searchQuery, ingredientSearchQuery, selectedCategory, advancedFilters, recipeCategories]);
 
   // Math totals for the whole screen
   const stats = useMemo(() => {
@@ -219,12 +231,15 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   };
 
   const clearAdvancedFilters = () => {
+    setSearchQuery('');
+    setIngredientSearchQuery('');
+    setSelectedCategory('');
     setAdvancedFilters({
       valoracion: [],
       dificultad: [],
       tiempo_elaboracion: []
     });
-    window.toast && window.toast('🧹 Filtros avanzados restablecidos');
+    window.toast && window.toast('🧹 Filtros restablecidos');
   };
 
   // Recipe Metrics stars update in DB
@@ -500,19 +515,45 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         style={{ contain: 'paint', backfaceVisibility: 'hidden' }}
       >
         <div className="border border-slate-200/80 rounded-xl p-2.5 shadow-sm bg-white dark:bg-slate-900 space-y-2">
-          {/* Fila 1 (Buscador + Familias Select) */}
-          <div className="flex items-center gap-2 w-full">
+          {/* Fila 1 (Buscador Receta + Buscador por Ingrediente + Familias Select) */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
             <input
               type="text"
-              placeholder="Buscar receta..."
+              placeholder="Buscar receta por nombre..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400 flex-1 min-w-0"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs sm:text-sm outline-none focus:border-brand transition-colors placeholder-slate-400 flex-1 w-full min-w-0"
             />
+
+            <div className="relative flex-1 w-full min-w-0">
+              <input
+                type="text"
+                list="ingredients-filter-datalist"
+                placeholder="🥩 Buscar por ingrediente..."
+                value={ingredientSearchQuery}
+                onChange={e => setIngredientSearchQuery(e.target.value)}
+                className="w-full bg-amber-50/50 border border-amber-200/90 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-800 outline-none focus:border-amber-500 transition-colors placeholder-slate-400 font-medium pr-7"
+              />
+              <datalist id="ingredients-filter-datalist">
+                {inventory.map(ing => (
+                  <option key={ing.id} value={ing.name} />
+                ))}
+              </datalist>
+              {ingredientSearchQuery && (
+                <button
+                  onClick={() => setIngredientSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                  title="Borrar filtro de ingrediente"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-600 outline-none select-custom pr-7 flex-1 min-w-0"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-slate-600 outline-none select-custom pr-7 w-full sm:w-auto min-w-[140px]"
             >
               <option value="">Todas las familias</option>
               {recipeCategories.map(c => (
@@ -662,6 +703,23 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                         <span className="badge badge-slate mr-2">{r.category || 'Sin familia'}</span>
                         {rPortions} pax {canEdit && `· Coste total: ${totalRecipeCost.toFixed(2)}€`}
                       </p>
+
+                      {/* Matching ingredients badge when searching by ingredient */}
+                      {ingredientSearchQuery.trim() && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(r.recipe_ingredients || []).filter(ri => {
+                            const ingName = (ri.ingredients?.name || ri.name || '').toLowerCase();
+                            const corte = (ri.tipo_corte || '').toLowerCase();
+                            const q = ingredientSearchQuery.toLowerCase().trim();
+                            return ingName.includes(q) || corte.includes(q);
+                          }).map((ri, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                              <span className="material-symbols-outlined text-[14px] text-amber-700">grocery</span>
+                              {ri.ingredients?.name || ri.name} {ri.tipo_corte ? `(${ri.tipo_corte})` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -766,13 +824,27 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-50">
-                                {parsedIngredients.map((ing, idx) => (
-                                  <tr key={idx} className="text-slate-700">
-                                    <td className="py-2.5 font-medium">{ing.name}</td>
-                                    <td className="py-2.5 text-right text-slate-500 font-mono">{ing.rawQty}</td>
-                                    <td className="py-2.5 text-right text-slate-400">{ing.unit}</td>
-                                  </tr>
-                                ))}
+                                {parsedIngredients.map((ing, idx) => {
+                                  const isMatch = ingredientSearchQuery.trim() && (
+                                    (ing.name || '').toLowerCase().includes(ingredientSearchQuery.toLowerCase().trim()) ||
+                                    (ing.tipo_corte || '').toLowerCase().includes(ingredientSearchQuery.toLowerCase().trim())
+                                  );
+
+                                  return (
+                                    <tr key={idx} className={isMatch ? "bg-amber-50/80 font-bold text-amber-950 border-l-4 border-amber-500" : "text-slate-700"}>
+                                      <td className="py-2.5 font-medium flex items-center gap-2">
+                                        <span>{ing.name}</span>
+                                        {isMatch && (
+                                          <span className="px-1.5 py-0.5 text-[10px] bg-amber-200 text-amber-900 rounded font-bold border border-amber-300">
+                                            Coincidencia
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 text-right text-slate-500 font-mono">{ing.rawQty}</td>
+                                      <td className="py-2.5 text-right text-slate-400">{ing.unit}</td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
@@ -824,16 +896,30 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                              {parsedIngredients.map((ing, idx) => (
-                                <tr key={idx} className="text-slate-700">
-                                  <td className="py-2.5 font-medium text-slate-900">{ing.name}</td>
-                                  <td className="py-2.5"><span className="badge badge-slate">{ing.nutritional_category}</span></td>
-                                  <td className="py-2.5 text-right font-mono">{ing.rawQty} {ing.unit}</td>
-                                  <td className="py-2.5 text-right font-mono text-slate-500">{ing.unitCostText}</td>
-                                  <td className="py-2.5 text-right font-mono text-slate-500">{ing.waste_percentage}%</td>
-                                  <td className="py-2.5 text-right font-mono font-bold text-slate-800">{ing.cost.toFixed(3)}€</td>
-                                </tr>
-                              ))}
+                              {parsedIngredients.map((ing, idx) => {
+                                const isMatch = ingredientSearchQuery.trim() && (
+                                  (ing.name || '').toLowerCase().includes(ingredientSearchQuery.toLowerCase().trim()) ||
+                                  (ing.tipo_corte || '').toLowerCase().includes(ingredientSearchQuery.toLowerCase().trim())
+                                );
+
+                                return (
+                                  <tr key={idx} className={isMatch ? "bg-amber-50/80 font-bold text-amber-950 border-l-4 border-amber-500" : "text-slate-700"}>
+                                    <td className="py-2.5 font-medium text-slate-900 flex items-center gap-2">
+                                      <span>{ing.name}</span>
+                                      {isMatch && (
+                                        <span className="px-1.5 py-0.5 text-[10px] bg-amber-200 text-amber-900 rounded font-bold border border-amber-300">
+                                          Coincidencia
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-2.5"><span className="badge badge-slate">{ing.nutritional_category}</span></td>
+                                    <td className="py-2.5 text-right font-mono">{ing.rawQty} {ing.unit}</td>
+                                    <td className="py-2.5 text-right font-mono text-slate-500">{ing.unitCostText}</td>
+                                    <td className="py-2.5 text-right font-mono text-slate-500">{ing.waste_percentage}%</td>
+                                    <td className="py-2.5 text-right font-mono font-bold text-slate-800">{ing.cost.toFixed(3)}€</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
