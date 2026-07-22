@@ -478,19 +478,58 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
     }, [filteredInventory]);
 
     const [activeLetter, setActiveLetter] = useState('');
+    const [collapsedLetters, setCollapsedLetters] = useState({});
 
-    // ─── scrollToLetter: usa getElementById para máxima fiabilidad ───────────
+    // Agrupación por letra inicial
+    const inventoryByLetter = useMemo(() => {
+      const groups = {};
+      sortedInventory.forEach(item => {
+        const letter = (item.name || '').trim()[0]?.toUpperCase() || '#';
+        if (!groups[letter]) groups[letter] = [];
+        groups[letter].push(item);
+      });
+      return groups;
+    }, [sortedInventory]);
+
+    const toggleLetterCollapse = useCallback((letter) => {
+      setCollapsedLetters(prev => ({
+        ...prev,
+        [letter]: !prev[letter]
+      }));
+    }, []);
+
+    const collapseAllLetters = useCallback(() => {
+      const allCollapsed = {};
+      ALPHABET.forEach(l => { allCollapsed[l] = true; });
+      setCollapsedLetters(allCollapsed);
+    }, []);
+
+    const expandAllLetters = useCallback(() => {
+      setCollapsedLetters({});
+    }, []);
+
+    // ─── scrollToLetter: despliega la letra si está colapsada y hace scroll suave ───────────
     const scrollToLetter = useCallback((letter) => {
-      // intenta la letra pedida o la más cercana disponible
-      const targets = [letter, ...ALPHABET.filter(l => l > letter && activeLetters.has(l))];
-      for (const l of targets) {
-        const el = document.getElementById(`letter-group-${l}`) || document.getElementById(`letter-group-mobile-${l}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActiveLetter(l);
-          return;
+      setCollapsedLetters(prev => {
+        if (prev[letter]) {
+          const next = { ...prev };
+          delete next[letter];
+          return next;
         }
-      }
+        return prev;
+      });
+
+      setTimeout(() => {
+        const targets = [letter, ...ALPHABET.filter(l => l > letter && activeLetters.has(l))];
+        for (const l of targets) {
+          const el = document.getElementById(`letter-group-${l}`) || document.getElementById(`letter-group-mobile-${l}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveLetter(l);
+            return;
+          }
+        }
+      }, 60);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLetters]);
 
@@ -671,9 +710,30 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
       <div className="ml-7 sm:ml-8">
         {/* Contenido principal de la tabla */}
         <div className="card overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3">
             <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Live Stock Matrix</h3>
-            <div className="flex items-center gap-3">
+            
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              {/* Botones globales Expandir / Contraer Todo */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={expandAllLetters}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                  title="Expandir todas las secciones"
+                >
+                  Expandir todo
+                </button>
+                <button
+                  type="button"
+                  onClick={collapseAllLetters}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                  title="Contraer todas las secciones"
+                >
+                  Contraer todo
+                </button>
+              </div>
+
               <span className="text-xs font-medium text-slate-400">
                 {filteredInventory.length} de {inventory.length} líneas
               </span>
@@ -708,104 +768,120 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 bg-white text-slate-700">
-                {sortedInventory.map((item, idx) => {
-                  const firstLetter = (item.name || '').trim()[0]?.toUpperCase();
-                  const prevLetter = idx > 0 ? (sortedInventory[idx - 1].name || '').trim()[0]?.toUpperCase() : null;
-                  const isFirstOfLetter = firstLetter && firstLetter !== prevLetter;
-
+                {Object.entries(inventoryByLetter).map(([letter, items]) => {
+                  const isCollapsed = !!collapsedLetters[letter];
                   return (
-                    <React.Fragment key={item.id}>
-                      {isFirstOfLetter && (
-                        <tr
-                          id={`letter-group-${firstLetter}`}
-                          className="bg-slate-50/80 scroll-mt-24"
-                        >
-                          <td colSpan={isAssistant ? 7 : 9} className="px-6 py-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{firstLetter}</span>
-                          </td>
-                        </tr>
-                      )}
-                      <tr className="tr-hover cursor-pointer" onClick={() => openEditModal(item)}>
-                        {/* Ingrediente */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
-                              {item.image_url ? (
-                                <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-                              ) : (
-                                <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
-                              )}
+                    <React.Fragment key={`group-${letter}`}>
+                      {/* Encabezado Acordeón de Letra */}
+                      <tr
+                        id={`letter-group-${letter}`}
+                        onClick={() => toggleLetterCollapse(letter)}
+                        className="bg-slate-100/90 border-y border-slate-200 cursor-pointer hover:bg-slate-200/80 transition-colors select-none scroll-mt-24"
+                      >
+                        <td colSpan={isAssistant ? 7 : 9} className="px-6 py-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-sm font-black text-slate-800 uppercase font-display tracking-wider">
+                                {letter}
+                              </span>
+                              <span className="badge badge-indigo text-[10px] py-0.5 px-2 font-bold">
+                                {items.length} {items.length === 1 ? 'insumo' : 'insumos'}
+                              </span>
                             </div>
-                            <div>
-                              <p className="font-semibold text-slate-900">{item.name}</p>
-                              {item.brand && <p className="text-[10px] text-slate-400 font-medium">{item.brand}</p>}
+                            <div className="flex items-center gap-1 text-slate-500 text-xs font-semibold">
+                              <span>{isCollapsed ? 'Desplegar' : 'Plegar'}</span>
+                              <span className="material-symbols-outlined transition-transform duration-200" style={{ fontSize: '18px' }}>
+                                {isCollapsed ? 'expand_more' : 'expand_less'}
+                              </span>
                             </div>
                           </div>
                         </td>
-                        {/* Categoría */}
-                        <td className="px-4 py-4"><span className="badge badge-slate">{item.cat}</span></td>
-                        {/* Stock Actual */}
-                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              step="any"
-                              value={item.stock_actual}
-                              onChange={e => handleLocalFieldChange(item.id, 'stock_actual', e.target.value)}
-                              className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
-                            />
-                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                          </div>
-                        </td>
-                        {/* Mínimo */}
-                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              step="any"
-                              disabled={isAssistant}
-                              value={item.stock_minimo}
-                              onChange={e => handleLocalFieldChange(item.id, 'stock_minimo', e.target.value)}
-                              className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
-                            />
-                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                          </div>
-                        </td>
-                        {/* Máximo */}
-                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              step="any"
-                              disabled={isAssistant}
-                              value={item.stock_maximo}
-                              onChange={e => handleLocalFieldChange(item.id, 'stock_maximo', e.target.value)}
-                              className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
-                            />
-                            <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
-                          </div>
-                        </td>
-                        {/* Coste/Kg — solo chef/admin */}
-                        {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
-                        {/* Proveedor — visible para todos */}
-                        <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
-                        {/* Estado */}
-                        <td className="px-4 py-4">
-                          {item.critical ? (
-                            <span className="badge badge-red pulse-red">REORDENAR</span>
-                          ) : (
-                            <span className="badge badge-green">OK</span>
-                          )}
-                        </td>
-                        {/* Acciones — solo chef/admin */}
-                        {!isAssistant && (
-                          <td className="px-4 py-4">
-                            <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
-                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-                            </button>
-                          </td>
-                        )}
                       </tr>
+
+                      {/* Filas de insumos (si no está colapsado) */}
+                      {!isCollapsed && items.map(item => (
+                        <tr key={item.id} className="tr-hover cursor-pointer" onClick={() => openEditModal(item)}>
+                          {/* Ingrediente */}
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                                {item.image_url ? (
+                                  <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                                ) : (
+                                  <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900">{item.name}</p>
+                                {item.brand && <p className="text-[10px] text-slate-400 font-medium">{item.brand}</p>}
+                              </div>
+                            </div>
+                          </td>
+                          {/* Categoría */}
+                          <td className="px-4 py-4"><span className="badge badge-slate">{item.cat}</span></td>
+                          {/* Stock Actual */}
+                          <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="any"
+                                value={item.stock_actual}
+                                onChange={e => handleLocalFieldChange(item.id, 'stock_actual', e.target.value)}
+                                className="w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand text-slate-900 text-center"
+                              />
+                              <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                            </div>
+                          </td>
+                          {/* Mínimo */}
+                          <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="any"
+                                disabled={isAssistant}
+                                value={item.stock_minimo}
+                                onChange={e => handleLocalFieldChange(item.id, 'stock_minimo', e.target.value)}
+                                className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
+                              />
+                              <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                            </div>
+                          </td>
+                          {/* Máximo */}
+                          <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                step="any"
+                                disabled={isAssistant}
+                                value={item.stock_maximo}
+                                onChange={e => handleLocalFieldChange(item.id, 'stock_maximo', e.target.value)}
+                                className={`w-16 px-1.5 py-0.5 text-xs font-semibold rounded bg-transparent border-0 text-slate-900 text-center ${isAssistant ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-100 focus:bg-white focus:ring-1 focus:ring-brand'}`}
+                              />
+                              <span className="text-slate-400 text-[10px] font-normal">{item.unit}</span>
+                            </div>
+                          </td>
+                          {/* Coste/Kg — solo chef/admin */}
+                          {!isAssistant && <td className="px-4 py-4 font-semibold text-slate-700 hidden sm:table-cell">{(Number(item.cost) || 0).toFixed(2)}€</td>}
+                          {/* Proveedor — visible para todos */}
+                          <td className="px-4 py-4 text-slate-500 text-xs">{item.supplier}</td>
+                          {/* Estado */}
+                          <td className="px-4 py-4">
+                            {item.critical ? (
+                              <span className="badge badge-red pulse-red">REORDENAR</span>
+                            ) : (
+                              <span className="badge badge-green">OK</span>
+                            )}
+                          </td>
+                          {/* Acciones — solo chef/admin */}
+                          {!isAssistant && (
+                            <td className="px-4 py-4">
+                              <button onClick={e => { e.stopPropagation(); openEditModal(item); }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand hover:bg-brand-muted transition-colors">
+                                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
                     </React.Fragment>
                   );
                 })}
@@ -814,86 +890,101 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
           </div>
 
           {/* Mobile View */}
-          <div className="md:hidden">
-            {/* Lista móvil con separadores de letra */}
-            <div className="p-3 space-y-2">
-              {sortedInventory.map((item, idx) => {
-                const firstLetter = (item.name || '').trim()[0]?.toUpperCase();
-                const prevLetter = idx > 0 ? (sortedInventory[idx - 1].name || '').trim()[0]?.toUpperCase() : null;
-                const isFirstOfLetter = firstLetter && firstLetter !== prevLetter;
-                const stockColor = item.stock_actual <= 0 ? 'text-red-500' : 'text-slate-700';
-                const detailId = `react-inv-detail-${item.id}`;
-                const toggleDetail = () => {
-                  const el = document.getElementById(detailId);
-                  if (el) el.classList.toggle('hidden');
-                };
-
-                return (
-                  <React.Fragment key={item.id}>
-                    {isFirstOfLetter && (
-                      <div
-                        id={`letter-group-mobile-${firstLetter}`}
-                        className="pt-2 pb-0.5 px-1 scroll-mt-28"
-                      >
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-200 pb-0.5 block">{firstLetter}</span>
-                      </div>
-                    )}
-
-                    <div className="border border-slate-100 rounded-xl overflow-hidden bg-white">
-                      <div className="flex items-center py-2.5 px-3 gap-2.5">
-                        {/* Thumbnail miniatura para móvil */}
-                        <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
-                          {item.image_url ? (
-                            <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-                          ) : (
-                            <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
-                          )}
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1 cursor-pointer" onClick={toggleDetail}>
-                          <span className="font-medium text-slate-800 text-sm truncate leading-tight">{item.name}</span>
-                          <span className="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">{item.cat}</span>
-                        </div>
-                        <div className="flex items-baseline gap-1 flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
-                          <span className={`text-xs font-semibold ${stockColor}`}>{item.stock_actual}</span>
-                          <span className="text-xs text-slate-400">{item.unit}</span>
-                        </div>
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <button onClick={toggleDetail} className="p-1.5 text-slate-400 hover:text-slate-600">
-                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>expand_more</span>
-                          </button>
-                          {!isAssistant && (
-                            <button onClick={() => openEditModal(item)} className="p-1.5 text-indigo-600 hover:text-indigo-900">
-                              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div id={detailId} className="hidden px-3 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 grid grid-cols-2 gap-x-4 gap-y-2.5">
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Proveedor</p>
-                          <p className="font-medium text-slate-700 truncate">{item.supplier}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Marca / Ref.</p>
-                          <p className="font-medium text-slate-700 truncate">{item.brand || '—'}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Merma</p>
-                          <p className="font-medium text-slate-700">{item.waste_percentage > 0 ? item.waste_percentage + '%' : '—'}</p>
-                        </div>
-                        {!isAssistant && (
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / {item.unit}</p>
-                            <p className="font-bold text-slate-900">{(item.cost || 0).toFixed(2)}€</p>
-                          </div>
-                        )}
-                      </div>
+          <div className="md:hidden p-3 space-y-3">
+            {Object.entries(inventoryByLetter).map(([letter, items]) => {
+              const isCollapsed = !!collapsedLetters[letter];
+              return (
+                <div key={`m-group-${letter}`} className="space-y-2">
+                  {/* Encabezado Acordeón Móvil de Letra */}
+                  <div
+                    id={`letter-group-mobile-${letter}`}
+                    onClick={() => toggleLetterCollapse(letter)}
+                    className="flex items-center justify-between bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-slate-200/70 transition-all select-none scroll-mt-28 shadow-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-widest">{letter}</span>
+                      <span className="badge badge-indigo text-[10px] py-0.5 px-1.5 font-bold">
+                        {items.length}
+                      </span>
                     </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+                    <div className="flex items-center gap-1 text-slate-500 text-[11px] font-semibold">
+                      <span>{isCollapsed ? 'Mostrar' : 'Ocultar'}</span>
+                      <span className="material-symbols-outlined transition-transform duration-200" style={{ fontSize: '18px' }}>
+                        {isCollapsed ? 'expand_more' : 'expand_less'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tarjetas de productos (si no está colapsado) */}
+                  {!isCollapsed && (
+                    <div className="space-y-2">
+                      {items.map(item => {
+                        const stockColor = item.stock_actual <= 0 ? 'text-red-500' : 'text-slate-700';
+                        const detailId = `react-inv-detail-${item.id}`;
+                        const toggleDetail = () => {
+                          const el = document.getElementById(detailId);
+                          if (el) el.classList.toggle('hidden');
+                        };
+
+                        return (
+                          <div key={item.id} className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-xs">
+                            <div className="flex items-center py-2.5 px-3 gap-2.5">
+                              {/* Thumbnail miniatura para móvil */}
+                              <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
+                                {item.image_url ? (
+                                  <img src={item.image_url} className="w-full h-full object-cover" alt="" onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }} />
+                                ) : (
+                                  <span className="material-symbols-outlined text-slate-400 text-lg">image</span>
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1 cursor-pointer" onClick={toggleDetail}>
+                                <span className="font-medium text-slate-800 text-sm truncate leading-tight">{item.name}</span>
+                                <span className="text-[10px] text-slate-400 font-normal uppercase leading-none mt-0.5 truncate">{item.cat}</span>
+                              </div>
+                              <div className="flex items-baseline gap-1 flex-shrink-0 cursor-pointer" onClick={toggleDetail}>
+                                <span className={`text-xs font-semibold ${stockColor}`}>{item.stock_actual}</span>
+                                <span className="text-xs text-slate-400">{item.unit}</span>
+                              </div>
+                              <div className="flex items-center gap-0.5 flex-shrink-0">
+                                <button onClick={toggleDetail} className="p-1.5 text-slate-400 hover:text-slate-600">
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>expand_more</span>
+                                </button>
+                                {!isAssistant && (
+                                  <button onClick={() => openEditModal(item)} className="p-1.5 text-indigo-600 hover:text-indigo-900">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div id={detailId} className="hidden px-3 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 grid grid-cols-2 gap-x-4 gap-y-2.5">
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Proveedor</p>
+                                <p className="font-medium text-slate-700 truncate">{item.supplier}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Marca / Ref.</p>
+                                <p className="font-medium text-slate-700 truncate">{item.brand || '—'}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Merma</p>
+                                <p className="font-medium text-slate-700">{item.waste_percentage > 0 ? item.waste_percentage + '%' : '—'}</p>
+                              </div>
+                              {!isAssistant && (
+                                <div>
+                                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Coste neto / {item.unit}</p>
+                                  <p className="font-bold text-slate-900">{(item.cost || 0).toFixed(2)}€</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
