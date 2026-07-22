@@ -401,6 +401,52 @@ export const guardarYConfirmarMenu = async (menuDays) => {
   }
 
   try {
+    for (const day of menuDays) {
+      // 1. Release existing reservations if previously confirmed
+      const { data: existingPlan } = await supabase
+        .from('menu_planner')
+        .select('*')
+        .eq('date', day.date)
+        .maybeSingle();
+
+      if (existingPlan && existingPlan.confirmado) {
+        const oldRecipes = [
+          { recipeId: existingPlan.breakfast_recipe_id, players: existingPlan.breakfast_players || 20 },
+          { recipeId: existingPlan.lunch_recipe_id, players: existingPlan.lunch_players || 25 },
+          { recipeId: existingPlan.lunch_side_recipe_id, players: existingPlan.lunch_players || 25 },
+          { recipeId: existingPlan.dinner_recipe_id, players: existingPlan.dinner_players || 20 }
+        ];
+
+        for (const oldItem of oldRecipes) {
+          if (!oldItem.recipeId || oldItem.players <= 0) continue;
+          const { data: oldRi } = await supabase
+            .from('recipe_ingredients')
+            .select('ingredient_id, quantity_per_portion')
+            .eq('recipe_id', oldItem.recipeId);
+
+          if (oldRi) {
+            for (const ri of oldRi) {
+              const qtyToRelease = Number(ri.quantity_per_portion || 0) * oldItem.players;
+              if (qtyToRelease > 0 && ri.ingredient_id) {
+                const { data: ingData } = await supabase
+                  .from('ingredients')
+                  .select('stock_reservado')
+                  .eq('id', ri.ingredient_id)
+                  .single();
+
+                const currentReserved = Number(ingData?.stock_reservado || 0);
+                const newReserved = Math.max(0, currentReserved - qtyToRelease);
+                await supabase
+                  .from('ingredients')
+                  .update({ stock_reservado: newReserved, updated_at: new Date().toISOString() })
+                  .eq('id', ri.ingredient_id);
+              }
+            }
+          }
+        }
+      }
+    }
+
     const upserts = menuDays.map(item => ({
       date: item.date,
       breakfast_recipe_id: item.breakfast_recipe_id || null,

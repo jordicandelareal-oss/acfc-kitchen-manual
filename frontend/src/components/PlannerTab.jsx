@@ -280,6 +280,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     }
   };
 
+  const handleClearDay = (day) => {
+    setSelectedDay(day);
+    setResetScope('day');
+    setResetModalOpen(true);
+  };
+
   const sanitizeRecipeId = (id) => {
     if (!id || String(id).trim() === '') return null;
     const exists = recipes.some(r => r.id === id);

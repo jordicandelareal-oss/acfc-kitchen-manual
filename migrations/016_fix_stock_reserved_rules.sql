@@ -10,6 +10,7 @@ DROP FUNCTION IF EXISTS resetear_entorno_pruebas();
 
 -- 1. RPC: guardar_menu_borrador
 -- Saves menu planner items as draft WITHOUT touching ingredients.stock_reservado
+-- If the day was previously confirmed, release its stock reservations first.
 CREATE OR REPLACE FUNCTION guardar_menu_borrador(p_menu_days JSONB)
 RETURNS void
 LANGUAGE plpgsql
@@ -18,11 +19,46 @@ AS $$
 DECLARE
   day_record JSONB;
   target_date DATE;
+  v_old_rec record;
+  v_ing record;
+  v_qty numeric;
 BEGIN
   FOR day_record IN SELECT * FROM jsonb_array_elements(p_menu_days)
   LOOP
     target_date := (day_record->>'date')::DATE;
     IF target_date IS NULL THEN CONTINUE; END IF;
+
+    -- If day was previously confirmed, release its reserved stock first
+    SELECT * INTO v_old_rec FROM public.menu_planner WHERE date = target_date;
+    IF FOUND AND COALESCE(v_old_rec.confirmado, false) = true THEN
+      IF v_old_rec.breakfast_recipe_id IS NOT NULL THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.breakfast_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * COALESCE(v_old_rec.breakfast_players, 20));
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      IF v_old_rec.lunch_recipe_id IS NOT NULL AND COALESCE(v_old_rec.lunch_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.lunch_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.lunch_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      IF v_old_rec.lunch_side_recipe_id IS NOT NULL AND COALESCE(v_old_rec.lunch_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.lunch_side_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.lunch_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      IF v_old_rec.dinner_recipe_id IS NOT NULL AND COALESCE(v_old_rec.dinner_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.dinner_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.dinner_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+    END IF;
 
     INSERT INTO public.menu_planner (
       date,
@@ -76,6 +112,7 @@ BEGIN
       dinner_kosher = EXCLUDED.dinner_kosher,
       dinner_vegan = EXCLUDED.dinner_vegan,
       dinner_allergies = EXCLUDED.dinner_allergies,
+      confirmado = false,
       updated_at = NOW();
   END LOOP;
 END;
@@ -84,6 +121,7 @@ $$;
 
 -- 2. RPC: guardar_y_confirmar_menu
 -- Saves menu planner items and marks them confirmed, reserving stock in ingredients
+-- IDEMPOTENT: Releases previous reservations before adding new ones
 CREATE OR REPLACE FUNCTION guardar_y_confirmar_menu(p_menu_days JSONB)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -92,6 +130,7 @@ AS $$
 DECLARE
   day_record JSONB;
   target_date DATE;
+  v_old_rec record;
   v_rec record;
   v_ing record;
   v_qty numeric;
@@ -102,7 +141,43 @@ BEGIN
     target_date := (day_record->>'date')::DATE;
     IF target_date IS NULL THEN CONTINUE; END IF;
 
-    -- Upsert menu planner record as confirmed
+    -- STEP 1: If day was previously confirmed, release its existing stock reservations first
+    SELECT * INTO v_old_rec FROM public.menu_planner WHERE date = target_date;
+    IF FOUND AND COALESCE(v_old_rec.confirmado, false) = true THEN
+      -- Release Breakfast
+      IF v_old_rec.breakfast_recipe_id IS NOT NULL THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.breakfast_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * COALESCE(v_old_rec.breakfast_players, 20));
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      -- Release Lunch
+      IF v_old_rec.lunch_recipe_id IS NOT NULL AND COALESCE(v_old_rec.lunch_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.lunch_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.lunch_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      -- Release Lunch Side
+      IF v_old_rec.lunch_side_recipe_id IS NOT NULL AND COALESCE(v_old_rec.lunch_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.lunch_side_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.lunch_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+
+      -- Release Dinner
+      IF v_old_rec.dinner_recipe_id IS NOT NULL AND COALESCE(v_old_rec.dinner_players, 0) > 0 THEN
+        FOR v_ing IN SELECT ingredient_id, quantity_per_portion FROM public.recipe_ingredients WHERE recipe_id = v_old_rec.dinner_recipe_id LOOP
+          v_qty := (v_ing.quantity_per_portion * v_old_rec.dinner_players);
+          UPDATE public.ingredients SET stock_reservado = GREATEST(0, COALESCE(stock_reservado, 0) - v_qty), updated_at = NOW() WHERE id = v_ing.ingredient_id;
+        END LOOP;
+      END IF;
+    END IF;
+
+    -- STEP 2: Upsert menu planner record as confirmed
     INSERT INTO public.menu_planner (
       date,
       breakfast_recipe_id,
@@ -134,7 +209,7 @@ BEGIN
       confirmado = true,
       updated_at = NOW();
 
-    -- Fetch current record
+    -- STEP 3: Add new reservations for updated confirmed menu
     SELECT * INTO v_rec FROM public.menu_planner WHERE date = target_date;
 
     -- A. Reserve Breakfast
@@ -182,7 +257,7 @@ $$;
 
 
 -- 3. RPC: eliminar_menu_y_liberar_stock
--- Releases reserved stock when deleting dishes or clearing dates
+-- Releases reserved stock 100% when deleting dishes or clearing dates
 CREATE OR REPLACE FUNCTION eliminar_menu_y_liberar_stock(p_dates DATE[])
 RETURNS JSONB
 LANGUAGE plpgsql
