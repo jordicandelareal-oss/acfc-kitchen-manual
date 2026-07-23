@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Calendar, Clock, Tv, Star, Flame } from 'lucide-react';
+import { Calendar, Clock, Star, Flame } from 'lucide-react';
 
 export default function MenuTvView() {
   const [plannerData, setPlannerData] = useState([]);
@@ -104,29 +104,27 @@ export default function MenuTvView() {
       }}
     >
       
-      {/* DARK OVERLAY FOR CONTRAST - CELESTE GREEN TURF VISIBLE BEHIND */}
+      {/* DARK OVERLAY FOR CONTRAST */}
       <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px] z-0" />
 
       {/* HEADER - CENTERED */}
       <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full">
-        {/* Large Logo */}
-        <div className="h-28 max-h-28 mb-3 flex items-center justify-center overflow-hidden">
+        {/* Logo increased by 15% (h-32) */}
+        <div className="h-32 max-h-32 mb-3 flex items-center justify-center overflow-hidden">
           <img 
             src="/logo_tv.png" 
             alt="ACFC Logo" 
             className="h-full object-contain"
-            onError={(e) => { e.target.outerHTML = '<span className="text-4xl font-black text-amber-500">ACFC</span>'; }}
+            onError={(e) => { e.target.outerHTML = '<span className="text-5xl font-black text-amber-500">ACFC</span>'; }}
           />
         </div>
 
         <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent">
           WEEKLY MENU
         </h1>
-        <p className="text-[12px] font-black text-amber-400 uppercase tracking-widest flex items-center justify-center gap-2 mt-1">
-          <Tv size={14} className="text-amber-500 animate-pulse" />
-          <span>ACFC ATHLETIC CLUB KITCHEN · DIGITAL SIGNAGE</span>
-          <span className="text-slate-800">|</span>
-          <span className="text-slate-300 font-bold">{getWeekRangeLabel(monday)}</span>
+        {/* Clean date range header only */}
+        <p className="text-sm font-black text-amber-400 uppercase tracking-widest flex items-center justify-center gap-2 mt-1">
+          <span>{getWeekRangeLabel(monday)}</span>
         </p>
 
         {/* Dynamic Clock - Top Right */}
@@ -167,10 +165,11 @@ export default function MenuTvView() {
             return (
               <div 
                 key={dateStr}
+                // Opacity adjusted strictly to 70% (bg-slate-900/70 and bg-slate-950/70)
                 className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
                   isToday 
-                    ? 'bg-slate-950/75 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
-                    : 'bg-slate-900/75 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/80'
+                    ? 'bg-slate-950/70 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
+                    : 'bg-slate-900/70 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/75'
                 }`}
               >
                 {/* Active Indicator Pin */}
@@ -181,8 +180,8 @@ export default function MenuTvView() {
                   </div>
                 )}
 
-                {/* Day Header */}
-                <div className={`p-5 border-b text-center rounded-t-[2rem] ${
+                {/* Day Header - reduced padding for compactness */}
+                <div className={`p-4 border-b text-center rounded-t-[2rem] ${
                   isToday 
                     ? 'bg-amber-400/10 border-white/10' 
                     : 'bg-slate-950/50 border-white/5'
@@ -197,19 +196,21 @@ export default function MenuTvView() {
                   </span>
                 </div>
 
-                {/* Meal Content */}
-                <div className="flex-grow p-6 flex flex-col justify-evenly gap-6 overflow-hidden">
+                {/* Meal Content - padding reduced by 20% to p-4.5/p-4 */}
+                <div className="flex-grow p-4.5 flex flex-col justify-evenly gap-5 overflow-hidden">
                   
                   {/* LUNCH */}
-                  <div className="space-y-2 flex-grow flex flex-col justify-center">
-                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
+                  <div className="space-y-1.5 flex-grow flex flex-col justify-center">
+                    {/* Shift text size increased to text-xl */}
+                    <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
                     {lunchName ? (
                       <div className="flex flex-col justify-start">
-                        <p className="text-2xl xl:text-3xl font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
+                        {/* Recipe text size reduced to text-[22px] */}
+                        <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {lunchName}
                         </p>
                         {lunchSide && (
-                          <div className="mt-2.5 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-lg self-start">
+                          <div className="mt-2 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg self-start">
                             <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">
                               🥗 SIDE: {lunchSide}
                             </span>
@@ -225,11 +226,13 @@ export default function MenuTvView() {
                   <div className="border-t border-white/10" />
 
                   {/* DINNER */}
-                  <div className="space-y-2 flex-grow flex flex-col justify-center">
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
+                  <div className="space-y-1.5 flex-grow flex flex-col justify-center">
+                    {/* Shift text size increased to text-xl */}
+                    <span className="text-xl font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
                     {dinnerName ? (
                       <div className="flex flex-col justify-start">
-                        <p className="text-2xl xl:text-3xl font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
+                        {/* Recipe text size reduced to text-[22px] */}
+                        <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {dinnerName}
                         </p>
                       </div>
