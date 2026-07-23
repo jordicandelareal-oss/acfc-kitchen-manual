@@ -773,12 +773,18 @@ export const procesarDescuentosAutomaticosTurnos = async () => {
 // ── Órdenes de Compra (Purchase Orders) ──
 export const createPurchaseOrder = async (orderData, itemsArray) => {
   try {
+    const rawSupplierId = orderData.supplier_id;
+    const resolvedSupplierId = (rawSupplierId === 'cairo-supplier' || rawSupplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c')
+      ? 'd257d90b-ad0b-4f84-97a0-fee73612953c'
+      : (rawSupplierId && rawSupplierId !== 'no-supplier' && rawSupplierId !== 'general')
+        ? rawSupplierId
+        : null;
+
     const poPayload = {
-      order_date: orderData.order_date || new Date().toISOString().split('T')[0],
-      supplier_id: orderData.supplier_id || null,
-      total_amount: Number(orderData.total_amount || 0),
+      supplier_id: resolvedSupplierId,
+      budget_id: orderData.budget_id || null,
       status: orderData.status || 'pending',
-      updated_at: new Date().toISOString()
+      total_cost: Number(orderData.total_cost !== undefined ? orderData.total_cost : (orderData.total_amount || 0))
     };
 
     console.log('📝 Insertando orden de compra en Supabase:', poPayload);

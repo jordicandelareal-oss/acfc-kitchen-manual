@@ -322,11 +322,31 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
     try {
       const totalAmount = itemsToOrder.reduce((acc, i) => acc + i.totalCost, 0);
+
+      // Resolve real supplier_id UUID or null
+      let resolvedSupplierId = null;
+      if (supplierGroup) {
+        if (supplierGroup.supplierId === 'cairo-supplier' || supplierGroup.isElCairo) {
+          resolvedSupplierId = 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+        } else if (supplierGroup.supplierId && supplierGroup.supplierId !== 'no-supplier' && supplierGroup.supplierId !== 'general') {
+          resolvedSupplierId = supplierGroup.supplierId;
+        }
+      }
+      if (!resolvedSupplierId && itemsToOrder.length > 0) {
+        const firstItem = itemsToOrder[0];
+        const isCairoItem = firstItem.isElCairo || isElCairoSupplier(firstItem.supplierName, firstItem.supplierId, firstItem.name);
+        if (isCairoItem) {
+          resolvedSupplierId = 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+        } else if (firstItem.supplierId && firstItem.supplierId !== 'no-supplier' && firstItem.supplierId !== 'general' && firstItem.supplierId !== 'cairo-supplier') {
+          resolvedSupplierId = firstItem.supplierId;
+        }
+      }
+
       const orderPayload = {
-        order_date: new Date().toISOString().split('T')[0],
-        supplier_id: supplierGroup && supplierGroup.supplierId !== 'no-supplier' ? supplierGroup.supplierId : itemsToOrder[0]?.supplierId || null,
-        total_amount: totalAmount,
-        status: 'pending'
+        supplier_id: resolvedSupplierId,
+        budget_id: null,
+        status: 'pending',
+        total_cost: totalAmount
       };
 
       const itemsPayload = itemsToOrder.map(i => ({
