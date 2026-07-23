@@ -328,7 +328,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const extractUuid = (str) => {
         if (typeof str !== 'string') return null;
         const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-        return match ? match[0] : null;
+        if (match) return match[0];
+        // fallback split parsing
+        if (str.includes('_')) {
+          const parts = str.replace('cairo_', '').replace('elcairo_', '').split('_');
+          const possibleUuid = parts[0];
+          const checkMatch = possibleUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+          if (checkMatch) return checkMatch[0];
+        }
+        return null;
       };
 
       if (supplierGroup) {
@@ -369,13 +377,20 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         total_cost: totalAmount
       };
 
-      const itemsPayload = itemsToOrder.map(i => ({
-        ingredient_id: i.id,
-        ingredient_name: i.name,
-        quantity_ordered: Number(i.neededQuantity) || 0,
-        unit_price: Number(i.unitPrice) || 0,
-        tipo_corte: i.tipoCorte || i.tipo_corte || null
-      }));
+      const itemsPayload = itemsToOrder.map(i => {
+        let resolvedIngredientId = i.ingredientId || i.ingredient_id || i.id;
+        const extIng = extractUuid(resolvedIngredientId);
+        if (extIng) {
+          resolvedIngredientId = extIng;
+        }
+        return {
+          ingredient_id: resolvedIngredientId,
+          ingredient_name: i.name,
+          quantity_ordered: Number(i.neededQuantity) || 0,
+          unit_price: Number(i.unitPrice) || 0,
+          tipo_corte: i.tipoCorte || i.tipo_corte || null
+        };
+      });
 
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
