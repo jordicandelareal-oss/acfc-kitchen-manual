@@ -141,6 +141,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const addLog = useCallback((msg, type = 'info') => {
     const ts = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
+    console.log(`[PlannerAudit] [${type.toUpperCase()}] ${msg}`);
   }, []);
 
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 6, 1)); // Default: Julio 2026
@@ -816,10 +817,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       </div>
 
       {/* ── GRID + DIAGNOSTIC CONSOLE ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
+      <div className="w-full space-y-4">
         
         {/* Calendar Grid & View Selector */}
-        <div className="xl:col-span-3 space-y-4">
+        <div className="w-full space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
@@ -1254,9 +1255,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             </>
           )}
         </div>
-
-        {/* Audit Diagnostics Console */}
-        <AuditConsole logs={logs} onClear={() => setLogs([{ type: 'info', msg: '[INFO] Consola vacía. Listo para auditar.', ts: new Date().toLocaleTimeString() }])} />
       </div>
 
       {/* ── MODAL: EDITAR PLANIFICACIÓN DÍA (REACT) ── */}
