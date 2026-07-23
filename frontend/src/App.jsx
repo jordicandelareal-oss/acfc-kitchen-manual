@@ -24,8 +24,13 @@ import {
   ProfileModal
 } from './components/GlobalModals';
 import NotificationsPanel from './components/NotificationsPanel';
+import MenuTvView from './components/MenuTvView';
 
 function App() {
+  if (window.location.pathname === '/menu-tv') {
+    return <MenuTvView />;
+  }
+
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('introPlayed');
   });

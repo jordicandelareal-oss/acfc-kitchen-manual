@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Package, AlertTriangle, ChevronRight, 
   Utensils, Euro, Shield, Users, 
-  CheckCircle, Calendar, Activity, Check, X, Sparkles
+  CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
 import { fetchIngredients, fetchPlannerDataDb, syncCanvaMenu } from '../api';
 
@@ -671,14 +671,15 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           </select>
         </div>
 
-        {/* Canva Sync Action */}
+        {/* Canva Sync & TV Menu Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
           <div className="text-right sm:text-left">
             <span className="text-[10px] text-slate-400 block font-semibold uppercase">Pantallas de Menú</span>
-            <span className="text-slate-500 font-medium block">
+            <span className="text-slate-500 font-medium block text-right sm:text-left">
               {lastSync ? `Última sincronización: ${lastSync}` : 'Sin sincronizar esta semana'}
             </span>
           </div>
+          
           <button
             onClick={handleSyncCanva}
             disabled={syncing || !selectedWeek}
@@ -692,9 +693,18 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
             ) : (
               <>
                 <Sparkles size={14} className="animate-pulse" />
-                <span>Actualizar Pantallas</span>
+                <span>Actualizar Canva</span>
               </>
             )}
+          </button>
+
+          <button
+            onClick={() => window.open('/menu-tv', '_blank')}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all border border-slate-200"
+            title="Abrir Menú para TV/Pantallas"
+          >
+            <Tv size={14} className="text-indigo-600" />
+            <span>Abrir TV</span>
           </button>
         </div>
       </div>
