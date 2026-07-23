@@ -97,51 +97,49 @@ export default function MenuTvView() {
       className="h-screen w-screen text-slate-100 flex flex-col p-8 select-none overflow-hidden relative"
       style={{
         fontFamily: 'Outfit, sans-serif',
-        backgroundImage: 'url("football_pitch.png")',
+        backgroundImage: "url('/stadium-bg.jpg')",
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}
     >
       
-      {/* DARK OVERLAY FOR CONTRAST */}
-      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] z-0" />
+      {/* DARK OVERLAY FOR CONTRAST - CELESTE GREEN TURF VISIBLE BEHIND */}
+      <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px] z-0" />
 
-      {/* HEADER */}
-      <header className="flex justify-between items-center border-b border-white/5 pb-5 mb-5 flex-shrink-0 relative z-10">
-        <div className="flex items-center gap-5">
-          {/* Official logo display */}
-          <div className="w-28 h-14 flex items-center justify-center overflow-hidden">
-            <img 
-              src="logo_tv.png" 
-              alt="ACFC Logo" 
-              className="w-full h-full object-contain"
-              onError={(e) => { e.target.outerHTML = '<span className="text-3xl font-black text-amber-500">ACFC</span>'; }}
-            />
-          </div>
-          <div className="border-l border-white/10 pl-5">
-            <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent">
-              WEEKLY MENU
-            </h1>
-            <p className="text-[11px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 mt-0.5">
-              <Tv size={14} className="text-amber-500 animate-pulse" />
-              <span>ACFC ATHLETIC CLUB KITCHEN · DIGITAL SIGNAGE</span>
-              <span className="text-slate-800">|</span>
-              <span className="text-slate-300 font-semibold">{getWeekRangeLabel(monday)}</span>
-            </p>
-          </div>
+      {/* HEADER - CENTERED */}
+      <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full">
+        {/* Large Logo */}
+        <div className="h-28 max-h-28 mb-3 flex items-center justify-center overflow-hidden">
+          <img 
+            src="/logo_tv.png" 
+            alt="ACFC Logo" 
+            className="h-full object-contain"
+            onError={(e) => { e.target.outerHTML = '<span className="text-4xl font-black text-amber-500">ACFC</span>'; }}
+          />
         </div>
 
-        {/* Dynamic Clock */}
-        <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl text-xs font-bold shadow-2xl">
+        <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent">
+          WEEKLY MENU
+        </h1>
+        <p className="text-[12px] font-black text-amber-400 uppercase tracking-widest flex items-center justify-center gap-2 mt-1">
+          <Tv size={14} className="text-amber-500 animate-pulse" />
+          <span>ACFC ATHLETIC CLUB KITCHEN · DIGITAL SIGNAGE</span>
+          <span className="text-slate-800">|</span>
+          <span className="text-slate-300 font-bold">{getWeekRangeLabel(monday)}</span>
+        </p>
+
+        {/* Dynamic Clock - Top Right */}
+        <div className="absolute top-0 right-0 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-2xl">
           <div className="flex items-center gap-2 text-slate-200">
-            <Calendar size={16} className="text-amber-400" />
+            <Calendar size={15} className="text-amber-400" />
             <span className="tracking-wide">
               {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' }).toUpperCase()}
             </span>
           </div>
           <span className="text-white/10">|</span>
-          <div className="flex items-center gap-2 text-white font-mono text-[16px] tracking-wider">
-            <Clock size={16} className="text-amber-400" />
+          <div className="flex items-center gap-2 text-white font-mono text-[15px] tracking-wider">
+            <Clock size={15} className="text-amber-400" />
             <span>
               {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
@@ -171,8 +169,8 @@ export default function MenuTvView() {
                 key={dateStr}
                 className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
                   isToday 
-                    ? 'bg-slate-900/70 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
-                    : 'bg-slate-900/60 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/75'
+                    ? 'bg-slate-950/75 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
+                    : 'bg-slate-900/75 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/80'
                 }`}
               >
                 {/* Active Indicator Pin */}
@@ -189,12 +187,12 @@ export default function MenuTvView() {
                     ? 'bg-amber-400/10 border-white/10' 
                     : 'bg-slate-950/50 border-white/5'
                 }`}>
-                  <span className={`block text-2xl xl:text-3xl uppercase font-black tracking-tighter ${
+                  <span className={`block text-xl uppercase font-bold tracking-tight ${
                     isToday ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-white'
                   }`}>
-                    {dayLabel.substring(0, 3)}
+                    {dayLabel}
                   </span>
-                  <span className="text-sm font-extrabold font-mono mt-1 inline-block text-slate-400 leading-none">
+                  <span className="text-xs font-extrabold font-mono mt-1 inline-block text-slate-400 leading-none">
                     {dateStr.split('-')[1]}/{dayNum}
                   </span>
                 </div>
@@ -207,12 +205,12 @@ export default function MenuTvView() {
                     <span className="text-[10px] font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
                     {lunchName ? (
                       <div className="flex flex-col justify-start">
-                        <p className="text-[15px] font-extrabold text-white leading-snug uppercase tracking-tight line-clamp-3">
+                        <p className="text-2xl xl:text-3xl font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {lunchName}
                         </p>
                         {lunchSide && (
-                          <div className="mt-2.5 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-lg self-start">
-                            <span className="text-[9px] text-emerald-400 font-extrabold uppercase tracking-widest">
+                          <div className="mt-2.5 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-lg self-start">
+                            <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">
                               🥗 SIDE: {lunchSide}
                             </span>
                           </div>
@@ -231,7 +229,7 @@ export default function MenuTvView() {
                     <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
                     {dinnerName ? (
                       <div className="flex flex-col justify-start">
-                        <p className="text-[15px] font-extrabold text-white leading-snug uppercase tracking-tight line-clamp-3">
+                        <p className="text-2xl xl:text-3xl font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {dinnerName}
                         </p>
                       </div>
