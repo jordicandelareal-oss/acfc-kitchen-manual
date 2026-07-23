@@ -107,9 +107,12 @@ export default function MenuTvView() {
       {/* DARK OVERLAY FOR CONTRAST */}
       <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px] z-0" />
 
+      {/* TOP DEGRADADO OSCURO (GRADIENT OVERLAY) FOR HEADER CONTRAST */}
+      <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-0 pointer-events-none" />
+
       {/* HEADER - CENTERED */}
       <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full">
-        {/* Logo increased by 15% (h-32) */}
+        {/* Logo */}
         <div className="h-32 max-h-32 mb-3 flex items-center justify-center overflow-hidden">
           <img 
             src="/logo_tv.png" 
@@ -119,13 +122,17 @@ export default function MenuTvView() {
           />
         </div>
 
-        <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent">
+        {/* Titular drop-shadow contrast */}
+        <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
           WEEKLY MENU
         </h1>
-        {/* Clean date range header only */}
-        <p className="text-sm font-black text-amber-400 uppercase tracking-widest flex items-center justify-center gap-2 mt-1">
-          <span>{getWeekRangeLabel(monday)}</span>
-        </p>
+        
+        {/* Pastilla / Badge para las fechas */}
+        <div className="mt-3 bg-slate-950/80 border border-amber-400/40 px-6 py-1.5 rounded-full shadow-lg backdrop-blur-md">
+          <span className="text-amber-400 font-bold tracking-wider text-lg md:text-xl">
+            {getWeekRangeLabel(monday)}
+          </span>
+        </div>
 
         {/* Dynamic Clock - Top Right */}
         <div className="absolute top-0 right-0 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-2xl">
@@ -165,7 +172,6 @@ export default function MenuTvView() {
             return (
               <div 
                 key={dateStr}
-                // Opacity adjusted strictly to 70% (bg-slate-900/70 and bg-slate-950/70)
                 className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
                   isToday 
                     ? 'bg-slate-950/70 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
@@ -180,7 +186,7 @@ export default function MenuTvView() {
                   </div>
                 )}
 
-                {/* Day Header - reduced padding for compactness */}
+                {/* Day Header */}
                 <div className={`p-4 border-b text-center rounded-t-[2rem] ${
                   isToday 
                     ? 'bg-amber-400/10 border-white/10' 
@@ -196,16 +202,14 @@ export default function MenuTvView() {
                   </span>
                 </div>
 
-                {/* Meal Content - padding reduced by 20% to p-4.5/p-4 */}
+                {/* Meal Content */}
                 <div className="flex-grow p-4.5 flex flex-col justify-evenly gap-5 overflow-hidden">
                   
                   {/* LUNCH */}
                   <div className="space-y-1.5 flex-grow flex flex-col justify-center">
-                    {/* Shift text size increased to text-xl */}
                     <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
                     {lunchName ? (
                       <div className="flex flex-col justify-start">
-                        {/* Recipe text size reduced to text-[22px] */}
                         <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {lunchName}
                         </p>
@@ -227,11 +231,9 @@ export default function MenuTvView() {
 
                   {/* DINNER */}
                   <div className="space-y-1.5 flex-grow flex flex-col justify-center">
-                    {/* Shift text size increased to text-xl */}
                     <span className="text-xl font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
                     {dinnerName ? (
                       <div className="flex flex-col justify-start">
-                        {/* Recipe text size reduced to text-[22px] */}
                         <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                           {dinnerName}
                         </p>
