@@ -178,8 +178,8 @@ export default function MenuTvView() {
                     </span>
                   </div>
 
-                  {/* Meal Content - centered vertically & horizontally */}
-                  <div className="flex-grow p-4 flex flex-col justify-evenly gap-3 overflow-hidden text-center items-center">
+                  {/* Meal Content - centered vertically & horizontally with 15% padding increase */}
+                  <div className="flex-grow py-5 px-4.5 flex flex-col justify-evenly gap-3.5 overflow-hidden text-center items-center">
                     
                     {/* LUNCH - Gold ☀️ */}
                     <div className="space-y-1 flex-grow flex flex-col justify-center items-center text-center">
