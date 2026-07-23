@@ -4,7 +4,7 @@ import {
   Utensils, Euro, Shield, Users, 
   CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb, syncCanvaMenu } from '../api';
+import { fetchIngredients, fetchPlannerDataDb } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
@@ -25,49 +25,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
-  const [syncing, setSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState('');
 
-  useEffect(() => {
-    if (selectedWeek) {
-      setLastSync(localStorage.getItem(`acfc_canva_sync_${selectedWeek}`) || '');
-    }
-  }, [selectedWeek]);
-
-  const handleSyncCanva = async () => {
-    if (!selectedWeek) return;
-    setSyncing(true);
-    try {
-      const res = await syncCanvaMenu(selectedWeek);
-      if (res && res.success) {
-        const nowStr = new Date().toLocaleString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        localStorage.setItem(`acfc_canva_sync_${selectedWeek}`, nowStr);
-        setLastSync(nowStr);
-        if (typeof window.toast === 'function') {
-          window.toast('¡Menú semanal actualizado en Canva y listo para las pantallas!');
-        } else {
-          alert('¡Menú semanal actualizado en Canva y listo para las pantallas!');
-        }
-      } else {
-        throw new Error(res?.error || 'Error al conectar con la API de Canva');
-      }
-    } catch (err) {
-      console.error(err);
-      if (typeof window.toast === 'function') {
-        window.toast('❌ Error: ' + err.message);
-      } else {
-        alert('❌ Error al sincronizar: ' + err.message);
-      }
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   // Sync role to localStorage
   const handleRoleChange = (newRole) => {
@@ -671,40 +629,22 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           </select>
         </div>
 
-        {/* Canva Sync & TV Menu Actions */}
+        {/* TV Menu Screen Action */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
           <div className="text-right sm:text-left">
             <span className="text-[10px] text-slate-400 block font-semibold uppercase">Pantallas de Menú</span>
             <span className="text-slate-500 font-medium block text-right sm:text-left">
-              {lastSync ? `Última sincronización: ${lastSync}` : 'Sin sincronizar esta semana'}
+              Menú Digital en Tiempo Real
             </span>
           </div>
-          
-          <button
-            onClick={handleSyncCanva}
-            disabled={syncing || !selectedWeek}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow disabled:opacity-50 min-w-[150px]"
-          >
-            {syncing ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Sincronizando...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={14} className="animate-pulse" />
-                <span>Actualizar Canva</span>
-              </>
-            )}
-          </button>
 
           <button
             onClick={() => window.open('/menu-tv', '_blank')}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all border border-slate-200"
+            className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md cursor-pointer"
             title="Abrir Menú para TV/Pantallas"
           >
-            <Tv size={14} className="text-indigo-600" />
-            <span>Abrir TV</span>
+            <Tv size={15} className="animate-pulse" />
+            <span>Ver Pantalla TV</span>
           </button>
         </div>
       </div>

@@ -919,37 +919,3 @@ export const confirmOrderReception = async (orderId, itemsArray) => {
   }
 };
 
-// ── Sincronización con Canva ──
-export const syncCanvaMenu = async (startDate) => {
-  try {
-    const apiUrl = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : '');
-    const response = await fetch(`${apiUrl}/api/canva/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ startDate })
-    });
-    
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (err) {
-    console.warn('Fallo al conectar con el backend Express, ejecutando simulación local en frontend:', err);
-    // Local simulation fallback if server is down or returns error
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          simulated: true,
-          message: '¡Menú semanal actualizado (Simulado: sin conexión con el backend)!',
-          updated_at: new Date().toISOString()
-        });
-      }, 1500);
-    });
-  }
-};
-
