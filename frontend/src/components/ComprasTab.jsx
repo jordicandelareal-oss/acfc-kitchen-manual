@@ -325,20 +325,40 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       // Resolve real supplier_id UUID or null
       let resolvedSupplierId = null;
+      const extractUuid = (str) => {
+        if (typeof str !== 'string') return null;
+        const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        return match ? match[0] : null;
+      };
+
       if (supplierGroup) {
-        if (supplierGroup.supplierId === 'cairo-supplier' || supplierGroup.isElCairo) {
-          resolvedSupplierId = 'd257d90b-ad0b-4f84-97a0-fee73612953c';
+        const extGroup = extractUuid(supplierGroup.supplierId);
+        if (extGroup) {
+          resolvedSupplierId = extGroup;
+        } else if (supplierGroup.supplierId === 'cairo-supplier' || supplierGroup.isElCairo) {
+          const itemWithUuid = supplierGroup.items?.find(i => extractUuid(i.supplierId) || extractUuid(i.id));
+          if (itemWithUuid) {
+            resolvedSupplierId = extractUuid(itemWithUuid.supplierId) || extractUuid(itemWithUuid.id);
+          }
+          if (!resolvedSupplierId) {
+            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
+          }
         } else if (supplierGroup.supplierId && supplierGroup.supplierId !== 'no-supplier' && supplierGroup.supplierId !== 'general') {
           resolvedSupplierId = supplierGroup.supplierId;
         }
       }
       if (!resolvedSupplierId && itemsToOrder.length > 0) {
         const firstItem = itemsToOrder[0];
-        const isCairoItem = firstItem.isElCairo || isElCairoSupplier(firstItem.supplierName, firstItem.supplierId, firstItem.name);
-        if (isCairoItem) {
-          resolvedSupplierId = 'd257d90b-ad0b-4f84-97a0-fee73612953c';
-        } else if (firstItem.supplierId && firstItem.supplierId !== 'no-supplier' && firstItem.supplierId !== 'general' && firstItem.supplierId !== 'cairo-supplier') {
-          resolvedSupplierId = firstItem.supplierId;
+        const extFirst = extractUuid(firstItem.supplierId) || extractUuid(firstItem.id);
+        if (extFirst) {
+          resolvedSupplierId = extFirst;
+        } else {
+          const isCairoItem = firstItem.isElCairo || isElCairoSupplier(firstItem.supplierName, firstItem.supplierId, firstItem.name);
+          if (isCairoItem) {
+            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
+          } else if (firstItem.supplierId && firstItem.supplierId !== 'no-supplier' && firstItem.supplierId !== 'general' && firstItem.supplierId !== 'cairo-supplier') {
+            resolvedSupplierId = firstItem.supplierId;
+          }
         }
       }
 

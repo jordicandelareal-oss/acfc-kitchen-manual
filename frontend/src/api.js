@@ -774,11 +774,18 @@ export const procesarDescuentosAutomaticosTurnos = async () => {
 export const createPurchaseOrder = async (orderData, itemsArray) => {
   try {
     const rawSupplierId = orderData.supplier_id;
-    const resolvedSupplierId = (rawSupplierId === 'cairo-supplier' || rawSupplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c')
-      ? 'd257d90b-ad0b-4f84-97a0-fee73612953c'
-      : (rawSupplierId && rawSupplierId !== 'no-supplier' && rawSupplierId !== 'general')
-        ? rawSupplierId
-        : null;
+    let resolvedSupplierId = null;
+
+    if (typeof rawSupplierId === 'string') {
+      // Look for a UUID inside the supplier_id string
+      const uuidMatch = rawSupplierId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) {
+        resolvedSupplierId = uuidMatch[0];
+      } else if (rawSupplierId === 'cairo-supplier' || rawSupplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') {
+        // Fallback for mock/older El Cairo ID
+        resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
+      }
+    }
 
     const poPayload = {
       supplier_id: resolvedSupplierId,
