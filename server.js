@@ -204,6 +204,105 @@ app.post('/api/purchase-orders/optimize', async (req, res) => {
     }
 });
 
+/**
+ * 3. Synchronize weekly menu with Canva
+ * POST /api/canva/sync
+ * Payload: { startDate: 'YYYY-MM-DD' }
+ */
+app.post('/api/canva/sync', async (req, res) => {
+    const { startDate } = req.body;
+    if (!startDate) {
+        return res.status(400).json({ error: 'Missing startDate parameter' });
+    }
+
+    try {
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        const endDateISO = end.toISOString().split('T')[0];
+
+        const { data: weekMenus, error: menuError } = await supabase
+            .from('menu_planner')
+            .select(`
+                date,
+                lunch_recipe_id,
+                dinner_recipe_id,
+                lunch_recipe:recipes!lunch_recipe_id(name),
+                dinner_recipe:recipes!dinner_recipe_id(name)
+            `)
+            .gte('date', startDate)
+            .lte('date', endDateISO);
+
+        if (menuError) throw menuError;
+
+        const dayNamesEn = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const dayNamesEs = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+        
+        const dataFields = {};
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const dateISO = d.toISOString().split('T')[0];
+
+            const menu = weekMenus ? weekMenus.find(m => m.date === dateISO) : null;
+            const lunchName = menu?.lunch_recipe?.name || 'Sin planificar';
+            const dinnerName = menu?.dinner_recipe?.name || 'Sin planificar';
+
+            const dayEn = dayNamesEn[i];
+            const dayEs = dayNamesEs[i];
+
+            dataFields[`${dayEn}_lunch`] = { type: 'text', text: lunchName };
+            dataFields[`${dayEn}_dinner`] = { type: 'text', text: dinnerName };
+            dataFields[`${dayEs}_almuerzo`] = { type: 'text', text: lunchName };
+            dataFields[`${dayEs}_cena`] = { type: 'text', text: dinnerName };
+        }
+
+        const canvaToken = process.env.CANVA_ACCESS_TOKEN || process.env.CANVA_API_TOKEN;
+        const brandTemplateId = process.env.CANVA_BRAND_TEMPLATE_ID || 'DAF6tFJMd0g';
+
+        if (!canvaToken) {
+            return res.json({
+                success: true,
+                simulated: true,
+                message: '¡Menú semanal actualizado (Simulado: sin token de Canva)!',
+                updated_at: new Date().toISOString(),
+                data_preview: dataFields
+            });
+        }
+
+        const response = await fetch('https://api.canva.com/rest/v1/autofills', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${canvaToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                brand_template_id: brandTemplateId,
+                title: `Menú Semanal - ${startDate}`,
+                data: dataFields
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Canva API returned ${response.status}: ${errText}`);
+        }
+
+        const resData = await response.json();
+
+        res.json({
+            success: true,
+            simulated: false,
+            canva_job: resData,
+            updated_at: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('[Canva Sync Error]:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`ACFC Gastronomic SaaS API Server running on port ${PORT}`);

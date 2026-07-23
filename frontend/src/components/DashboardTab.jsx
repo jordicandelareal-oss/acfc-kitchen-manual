@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Package, AlertTriangle, ChevronRight, 
   Utensils, Euro, Shield, Users, 
-  CheckCircle, Calendar, Activity, Check, X
+  CheckCircle, Calendar, Activity, Check, X, Sparkles
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb } from '../api';
+import { fetchIngredients, fetchPlannerDataDb, syncCanvaMenu } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
@@ -25,6 +25,49 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState('');
+
+  useEffect(() => {
+    if (selectedWeek) {
+      setLastSync(localStorage.getItem(`acfc_canva_sync_${selectedWeek}`) || '');
+    }
+  }, [selectedWeek]);
+
+  const handleSyncCanva = async () => {
+    if (!selectedWeek) return;
+    setSyncing(true);
+    try {
+      const res = await syncCanvaMenu(selectedWeek);
+      if (res && res.success) {
+        const nowStr = new Date().toLocaleString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        localStorage.setItem(`acfc_canva_sync_${selectedWeek}`, nowStr);
+        setLastSync(nowStr);
+        if (typeof window.toast === 'function') {
+          window.toast('¡Menú semanal actualizado en Canva y listo para las pantallas!');
+        } else {
+          alert('¡Menú semanal actualizado en Canva y listo para las pantallas!');
+        }
+      } else {
+        throw new Error(res?.error || 'Error al conectar con la API de Canva');
+      }
+    } catch (err) {
+      console.error(err);
+      if (typeof window.toast === 'function') {
+        window.toast('❌ Error: ' + err.message);
+      } else {
+        alert('❌ Error al sincronizar: ' + err.message);
+      }
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Sync role to localStorage
   const handleRoleChange = (newRole) => {
@@ -610,21 +653,50 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
         </div>
       </div>
 
-      {/* Week Selector */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-slate-700 font-semibold">
-          <Calendar size={16} className="text-brand" />
-          <span>Planificación Semanal de Operaciones</span>
+      {/* Week Selector & Canva Sync Panel */}
+      <div className="p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
+            <Calendar size={18} className="text-brand" />
+            <span>Planificación Semanal de Operaciones</span>
+          </div>
+          <select 
+            value={selectedWeek} 
+            onChange={e => setSelectedWeek(e.target.value)}
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none cursor-pointer focus:border-brand"
+          >
+            {weeksList.map(w => (
+              <option key={w.value} value={w.value}>{w.label}</option>
+            ))}
+          </select>
         </div>
-        <select 
-          value={selectedWeek} 
-          onChange={e => setSelectedWeek(e.target.value)}
-          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 outline-none cursor-pointer focus:border-brand"
-        >
-          {weeksList.map(w => (
-            <option key={w.value} value={w.value}>{w.label}</option>
-          ))}
-        </select>
+
+        {/* Canva Sync Action */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+          <div className="text-right sm:text-left">
+            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Pantallas de Menú</span>
+            <span className="text-slate-500 font-medium block">
+              {lastSync ? `Última sincronización: ${lastSync}` : 'Sin sincronizar esta semana'}
+            </span>
+          </div>
+          <button
+            onClick={handleSyncCanva}
+            disabled={syncing || !selectedWeek}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow disabled:opacity-50 min-w-[150px]"
+          >
+            {syncing ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Sincronizando...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} className="animate-pulse" />
+                <span>Actualizar Pantallas</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Main Operations Section: Contenedor Superior en Grid 2 Columnas (lg:grid-cols-2) */}
