@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Calendar, Clock, Tv, Star, ShieldAlert } from 'lucide-react';
+import { Calendar, Clock, Tv, Star, Flame } from 'lucide-react';
 
 export default function MenuTvView() {
   const [plannerData, setPlannerData] = useState([]);
@@ -67,10 +67,10 @@ export default function MenuTvView() {
   useEffect(() => {
     loadMenuData();
 
-    // 1. Polling fallback every 60 seconds
+    // Polling every 60 seconds
     const interval = setInterval(loadMenuData, 60000);
 
-    // 2. Realtime listener for direct instant updates
+    // Realtime changes listener
     const subscription = supabase
       .channel('tv_menu_planner_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_planner' }, () => {
@@ -93,45 +93,57 @@ export default function MenuTvView() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-950 text-slate-100 flex flex-col p-8 select-none overflow-hidden font-display" style={{ fontFamily: 'Outfit, sans-serif' }}>
+    <div className="h-screen w-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-100 flex flex-col p-8 select-none overflow-hidden relative">
       
+      {/* BACKGROUND TEXTURE MESH */}
+      <div 
+        className="absolute inset-0 opacity-5 pointer-events-none" 
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: '20px 20px'
+        }}
+      />
+
       {/* HEADER */}
-      <header className="flex justify-between items-center border-b border-slate-800/80 pb-5 mb-6 flex-shrink-0">
+      <header className="flex justify-between items-center border-b border-white/5 pb-5 mb-5 flex-shrink-0 relative z-10">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 via-amber-600 to-red-600 p-0.5 shadow-xl shadow-amber-950/20">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 p-0.5 shadow-2xl shadow-amber-500/10">
             <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center overflow-hidden">
               <img 
                 src="logo.png" 
                 alt="ACFC Logo" 
-                className="w-8 h-8 object-contain"
-                onError={(e) => { e.target.outerHTML = '<span className="text-xl font-bold text-amber-500">🏆</span>'; }}
+                className="w-10 h-10 object-contain"
+                onError={(e) => { e.target.outerHTML = '<span className="text-2xl font-bold text-amber-500">🏆</span>'; }}
               />
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent">
+            <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent" style={{ fontFamily: 'Outfit, sans-serif' }}>
               WEEKLY MENU
             </h1>
-            <p className="text-[11px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-2 mt-0.5">
-              <Tv size={13} />
-              <span>ATHLETIC CLUB FOOD CLUB · DIGITAL SIGNAGE</span>
-              <span className="text-slate-700">|</span>
-              <span className="text-slate-400 font-semibold">{getWeekRangeLabel(monday)}</span>
+            <p className="text-[11px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 mt-0.5">
+              <Tv size={14} className="text-amber-500 animate-pulse" />
+              <span>ACFC ATHLETIC CLUB KITCHEN · DIGITAL SIGNAGE</span>
+              <span className="text-slate-800">|</span>
+              <span className="text-slate-300 font-semibold">{getWeekRangeLabel(monday)}</span>
             </p>
           </div>
         </div>
 
         {/* Dynamic Clock */}
-        <div className="flex items-center gap-4 bg-slate-900/60 backdrop-blur-md border border-slate-800 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-lg">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Calendar size={15} className="text-amber-500" />
-            <span>
+        <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-6 py-3 rounded-2xl text-xs font-bold shadow-2xl">
+          <div className="flex items-center gap-2 text-slate-200">
+            <Calendar size={16} className="text-amber-400" />
+            <span className="tracking-wide">
               {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' }).toUpperCase()}
             </span>
           </div>
-          <span className="text-slate-800">|</span>
-          <div className="flex items-center gap-2 text-white font-mono text-[14px] tracking-wider">
-            <Clock size={15} className="text-amber-500 animate-pulse" />
+          <span className="text-white/10">|</span>
+          <div className="flex items-center gap-2 text-white font-mono text-[16px] tracking-wider">
+            <Clock size={16} className="text-amber-400" />
             <span>
               {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
@@ -141,13 +153,13 @@ export default function MenuTvView() {
 
       {/* LOADING */}
       {loading ? (
-        <div className="flex-grow flex flex-col items-center justify-center gap-3">
-          <div className="w-10 h-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+        <div className="flex-grow flex flex-col items-center justify-center gap-3 relative z-10">
+          <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-400 rounded-full animate-spin" />
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Synchronizing kitchen board...</span>
         </div>
       ) : (
         /* GRID DE MENÚ: Lunes a Domingo */
-        <div className="flex-grow grid grid-cols-7 gap-5 items-stretch overflow-hidden">
+        <div className="flex-grow grid grid-cols-7 gap-5 items-stretch overflow-hidden relative z-10">
           {weekDays.map(({ dateStr, dayNum, dayLabel }) => {
             const menu = plannerData.find(m => m.date === dateStr);
             const isToday = todayStr === dateStr;
@@ -159,66 +171,68 @@ export default function MenuTvView() {
             return (
               <div 
                 key={dateStr}
-                className={`flex flex-col rounded-3xl border transition-all duration-500 relative ${
+                className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
                   isToday 
-                    ? 'bg-slate-900/90 border-amber-500 ring-2 ring-amber-500/20 shadow-2xl shadow-amber-500/5' 
-                    : 'bg-slate-900/35 border-slate-800/80 hover:border-slate-800'
+                    ? 'bg-slate-900/80 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.18)]' 
+                    : 'bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-white/10'
                 }`}
               >
                 {/* Active Indicator Pin */}
                 {isToday && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-slate-950 text-[9px] font-black uppercase px-3 py-0.5 rounded-full tracking-widest shadow-lg flex items-center gap-1">
-                    <Star size={8} fill="currentColor" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[10px] font-black uppercase px-4 py-0.5 rounded-full tracking-widest shadow-lg flex items-center gap-1.5 border border-amber-300">
+                    <Flame size={10} className="animate-bounce" />
                     <span>TODAY</span>
                   </div>
                 )}
 
                 {/* Day Header */}
-                <div className={`p-4 border-b text-center rounded-t-3xl ${
+                <div className={`p-5 border-b text-center rounded-t-[2rem] ${
                   isToday 
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black' 
-                    : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                    ? 'bg-amber-400/10 border-white/10' 
+                    : 'bg-slate-950/40 border-white/5'
                 }`}>
-                  <span className="block text-[11px] uppercase tracking-widest font-black leading-none">{dayLabel}</span>
-                  <span className={`text-xl font-black font-mono mt-1.5 inline-block leading-none ${isToday ? 'text-slate-950' : 'text-white'}`}>{dayNum}</span>
+                  <span className={`block text-xs uppercase tracking-widest font-black ${isToday ? 'text-amber-400' : 'text-slate-400'}`}>{dayLabel}</span>
+                  <span className="text-2xl font-black font-mono mt-1.5 inline-block text-white leading-none">{dayNum}</span>
                 </div>
 
                 {/* Meal Content */}
-                <div className="flex-grow p-5 flex flex-col justify-evenly gap-5 overflow-hidden">
+                <div className="flex-grow p-6 flex flex-col justify-evenly gap-6 overflow-hidden">
                   
                   {/* LUNCH */}
                   <div className="space-y-2 flex-grow flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-black uppercase text-amber-500 tracking-widest">LUNCH</span>
-                    </div>
+                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
                     {lunchName ? (
-                      <div className="min-h-[56px] flex flex-col justify-start">
-                        <p className="text-xs font-black text-slate-100 line-clamp-2 leading-snug uppercase tracking-tight">{lunchName}</p>
+                      <div className="flex flex-col justify-start">
+                        <p className="text-[15px] font-extrabold text-white leading-snug uppercase tracking-tight line-clamp-3">
+                          {lunchName}
+                        </p>
                         {lunchSide && (
-                          <p className="text-[9px] text-emerald-400 font-extrabold mt-1.5 inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md self-start">
-                            🥗 SIDE: {lunchSide.toUpperCase()}
-                          </p>
+                          <div className="mt-2.5 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-lg self-start">
+                            <span className="text-[9px] text-emerald-400 font-extrabold uppercase tracking-widest">
+                              🥗 SIDE: {lunchSide}
+                            </span>
+                          </div>
                         )}
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-slate-700 italic uppercase tracking-wider">No service</p>
+                      <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
                     )}
                   </div>
 
                   {/* Horizontal Separator */}
-                  <div className="border-t border-slate-800/80" />
+                  <div className="border-t border-white/10" />
 
                   {/* DINNER */}
                   <div className="space-y-2 flex-grow flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">DINNER</span>
-                    </div>
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
                     {dinnerName ? (
-                      <div className="min-h-[56px] flex flex-col justify-start">
-                        <p className="text-xs font-black text-slate-100 line-clamp-2 leading-snug uppercase tracking-tight">{dinnerName}</p>
+                      <div className="flex flex-col justify-start">
+                        <p className="text-[15px] font-extrabold text-white leading-snug uppercase tracking-tight line-clamp-3">
+                          {dinnerName}
+                        </p>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-slate-700 italic uppercase tracking-wider">No service</p>
+                      <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
                     )}
                   </div>
 
@@ -230,9 +244,9 @@ export default function MenuTvView() {
       )}
 
       {/* FOOTER */}
-      <footer className="mt-6 pt-4 border-t border-slate-900 flex justify-between items-center text-[10px] font-black text-slate-500 flex-shrink-0 uppercase tracking-widest">
+      <footer className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-black text-slate-500 flex-shrink-0 uppercase tracking-widest relative z-10">
         <span>Designed for Athletic Club dining halls & player lounges</span>
-        <span className="flex items-center gap-2 text-emerald-500">
+        <span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-xl">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           Realtime kitchen synchronization active
         </span>
