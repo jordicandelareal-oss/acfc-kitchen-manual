@@ -1172,12 +1172,34 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                               : 'bg-white hover:border-slate-300'
                         }`}
                       >
-                        <div className="flex justify-between items-start">
-                          <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
-                          {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
+                            {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                          </div>
+                          {canEdit && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => openDayEditor(d)}
+                                className="text-slate-400 hover:text-brand transition-colors flex items-center p-0.5 rounded-md hover:bg-slate-100"
+                                title="Editar"
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>edit</span>
+                              </button>
+                              {hasMeal && (
+                                <button
+                                  onClick={() => handleClearDay(d)}
+                                  className="text-slate-300 hover:text-red-500 transition-colors flex items-center p-0.5 rounded-md hover:bg-slate-100"
+                                  title="Vaciar día"
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>delete</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        <div className="mt-2 space-y-1 flex-grow overflow-hidden">
+                        <div className="space-y-1 flex-grow overflow-hidden">
                           {/* 1. Almuerzo / Plato Principal */}
                           <div 
                             title={`Almuerzo: ${lunchName}`}
@@ -1224,27 +1246,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                             <p className="truncate font-semibold">{dinnerName}</p>
                           </div>
                         </div>
-
-                        {canEdit && (
-                          <div className="pt-2 mt-2 border-t border-slate-100/80 flex items-center justify-between">
-                            <button
-                              onClick={() => openDayEditor(d)}
-                              className="text-[10px] font-semibold text-slate-400 hover:text-brand transition-colors flex items-center gap-1"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>edit</span>
-                              <span>Editar</span>
-                            </button>
-                            {hasMeal && (
-                              <button
-                                onClick={() => handleClearDay(d)}
-                                className="text-[10px] font-semibold text-slate-300 hover:text-red-500 transition-colors"
-                                title="Vaciar día"
-                              >
-                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>delete</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
                       </div>
                     );
                   }
