@@ -61,7 +61,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerData, setPlannerData] = useState({});
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
-  const [selectedWeeks, setSelectedWeeks] = useState([1]);
+  const [selectedWeeks, setSelectedWeeks] = useState(() => {
+    const today = new Date();
+    const wk = Math.min(4, Math.ceil(today.getDate() / 7));
+    return [wk];
+  });
   const [viewMode, setViewMode] = useState('week'); // 'day' | 'week' | 'month'
   const [logs, setLogs] = useState([
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
@@ -144,15 +148,58 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     console.log(`[PlannerAudit] [${type.toUpperCase()}] ${msg}`);
   }, []);
 
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 6, 1)); // Default: Julio 2026
+  const [currentDate, setCurrentDate] = useState(() => new Date()); // Default: Current system date
+
+  const goToCurrentWeek = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    const wk = Math.min(4, Math.ceil(today.getDate() / 7));
+    setSelectedWeeks([wk]);
+    setSelectedDay(today.getDate());
+  };
 
   const handlePrevMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    if (viewMode === 'week') {
+      setSelectedWeeks(prev => {
+        const currentW = prev[0] || 1;
+        if (currentW > 1) {
+          return [currentW - 1];
+        } else {
+          setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+          return [4];
+        }
+      });
+    } else {
+      setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    }
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    if (viewMode === 'week') {
+      setSelectedWeeks(prev => {
+        const currentW = prev[0] || 1;
+        if (currentW < 4) {
+          return [currentW + 1];
+        } else {
+          setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+          return [1];
+        }
+      });
+    } else {
+      setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    }
   };
+
+  // Force current week when entering weekly view
+  useEffect(() => {
+    if (viewMode === 'week') {
+      const today = new Date();
+      if (currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() === today.getMonth()) {
+        const wk = Math.min(4, Math.ceil(today.getDate() / 7));
+        setSelectedWeeks([wk]);
+      }
+    }
+  }, [viewMode]);
 
   // Fetch Planner Data & Process Automatic Shift Deductions
   const loadData = useCallback(async () => {
@@ -798,9 +845,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <button 
               onClick={handlePrevMonth}
               className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer"
-              title="Mes anterior"
+              title={viewMode === 'week' ? "Semana anterior" : "Mes anterior"}
             >
               <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={goToCurrentWeek}
+              className="px-2.5 py-1 text-[11px] font-bold text-brand bg-brand-muted/20 border border-brand/20 rounded-lg hover:bg-brand-muted/30 transition-colors"
+              title="Ir a hoy / esta semana"
+            >
+              Hoy
             </button>
             <span className="font-semibold text-slate-700 text-xs px-1 min-w-[70px] text-center">
               {currentDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
@@ -808,7 +862,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <button 
               onClick={handleNextMonth}
               className="p-1.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-slate-500 cursor-pointer"
-              title="Mes siguiente"
+              title={viewMode === 'week' ? "Semana siguiente" : "Mes siguiente"}
             >
               <ChevronRight size={16} />
             </button>
