@@ -776,13 +776,24 @@ export const createPurchaseOrder = async (orderData, itemsArray) => {
     const rawSupplierId = orderData.supplier_id;
     let resolvedSupplierId = null;
 
+    const extractUuid = (str) => {
+      if (typeof str !== 'string') return null;
+      const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (match) return match[0];
+      if (str.includes('_')) {
+        const parts = str.replace('cairo_', '').replace('elcairo_', '').split('_');
+        const possibleUuid = parts[0];
+        const checkMatch = possibleUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (checkMatch) return checkMatch[0];
+      }
+      return null;
+    };
+
     if (typeof rawSupplierId === 'string') {
-      // Look for a UUID inside the supplier_id string
-      const uuidMatch = rawSupplierId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (uuidMatch) {
-        resolvedSupplierId = uuidMatch[0];
+      const ext = extractUuid(rawSupplierId);
+      if (ext) {
+        resolvedSupplierId = ext;
       } else if (rawSupplierId === 'cairo-supplier' || rawSupplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') {
-        // Fallback for mock/older El Cairo ID
         resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
       }
     }
@@ -808,14 +819,19 @@ export const createPurchaseOrder = async (orderData, itemsArray) => {
     }
 
     if (itemsArray && itemsArray.length > 0) {
-      const poiRecords = itemsArray.map(item => ({
-        purchase_order_id: poData.id,
-        ingredient_id: item.ingredient_id || item.id,
-        ingredient_name: item.ingredient_name || item.name || 'Ingrediente',
-        quantity_ordered: Number(item.quantity_ordered || item.quantity || item.neededQuantity || 0),
-        unit_price: Number(item.unit_price || item.price_per_unit || item.unitPrice || 0),
-        tipo_corte: item.tipo_corte || item.tipoCorte || null
-      }));
+      const poiRecords = itemsArray.map(item => {
+        const rawIngId = item.ingredient_id || item.id;
+        const resolvedIngredientId = extractUuid(rawIngId) || rawIngId || null;
+
+        return {
+          purchase_order_id: poData.id,
+          ingredient_id: resolvedIngredientId,
+          ingredient_name: item.ingredient_name || item.name || 'Ingrediente',
+          quantity_ordered: Number(item.quantity_ordered || item.quantity || item.neededQuantity || 0),
+          unit_price: Number(item.unit_price || item.price_per_unit || item.unitPrice || 0),
+          tipo_corte: item.tipo_corte || item.tipoCorte || null
+        };
+      });
 
       console.log(`📝 Insertando ${poiRecords.length} líneas en purchase_order_items:`, poiRecords);
 
