@@ -110,10 +110,10 @@ export default function MenuTvView() {
       {/* TOP DEGRADADO OSCURO (GRADIENT OVERLAY) FOR HEADER CONTRAST */}
       <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-0 pointer-events-none" />
 
-      {/* HEADER - CENTERED */}
-      <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full">
-        {/* Logo */}
-        <div className="h-32 max-h-32 mb-3 flex items-center justify-center overflow-hidden">
+      {/* HEADER - CENTERED & SHIFTED DOWN */}
+      <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full pt-16">
+        {/* Logo increased by 20% (h-40) */}
+        <div className="h-40 max-h-40 mb-4 flex items-center justify-center overflow-hidden">
           <img 
             src="/logo_tv.png" 
             alt="ACFC Logo" 
@@ -122,20 +122,19 @@ export default function MenuTvView() {
           />
         </div>
 
-        {/* Titular drop-shadow contrast */}
         <h1 className="text-3xl font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-100 to-white bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
           WEEKLY MENU
         </h1>
         
-        {/* Pastilla / Badge para las fechas */}
-        <div className="mt-3 bg-slate-950/80 border border-amber-400/40 px-6 py-1.5 rounded-full shadow-lg backdrop-blur-md">
-          <span className="text-amber-400 font-bold tracking-wider text-lg md:text-xl">
+        {/* Pastilla / Badge with dates size increased to text-[26px] */}
+        <div className="mt-3 bg-slate-950/80 border border-amber-400/40 px-8 py-2 rounded-full shadow-lg backdrop-blur-md">
+          <span className="text-amber-400 font-extrabold tracking-wider text-xl md:text-[26px] leading-none block">
             {getWeekRangeLabel(monday)}
           </span>
         </div>
 
         {/* Dynamic Clock - Top Right */}
-        <div className="absolute top-0 right-0 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-2xl">
+        <div className="absolute top-6 right-6 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-2xl">
           <div className="flex items-center gap-2 text-slate-200">
             <Calendar size={15} className="text-amber-400" />
             <span className="tracking-wide">
@@ -159,100 +158,102 @@ export default function MenuTvView() {
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Synchronizing kitchen board...</span>
         </div>
       ) : (
-        /* GRID DE MENÚ: Lunes a Domingo */
-        <div className="flex-grow grid grid-cols-7 gap-5 items-stretch overflow-hidden relative z-10">
-          {weekDays.map(({ dateStr, dayNum, dayLabel }) => {
-            const menu = plannerData.find(m => m.date === dateStr);
-            const isToday = todayStr === dateStr;
+        /* GRID DE MENÚ: Lunes a Domingo - aligned to bottom */
+        <div className="flex-grow flex flex-col justify-end relative z-10 overflow-hidden">
+          <div className="grid grid-cols-7 gap-5 items-stretch w-full">
+            {weekDays.map(({ dateStr, dayNum, dayLabel }) => {
+              const menu = plannerData.find(m => m.date === dateStr);
+              const isToday = todayStr === dateStr;
 
-            const lunchName = menu?.lunch_recipe?.name || '';
-            const lunchSide = menu?.lunch_side_recipe?.name || '';
-            const dinnerName = menu?.dinner_recipe?.name || '';
+              const lunchName = menu?.lunch_recipe?.name || '';
+              const lunchSide = menu?.lunch_side_recipe?.name || '';
+              const dinnerName = menu?.dinner_recipe?.name || '';
 
-            return (
-              <div 
-                key={dateStr}
-                className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
-                  isToday 
-                    ? 'bg-slate-950/70 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
-                    : 'bg-slate-900/70 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/75'
-                }`}
-              >
-                {/* Active Indicator Pin */}
-                {isToday && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[10px] font-black uppercase px-4 py-0.5 rounded-full tracking-widest shadow-lg flex items-center gap-1.5 border border-amber-300">
-                    <Flame size={10} className="animate-bounce" />
-                    <span>TODAY</span>
-                  </div>
-                )}
+              return (
+                <div 
+                  key={dateStr}
+                  className={`flex flex-col rounded-[2rem] transition-all duration-500 relative ${
+                    isToday 
+                      ? 'bg-slate-950/70 border-t-4 border-t-amber-400 border-x border-b border-white/20 shadow-[0_0_30px_rgba(251,191,36,0.22)] backdrop-blur-md' 
+                      : 'bg-slate-900/70 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/80 hover:bg-slate-900/75'
+                  }`}
+                >
+                  {/* Active Indicator Pin */}
+                  {isToday && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-[10px] font-black uppercase px-4 py-0.5 rounded-full tracking-widest shadow-lg flex items-center gap-1.5 border border-amber-300">
+                      <Flame size={10} className="animate-bounce" />
+                      <span>TODAY</span>
+                    </div>
+                  )}
 
-                {/* Day Header */}
-                <div className={`p-4 border-b text-center rounded-t-[2rem] ${
-                  isToday 
-                    ? 'bg-amber-400/10 border-white/10' 
-                    : 'bg-slate-950/50 border-white/5'
-                }`}>
-                  <span className={`block text-xl uppercase font-bold tracking-tight ${
-                    isToday ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-white'
+                  {/* Day Header - Intact height & padding */}
+                  <div className={`p-5 border-b text-center rounded-t-[2rem] ${
+                    isToday 
+                      ? 'bg-amber-400/10 border-white/10' 
+                      : 'bg-slate-950/50 border-white/5'
                   }`}>
-                    {dayLabel}
-                  </span>
-                  <span className="text-xs font-extrabold font-mono mt-1 inline-block text-slate-400 leading-none">
-                    {dateStr.split('-')[1]}/{dayNum}
-                  </span>
-                </div>
-
-                {/* Meal Content */}
-                <div className="flex-grow p-4.5 flex flex-col justify-evenly gap-5 overflow-hidden">
-                  
-                  {/* LUNCH */}
-                  <div className="space-y-1.5 flex-grow flex flex-col justify-center">
-                    <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
-                    {lunchName ? (
-                      <div className="flex flex-col justify-start">
-                        <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
-                          {lunchName}
-                        </p>
-                        {lunchSide && (
-                          <div className="mt-2 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg self-start">
-                            <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">
-                              🥗 SIDE: {lunchSide}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
-                    )}
+                    <span className={`block text-xl uppercase font-bold tracking-tight ${
+                      isToday ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'text-white'
+                    }`}>
+                      {dayLabel}
+                    </span>
+                    <span className="text-xs font-extrabold font-mono mt-1 inline-block text-slate-400 leading-none">
+                      {dateStr.split('-')[1]}/{dayNum}
+                    </span>
                   </div>
 
-                  {/* Horizontal Separator */}
-                  <div className="border-t border-white/10" />
+                  {/* Meal Content - Padding reduced 30% to p-3.5 and tighter gap-3 */}
+                  <div className="flex-grow p-3.5 flex flex-col justify-evenly gap-3 overflow-hidden">
+                    
+                    {/* LUNCH */}
+                    <div className="space-y-1 flex-grow flex flex-col justify-center">
+                      <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
+                      {lunchName ? (
+                        <div className="flex flex-col justify-start">
+                          <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
+                            {lunchName}
+                          </p>
+                          {lunchSide && (
+                            <div className="mt-1 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg self-start">
+                              <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">
+                                🥗 SIDE: {lunchSide}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
+                      )}
+                    </div>
 
-                  {/* DINNER */}
-                  <div className="space-y-1.5 flex-grow flex flex-col justify-center">
-                    <span className="text-xl font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
-                    {dinnerName ? (
-                      <div className="flex flex-col justify-start">
-                        <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
-                          {dinnerName}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
-                    )}
+                    {/* Horizontal Separator */}
+                    <div className="border-t border-white/10" />
+
+                    {/* DINNER */}
+                    <div className="space-y-1 flex-grow flex flex-col justify-center">
+                      <span className="text-xl font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
+                      {dinnerName ? (
+                        <div className="flex flex-col justify-start">
+                          <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
+                            {dinnerName}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] font-bold text-slate-600 italic uppercase tracking-wider">No service</p>
+                      )}
+                    </div>
+
                   </div>
-
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* FOOTER */}
+      {/* FOOTER - Designed By Jordi CR */}
       <footer className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-black text-slate-500 flex-shrink-0 uppercase tracking-widest relative z-10">
-        <span>Designed for Athletic Club dining halls & player lounges</span>
+        <span>Designed By Jordi CR</span>
         <span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-xl">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           Realtime kitchen synchronization active
