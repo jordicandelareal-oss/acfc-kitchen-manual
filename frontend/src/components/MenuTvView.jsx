@@ -134,8 +134,8 @@ export default function MenuTvView() {
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Synchronizing kitchen board...</span>
         </div>
       ) : (
-        /* GRID DE MENÚ: Lunes a Domingo - aligned to bottom */
-        <div className="flex-grow flex flex-col justify-end relative z-10 overflow-hidden mb-4">
+        /* GRID DE MENÚ: Lunes a Domingo - centered vertically */
+        <div className="flex-grow flex flex-col justify-center relative z-10 overflow-hidden">
           <div className="grid grid-cols-7 gap-5 items-stretch w-full">
             {weekDays.map(({ dateStr, dayNum, dayLabel }) => {
               const menu = plannerData.find(m => m.date === dateStr);
