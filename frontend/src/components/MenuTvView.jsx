@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Calendar, Clock, Star, Flame } from 'lucide-react';
+import { Star, Flame } from 'lucide-react';
 
 export default function MenuTvView() {
   const [plannerData, setPlannerData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [time, setTime] = useState(new Date());
 
   const getWeekRange = () => {
     const today = new Date();
@@ -78,14 +77,8 @@ export default function MenuTvView() {
       })
       .subscribe();
 
-    // Clock updater
-    const clockInterval = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-
     return () => {
       clearInterval(interval);
-      clearInterval(clockInterval);
       subscription.unsubscribe();
     };
   }, []);
@@ -108,12 +101,12 @@ export default function MenuTvView() {
       <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px] z-0" />
 
       {/* TOP DEGRADADO OSCURO (GRADIENT OVERLAY) FOR HEADER CONTRAST */}
-      <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-black/80 via-black/40 to-transparent z-0 pointer-events-none" />
+      <div className="absolute top-0 inset-x-0 h-72 bg-gradient-to-b from-black/80 via-black/30 to-transparent z-0 pointer-events-none" />
 
       {/* HEADER - CENTERED & SHIFTED DOWN */}
       <header className="flex flex-col items-center justify-center text-center border-b border-white/10 pb-5 mb-5 flex-shrink-0 relative z-10 w-full pt-16">
-        {/* Logo increased by 20% (h-40) */}
-        <div className="h-40 max-h-40 mb-4 flex items-center justify-center overflow-hidden">
+        {/* Centered Logo (h-36) */}
+        <div className="h-36 max-h-36 mb-4 flex items-center justify-center overflow-hidden">
           <img 
             src="/logo_tv.png" 
             alt="ACFC Logo" 
@@ -126,28 +119,11 @@ export default function MenuTvView() {
           WEEKLY MENU
         </h1>
         
-        {/* Pastilla / Badge with dates size increased to text-[26px] */}
+        {/* Pastilla / Badge with dates */}
         <div className="mt-3 bg-slate-950/80 border border-amber-400/40 px-8 py-2 rounded-full shadow-lg backdrop-blur-md">
           <span className="text-amber-400 font-extrabold tracking-wider text-xl md:text-[26px] leading-none block">
             {getWeekRangeLabel(monday)}
           </span>
-        </div>
-
-        {/* Dynamic Clock - Top Right */}
-        <div className="absolute top-6 right-6 flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-2xl text-xs font-bold shadow-2xl">
-          <div className="flex items-center gap-2 text-slate-200">
-            <Calendar size={15} className="text-amber-400" />
-            <span className="tracking-wide">
-              {time.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' }).toUpperCase()}
-            </span>
-          </div>
-          <span className="text-white/10">|</span>
-          <div className="flex items-center gap-2 text-white font-mono text-[15px] tracking-wider">
-            <Clock size={15} className="text-amber-400" />
-            <span>
-              {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-            </span>
-          </div>
         </div>
       </header>
 
@@ -159,7 +135,7 @@ export default function MenuTvView() {
         </div>
       ) : (
         /* GRID DE MENÚ: Lunes a Domingo - aligned to bottom */
-        <div className="flex-grow flex flex-col justify-end relative z-10 overflow-hidden">
+        <div className="flex-grow flex flex-col justify-end relative z-10 overflow-hidden mb-4">
           <div className="grid grid-cols-7 gap-5 items-stretch w-full">
             {weekDays.map(({ dateStr, dayNum, dayLabel }) => {
               const menu = plannerData.find(m => m.date === dateStr);
@@ -186,7 +162,7 @@ export default function MenuTvView() {
                     </div>
                   )}
 
-                  {/* Day Header - Intact height & padding */}
+                  {/* Day Header */}
                   <div className={`p-5 border-b text-center rounded-t-[2rem] ${
                     isToday 
                       ? 'bg-amber-400/10 border-white/10' 
@@ -202,19 +178,21 @@ export default function MenuTvView() {
                     </span>
                   </div>
 
-                  {/* Meal Content - Padding reduced 30% to p-3.5 and tighter gap-3 */}
-                  <div className="flex-grow p-3.5 flex flex-col justify-evenly gap-3 overflow-hidden">
+                  {/* Meal Content - centered vertically & horizontally */}
+                  <div className="flex-grow p-4 flex flex-col justify-evenly gap-3 overflow-hidden text-center items-center">
                     
-                    {/* LUNCH */}
-                    <div className="space-y-1 flex-grow flex flex-col justify-center">
-                      <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none">LUNCH</span>
+                    {/* LUNCH - Gold ☀️ */}
+                    <div className="space-y-1 flex-grow flex flex-col justify-center items-center text-center">
+                      <span className="text-xl font-black uppercase text-amber-400 tracking-widest leading-none flex items-center gap-1">
+                        <span>☀️ LUNCH</span>
+                      </span>
                       {lunchName ? (
-                        <div className="flex flex-col justify-start">
+                        <div className="flex flex-col justify-center items-center text-center">
                           <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                             {lunchName}
                           </p>
                           {lunchSide && (
-                            <div className="mt-1 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg self-start">
+                            <div className="mt-1 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
                               <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-widest">
                                 🥗 SIDE: {lunchSide}
                               </span>
@@ -227,13 +205,15 @@ export default function MenuTvView() {
                     </div>
 
                     {/* Horizontal Separator */}
-                    <div className="border-t border-white/10" />
+                    <div className="border-t border-white/10 w-full" />
 
-                    {/* DINNER */}
-                    <div className="space-y-1 flex-grow flex flex-col justify-center">
-                      <span className="text-xl font-black uppercase text-slate-400 tracking-widest leading-none">DINNER</span>
+                    {/* DINNER - Silver/Indigo 🌙 */}
+                    <div className="space-y-1 flex-grow flex flex-col justify-center items-center text-center">
+                      <span className="text-xl font-black uppercase text-indigo-300 tracking-widest leading-none flex items-center gap-1">
+                        <span>🌙 DINNER</span>
+                      </span>
                       {dinnerName ? (
-                        <div className="flex flex-col justify-start">
+                        <div className="flex flex-col justify-center items-center text-center">
                           <p className="text-[22px] font-black text-white leading-tight uppercase tracking-tight line-clamp-3">
                             {dinnerName}
                           </p>
@@ -251,10 +231,10 @@ export default function MenuTvView() {
         </div>
       )}
 
-      {/* FOOTER - Designed By Jordi CR */}
-      <footer className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-black text-slate-500 flex-shrink-0 uppercase tracking-widest relative z-10">
+      {/* FOOTER - Designed By Jordi CR (Elevated a few pixels, text-white/50 text-sm font-medium) */}
+      <footer className="mt-4 pt-4 pb-2 border-t border-white/5 flex justify-between items-center text-sm font-medium text-white/50 flex-shrink-0 uppercase tracking-widest relative z-10">
         <span>Designed By Jordi CR</span>
-        <span className="flex items-center gap-2 text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-xl">
+        <span className="flex items-center gap-2 text-emerald-400/70 bg-emerald-500/5 border border-emerald-500/10 px-3 py-1 rounded-xl">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           Realtime kitchen synchronization active
         </span>
