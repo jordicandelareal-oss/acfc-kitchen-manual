@@ -5,6 +5,12 @@ import { PLANNER_RULES } from '../utils/plannerRules';
 import PlannerSettingsModal from './PlannerSettingsModal';
 import ShoppingListModal from './ShoppingListModal';
 import { 
+  getMadridTodayStr, 
+  getMadridTodayDateObject, 
+  getMadridWeekdayIndex, 
+  isTodayInMadrid 
+} from '../utils/dateUtils';
+import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
   Settings, ShoppingCart, RefreshCw, X, ChevronLeft, ChevronRight, AlertTriangle, Users, Edit2, Calendar 
 } from 'lucide-react';
@@ -62,13 +68,13 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState(() => {
-    const today = new Date();
+    const today = getMadridTodayDateObject();
     const wk = Math.min(4, Math.ceil(today.getDate() / 7));
     return [wk];
   });
   const [viewMode, setViewMode] = useState('week'); // 'day' | 'week' | 'month'
   const [logs, setLogs] = useState([
-    { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString() }
+    { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' }) }
   ]);
   const [loading, setLoading] = useState(false);
   // Estado de comensales configurados por semana { 1: { lunch: 25, dinner: 20 }, ... }
@@ -143,15 +149,15 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   });
 
   const addLog = useCallback((msg, type = 'info') => {
-    const ts = new Date().toLocaleTimeString();
+    const ts = new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
     console.log(`[PlannerAudit] [${type.toUpperCase()}] ${msg}`);
   }, []);
 
-  const [currentDate, setCurrentDate] = useState(() => new Date()); // Default: Current system date
+  const [currentDate, setCurrentDate] = useState(() => getMadridTodayDateObject()); // Default: Current system date
 
   const goToCurrentWeek = () => {
-    const today = new Date();
+    const today = getMadridTodayDateObject();
     setCurrentDate(today);
     const wk = Math.min(4, Math.ceil(today.getDate() / 7));
     setSelectedWeeks([wk]);
@@ -193,7 +199,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   // Force current week when entering weekly view
   useEffect(() => {
     if (viewMode === 'week') {
-      const today = new Date();
+      const today = getMadridTodayDateObject();
       if (currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() === today.getMonth()) {
         const wk = Math.min(4, Math.ceil(today.getDate() / 7));
         setSelectedWeeks([wk]);
@@ -1020,7 +1026,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                   const endDay = Math.min(31, weekNum * 7);
                   const year = currentDate.getFullYear();
                   const month = currentDate.getMonth();
-                  const now = new Date();
+                  const now = getMadridTodayDateObject();
                   const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
                   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -1034,7 +1040,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                     const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
                     const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
                     const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
-                    const dayNameIndex = (d - 1) % 7;
+                    const dayNameIndex = getMadridWeekdayIndex(year, month, d);
 
                     cards.push(
                       <div 
@@ -1098,9 +1104,8 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                     const year = currentDate.getFullYear();
                     const month = currentDate.getMonth();
                     const daysInMonth = new Date(year, month + 1, 0).getDate();
-                    const rawFirstDay = new Date(year, month, 1).getDay();
-                    const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
-                    const now = new Date();
+                    const firstDayOffset = getMadridWeekdayIndex(year, month, 1);
+                    const now = getMadridTodayDateObject();
                     const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
 
                     const mobElements = [];
@@ -1187,10 +1192,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                   
                   // First day of month (0 = Sun, 1 = Mon, ..., 6 = Sat)
                   // Convert to Spanish Monday-first index: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6
-                  const rawFirstDay = new Date(year, month, 1).getDay();
-                  const firstDayOffset = (rawFirstDay === 0 ? 6 : rawFirstDay - 1);
+                  const firstDayOffset = getMadridWeekdayIndex(year, month, 1);
                   
-                  const now = new Date();
+                  const now = getMadridTodayDateObject();
                   const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
 
                   const elements = [];

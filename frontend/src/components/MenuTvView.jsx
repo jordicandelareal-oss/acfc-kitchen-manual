@@ -1,45 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { Star, Flame } from 'lucide-react';
+import { getMadridWeekDays, getMadridWeekRangeLabel, getMadridTodayStr } from '../utils/dateUtils';
 
 export default function MenuTvView() {
   const [plannerData, setPlannerData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const getWeekRange = () => {
-    const today = new Date();
-    const day = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday-start
-    const monday = new Date(today.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    
-    const dates = [];
-    const weekdaysText = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-    
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      dates.push({
-        dateStr: d.toISOString().split('T')[0],
-        dayNum: d.getDate(),
-        dayLabel: weekdaysText[i]
-      });
-    }
-    return { monday, dates };
-  };
+  const { monday, dates: weekDays } = getMadridWeekDays();
 
-  const { monday, dates: weekDays } = getWeekRange();
-
-  const getWeekRangeLabel = (monDate) => {
-    const sunDate = new Date(monDate);
-    sunDate.setDate(monDate.getDate() + 6);
-    
-    const optionsMonth = { month: 'long' };
-    const monMonth = monDate.toLocaleDateString('en-US', optionsMonth).toUpperCase();
-    const sunMonth = sunDate.toLocaleDateString('en-US', optionsMonth).toUpperCase();
-    
-    return `${monMonth} ${monDate.getDate()} - ${sunMonth} ${sunDate.getDate()}, ${monDate.getFullYear()}`;
-  };
 
   const loadMenuData = async () => {
     try {
@@ -83,7 +52,7 @@ export default function MenuTvView() {
     };
   }, []);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getMadridTodayStr();
 
   return (
     <div 
@@ -122,7 +91,7 @@ export default function MenuTvView() {
         {/* Pastilla / Badge with dates */}
         <div className="mt-3 bg-slate-950/80 border border-amber-400/40 px-8 py-2 rounded-full shadow-lg backdrop-blur-md">
           <span className="text-amber-400 font-extrabold tracking-wider text-xl md:text-[26px] leading-none block">
-            {getWeekRangeLabel(monday)}
+            {getMadridWeekRangeLabel(monday)}
           </span>
         </div>
       </header>

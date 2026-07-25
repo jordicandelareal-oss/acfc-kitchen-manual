@@ -204,8 +204,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadGlobalRecipes();
-  }, [loadGlobalRecipes]);
+    if (!authChecking && userSession) {
+      loadGlobalRecipes();
+    }
+  }, [authChecking, userSession, loadGlobalRecipes]);
 
   // Interoperabilidad con código legacy del index.html
   useEffect(() => {
@@ -260,8 +262,10 @@ function App() {
   }, [activeTab, month]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (!authChecking && userSession) {
+      loadData();
+    }
+  }, [authChecking, userSession, loadData]);
 
   const allTabs = [
     { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
