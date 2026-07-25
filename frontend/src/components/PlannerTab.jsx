@@ -9,7 +9,8 @@ import {
   getMadridTodayDateObject, 
   getMadridWeekdayIndex, 
   isTodayInMadrid,
-  getMadridWeekRange
+  getMadridWeekRange,
+  getMadridWeeksInMonth
 } from '../utils/dateUtils';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
@@ -163,7 +164,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const goToCurrentWeek = () => {
     const today = getMadridTodayDateObject();
     setCurrentDate(today);
-    const wk = Math.min(4, Math.ceil(today.getDate() / 7));
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const firstWeekdayIndex = getMadridWeekdayIndexForDate(firstOfMonth);
+    const wk = Math.ceil((today.getDate() + firstWeekdayIndex) / 7);
     setSelectedWeeks([wk]);
     setSelectedDay(today.getDate());
   };
@@ -175,8 +178,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         if (currentW > 1) {
           return [currentW - 1];
         } else {
-          setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-          return [4];
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth();
+          const prevMonthDate = new Date(year, month - 1, 1);
+          const maxWeeks = getMadridWeeksInMonth(prevMonthDate.getFullYear(), prevMonthDate.getMonth());
+          setCurrentDate(prevMonthDate);
+          return [maxWeeks];
         }
       });
     } else {
@@ -186,9 +193,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
 
   const handleNextMonth = () => {
     if (viewMode === 'week') {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const numWeeks = getMadridWeeksInMonth(year, month);
       setSelectedWeeks(prev => {
         const currentW = prev[0] || 1;
-        if (currentW < 4) {
+        if (currentW < numWeeks) {
           return [currentW + 1];
         } else {
           setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
@@ -205,7 +215,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     if (viewMode === 'week') {
       const today = getMadridTodayDateObject();
       if (currentDate.getFullYear() === today.getFullYear() && currentDate.getMonth() === today.getMonth()) {
-        const wk = Math.min(4, Math.ceil(today.getDate() / 7));
+        const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const firstWeekdayIndex = getMadridWeekdayIndexForDate(firstOfMonth);
+        const wk = Math.ceil((today.getDate() + firstWeekdayIndex) / 7);
         setSelectedWeeks([wk]);
       }
     }
@@ -751,17 +763,24 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           {/* Week selector */}
           <div className="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Sem:</span>
-            {[1, 2, 3, 4].map(w => (
-              <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
-                <input 
-                  type="checkbox" 
-                  checked={selectedWeeks.includes(w)}
-                  onChange={() => handleWeekToggle(w)}
-                  className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
-                />
-                <span>{w}</span>
-              </label>
-            ))}
+            {(() => {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth();
+              const numWeeks = getMadridWeeksInMonth(year, month);
+              const weeksArr = [];
+              for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
+              return weeksArr.map(w => (
+                <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedWeeks.includes(w)}
+                    onChange={() => handleWeekToggle(w)}
+                    className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
+                  />
+                  <span>{w}</span>
+                </label>
+              ));
+            })()}
           </div>
 
           {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}

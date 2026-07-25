@@ -169,3 +169,16 @@ export function getMadridWeekRange(year, month, weekNum) {
   return days;
 }
 
+// Get number of calendar weeks for a month (4, 5, or 6) using Europe/Madrid timezone
+export function getMadridWeeksInMonth(year, month) {
+  const firstOfMonth = new Date(year, month, 1);
+  const firstWeekday = getMadridWeekdayIndexForDate(firstOfMonth);
+  
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const totalDays = lastOfMonth.getDate();
+  
+  const totalSlots = firstWeekday + totalDays;
+  return Math.ceil(totalSlots / 7);
+}
+
+
