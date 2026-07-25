@@ -181,4 +181,22 @@ export function getMadridWeeksInMonth(year, month) {
   return Math.ceil(totalSlots / 7);
 }
 
+// Get the Monday date ISO string 'YYYY-MM-DD' for the week containing dateInput (Europe/Madrid)
+export function getMadridMondayOfWeek(dateInput) {
+  const d = new Date(dateInput);
+  const weekdayIndex = getMadridWeekdayIndexForDate(d);
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - weekdayIndex);
+  monday.setHours(0, 0, 0, 0);
+  
+  const dtf = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  return dtf.format(monday);
+}
+
+
 

@@ -11,7 +11,8 @@ import {
   isTodayInMadrid,
   getMadridWeekRange,
   getMadridWeeksInMonth,
-  getMadridWeekdayIndexForDate
+  getMadridWeekdayIndexForDate,
+  getMadridMondayOfWeek
 } from '../utils/dateUtils';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
@@ -80,28 +81,22 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' }) }
   ]);
   const [loading, setLoading] = useState(false);
-  // Estado de comensales configurados por semana { 1: { lunch: 25, dinner: 20 }, ... }
   const [weeklyPlayers, setWeeklyPlayers] = useState(() => {
     const stored = localStorage.getItem('acfc_weekly_players_v2');
     if (stored) {
       try { return JSON.parse(stored); } catch (e) { /* fallback */ }
     }
-    return {
-      1: { lunch: 25, dinner: 20 },
-      2: { lunch: 25, dinner: 20 },
-      3: { lunch: 25, dinner: 20 },
-      4: { lunch: 25, dinner: 20 }
-    };
+    return {};
   });
 
-  const handleUpdateMealPlayers = (weekNum, mealType, delta) => {
+  const handleUpdateMealPlayers = (weekKey, mealType, delta) => {
     setWeeklyPlayers(prev => {
-      const currentWeekObj = prev[weekNum] || { lunch: 25, dinner: 20 };
+      const currentWeekObj = prev[weekKey] || { lunch: 25, dinner: 20 };
       const currentVal = currentWeekObj[mealType] !== undefined ? currentWeekObj[mealType] : (mealType === 'lunch' ? 25 : 20);
       const nextVal = Math.max(1, currentVal + delta);
       const updated = { 
         ...prev, 
-        [weekNum]: { 
+        [weekKey]: { 
           ...currentWeekObj, 
           [mealType]: nextVal 
         } 
@@ -249,12 +244,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           if (row.date) {
             // Indexar por ISO 'YYYY-MM-DD'
             plannerMap[row.date] = row;
-            
-            // Indexar también por número del día (ej. 1, 2, 3...)
-            const dayNum = parseInt(String(row.date).split('-')[2], 10);
-            if (!isNaN(dayNum)) {
-              plannerMap[dayNum] = row;
-            }
           }
         });
       }
@@ -402,7 +391,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       setPlannerData(prev => {
         const nextMap = { ...prev };
         nextMap[formattedDate] = { ...nextMap[formattedDate], ...payload };
-        nextMap[selectedDay] = { ...nextMap[selectedDay], ...payload };
         return nextMap;
       });
       
@@ -437,8 +425,8 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     setSelectedDayYear(year);
     const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
-    // Search plannerData using ISO date string first, then by numeric day
-    const dayData = plannerData[dateISO] || plannerData[day] || {};
+    // Search plannerData using ISO date string
+    const dayData = plannerData[dateISO] || {};
     
     const savedSideId = dayData.lunch_side_recipe_id || dayData.lunch_side_recipe?.id || '';
 
@@ -601,8 +589,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           }
 
           // Número de comensales asignado específicamente a esta semana (Comida y Cena independientes)
-          const weekLunchPlayers = Number(weeklyPlayers[week]?.lunch) || defaultLunchPlayers;
-          const weekDinnerPlayers = Number(weeklyPlayers[week]?.dinner) || defaultDinnerPlayers;
+          const weekMondayStr = weekDaysList[0].dateStr;
+          const weekLunchPlayers = Number(weeklyPlayers[weekMondayStr]?.lunch) || defaultLunchPlayers;
+          const weekDinnerPlayers = Number(weeklyPlayers[weekMondayStr]?.dinner) || defaultDinnerPlayers;
 
           upserts.push({
             date: dateISO,
@@ -785,64 +774,74 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           </div>
 
           {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}
-          <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
-            <div className="flex items-center gap-1">
-              <Users size={14} className="text-indigo-600 ml-1" />
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
-                Sem {selectedWeeks[0] || 1}:
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {/* Comida / Lunch */}
-              <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
-                <span className="text-[10px] font-bold text-brand">☀️</span>
-                {canEdit && (
-                  <button 
-                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', -1)}
-                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                  >
-                    -
-                  </button>
-                )}
-                <span className="font-extrabold text-xs text-slate-800 min-w-[18px] text-center">
-                  {weeklyPlayers[selectedWeeks[0] || 1]?.lunch ?? 25}
-                </span>
-                {canEdit && (
-                  <button 
-                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'lunch', 1)}
-                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                  >
-                    +
-                  </button>
-                )}
-              </div>
+          {(() => {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const weekNum = selectedWeeks[0] || 1;
+            const weekDaysList = getMadridWeekRange(year, month, weekNum);
+            const weekMondayStr = weekDaysList[0]?.dateStr || '';
+            const currentPlayers = weeklyPlayers[weekMondayStr] || { lunch: 25, dinner: 20 };
+            return (
+              <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+                <div className="flex items-center gap-1">
+                  <Users size={14} className="text-indigo-600 ml-1" />
+                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
+                    Sem {weekNum}:
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Comida / Lunch */}
+                  <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
+                    <span className="text-[10px] font-bold text-brand">☀️</span>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'lunch', -1)}
+                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                      >
+                        -
+                      </button>
+                    )}
+                    <span className="font-extrabold text-xs text-slate-800 min-w-[18px] text-center">
+                      {currentPlayers.lunch ?? 25}
+                    </span>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'lunch', 1)}
+                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
 
-              {/* Cena / Dinner */}
-              <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
-                <span className="text-[10px] font-bold text-indigo-600">🌙</span>
-                {canEdit && (
-                  <button 
-                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', -1)}
-                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                  >
-                    -
-                  </button>
-                )}
-                <span className="font-extrabold text-xs text-indigo-950 min-w-[18px] text-center">
-                  {weeklyPlayers[selectedWeeks[0] || 1]?.dinner ?? 20}
-                </span>
-                {canEdit && (
-                  <button 
-                    onClick={() => handleUpdateMealPlayers(selectedWeeks[0] || 1, 'dinner', 1)}
-                    className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                  >
-                    +
-                  </button>
-                )}
+                  {/* Cena / Dinner */}
+                  <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
+                    <span className="text-[10px] font-bold text-indigo-600">🌙</span>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'dinner', -1)}
+                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                      >
+                        -
+                      </button>
+                    )}
+                    <span className="font-extrabold text-xs text-indigo-950 min-w-[18px] text-center">
+                      {currentPlayers.dinner ?? 20}
+                    </span>
+                    {canEdit && (
+                      <button 
+                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'dinner', 1)}
+                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Auto-generate button */}
           {canEdit && (
@@ -981,19 +980,19 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
               </div>
 
               {(() => {
-                const activeDayNum = selectedDay || new Date().getDate();
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
+                const activeDayNum = selectedDay || getMadridTodayDateObject().getDate();
+                const year = selectedDayYear !== null ? selectedDayYear : currentDate.getFullYear();
+                const month = selectedDayMonth !== null ? selectedDayMonth : currentDate.getMonth();
                 const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(activeDayNum).padStart(2, '0')}`;
-                const menu = plannerData[dateISO] || plannerData[activeDayNum] || null;
+                const menu = plannerData[dateISO] || null;
 
                 const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
                 const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
                 const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, 'Sin guarnición'));
                 const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
 
-                const currentWeekNum = Math.ceil(activeDayNum / 7);
-                const players = weeklyPlayers[currentWeekNum] || { lunch: 25, dinner: 20 };
+                const weekMondayStr = getMadridMondayOfWeek(dateISO);
+                const players = weeklyPlayers[weekMondayStr] || { lunch: 25, dinner: 20 };
 
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1167,7 +1166,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                     for (let d = 1; d <= daysInMonth; d++) {
                       const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                       const isToday = isCurrentMonthYear && d === now.getDate();
-                      const menu = plannerData[dateISO] || plannerData[d] || null;
+                      const menu = plannerData[dateISO] || null;
 
                       const hasLunch = !!(menu?.lunch_recipe_id || menu?.lunch_recipe);
                       const hasSide = !!(menu?.lunch_side_recipe_id || menu?.lunch_side_recipe);
@@ -1258,7 +1257,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                   for (let d = 1; d <= daysInMonth; d++) {
                     const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const isToday = isCurrentMonthYear && d === now.getDate();
-                    const menu = plannerData[dateISO] || plannerData[d] || null;
+                    const menu = plannerData[dateISO] || null;
 
                     const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
                     const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
