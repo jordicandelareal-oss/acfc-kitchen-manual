@@ -70,6 +70,7 @@ const isSideRecipe = (r) => {
 // PlannerTab Component
 export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerData, setPlannerData] = useState({});
+  const [menuWeeks, setMenuWeeks] = useState([]);
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState(() => {
@@ -231,13 +232,24 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         addLog(`⏱️ Se procesaron automáticamente ${autoRes.data.processed_count} servicio(s) transcurridos`, 'success');
       }
 
-      const [plannerRes, ingredientsRes] = await Promise.all([
-        api.fetchPlannerDataDb(),
-        api.fetchIngredients()
+      // Calculate calendar start & end boundaries in Madrid timezone
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const numWeeks = getMadridWeeksInMonth(year, month);
+      const firstWeekDays = getMadridWeekRange(year, month, 1);
+      const lastWeekDays = getMadridWeekRange(year, month, numWeeks);
+      const startDate = firstWeekDays[0].dateStr;
+      const endDate = lastWeekDays[6].dateStr;
+
+      const [plannerRes, ingredientsRes, weeksRes] = await Promise.all([
+        api.fetchPlannerDataDb(startDate, endDate),
+        api.fetchIngredients(),
+        api.fetchMenuWeeks()
       ]);
 
       if (plannerRes.error) throw plannerRes.error;
       if (ingredientsRes.error) throw ingredientsRes.error;
+      if (weeksRes.error) throw weeksRes.error;
       
       const plannerMap = {};
       if (plannerRes.data) {
@@ -255,13 +267,17 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       setInventory(invData);
       window.INVENTORY = invData;
 
-      addLog(`Planificación e inventario cargados con éxito`, 'success');
+      const wData = weeksRes.data || [];
+      setMenuWeeks(wData);
+      window.MENU_WEEKS = wData;
+
+      addLog(`Planificación e inventario cargados con éxito para el rango ${startDate} a ${endDate}`, 'success');
     } catch (e) {
       addLog(`Error al cargar datos desde Supabase: ${e.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [addLog]);
+  }, [addLog, currentDate]);
 
   useEffect(() => {
     loadData();
@@ -504,6 +520,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
 
       selectedWeeks.forEach(week => {
         const weekDaysList = getMadridWeekRange(year, month, week);
+        const weekMondayStr = weekDaysList[0].dateStr;
+        
+        // Find if this week is confirmed in menu_weeks
+        const isConfirmedWeek = (menuWeeks || []).some(w => w.start_date === weekMondayStr && w.confirmado === true);
         
         // Regla de Protección contra Sobrescritura:
         const hasExistingMenu = weekDaysList.some(({ dateStr }) => {
@@ -511,11 +531,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           return existing && (existing.lunch_recipe_id || existing.dinner_recipe_id || existing.breakfast_recipe_id);
         });
 
-        if (hasExistingMenu) {
+        if (isConfirmedWeek || hasExistingMenu) {
           const rangeLabel = getMadridWeekRangeLabelForSelector(year, month, week);
-          addLog(`⚠️ Omitida generación para la semana [${rangeLabel}]: ya tiene menús registrados`, 'warn');
+          const reason = isConfirmedWeek ? 'está confirmada' : 'ya tiene menús registrados';
+          addLog(`⚠️ Omitida generación para la semana [${rangeLabel}]: ${reason}`, 'warn');
           if (typeof window.toast === 'function') {
-            window.toast(`⚠️ Semana [${rangeLabel}] omitida: ya tiene menús`);
+            window.toast(`⚠️ Semana [${rangeLabel}] omitida: ${reason}`);
           }
           return;
         }

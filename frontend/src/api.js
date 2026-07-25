@@ -312,24 +312,110 @@ export const insertRecipeIngredients = async (ingredientsArray) => {
 };
 
 // ── Planner ──
-export const fetchPlannerDataDb = async () => {
-  return supabase.from('menu_planner').select(`
+export const fetchPlannerDataDb = async (startDate, endDate) => {
+  let query = supabase.from('menu_planner').select(`
     *,
     breakfast_recipe:recipes!breakfast_recipe_id(id, name, image_url),
     lunch_recipe:recipes!lunch_recipe_id(id, name, image_url),
     lunch_side_recipe:recipes!lunch_side_recipe_id(id, name, image_url),
     dinner_recipe:recipes!dinner_recipe_id(id, name, image_url)
   `);
+  if (startDate) query = query.gte('date', startDate);
+  if (endDate) query = query.lte('date', endDate);
+  return query;
 };
 
-export const fetchPlannerFullWithIngredients = async () => {
-  return supabase.from('menu_planner').select(`
+export const fetchPlannerFullWithIngredients = async (startDate, endDate) => {
+  let query = supabase.from('menu_planner').select(`
     *,
     breakfast_recipe:recipes!breakfast_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
     lunch_recipe:recipes!lunch_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
     lunch_side_recipe:recipes!lunch_side_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*)))),
     dinner_recipe:recipes!dinner_recipe_id(*, recipe_ingredients(*, ingredients(*, suppliers(*))))
-  `).order('date', { ascending: true });
+  `);
+  if (startDate) query = query.gte('date', startDate);
+  if (endDate) query = query.lte('date', endDate);
+  return query.order('date', { ascending: true });
+};
+
+export const fetchMenuWeeks = async () => {
+  return supabase.from('menu_weeks').select('*').order('start_date', { ascending: true });
+};
+
+// ── Helper to resolve or register week in menu_weeks using Madrid timezone ──
+export const obtenerORegistrarSemana = async (dateStr) => {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  
+  // Find weekday index in Europe/Madrid timezone (Mon=0, ..., Sun=6)
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Madrid',
+    weekday: 'short'
+  });
+  const weekdayStr = dtf.format(dateObj);
+  const mapping = { 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6 };
+  const weekdayIndex = mapping[weekdayStr] ?? 0;
+  
+  const monday = new Date(dateObj);
+  monday.setDate(dateObj.getDate() - weekdayIndex);
+  
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  const dtfISO = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  const start_date = dtfISO.format(monday);
+  const end_date = dtfISO.format(sunday);
+  const monParts = start_date.split('-').map(Number);
+  
+  // Try to find the week in menu_weeks
+  const { data: existingWeek, error: selectErr } = await supabase
+    .from('menu_weeks')
+    .select('*')
+    .eq('start_date', start_date)
+    .eq('end_date', end_date)
+    .maybeSingle();
+    
+  if (selectErr) {
+    console.error('Error fetching week:', selectErr);
+  }
+  
+  if (existingWeek) {
+    return existingWeek;
+  }
+  
+  // If not found, insert it
+  const { data: newWeek, error: insertErr } = await supabase
+    .from('menu_weeks')
+    .insert([{
+      start_date,
+      end_date,
+      year: monParts[0],
+      month: monParts[1],
+      confirmado: false
+    }])
+    .select()
+    .maybeSingle();
+    
+  if (insertErr) {
+    console.warn('Error inserting week (possible race condition):', insertErr);
+    // Retry fetch
+    const { data: retryWeek } = await supabase
+      .from('menu_weeks')
+      .select('*')
+      .eq('start_date', start_date)
+      .eq('end_date', end_date)
+      .maybeSingle();
+    return retryWeek;
+  }
+  
+  return newWeek;
 };
 
 export const upsertPlannerDays = async (upsertsArray) => {
@@ -360,32 +446,41 @@ export const confirmarYDescontarStock = async (planId) => {
 // ── Guardar menú borrador (Sin alterar stock_reservado) ──
 export const guardarMenuBorrador = async (menuDays) => {
   try {
-    const res = await supabase.rpc('guardar_menu_borrador', { p_menu_days: menuDays });
-    if (!res?.error) return res;
-  } catch (e) {
-    console.warn('RPC guardar_menu_borrador fallo, ejecutando fallback JS:', e);
-  }
+    const upserts = [];
+    for (const item of menuDays) {
+      const week = await obtenerORegistrarSemana(item.date);
+      
+      // Protection: if the week is confirmed = true, respect it and do not overwrite
+      if (week && week.confirmado) {
+        console.warn(`[API] La semana para ${item.date} está confirmada. Omitiendo sobrescritura automática.`);
+        continue;
+      }
 
-  try {
-    const upserts = menuDays.map(item => ({
-      date: item.date,
-      breakfast_recipe_id: item.breakfast_recipe_id || null,
-      lunch_recipe_id: item.lunch_recipe_id || null,
-      lunch_side_recipe_id: item.lunch_side_recipe_id || null,
-      dinner_recipe_id: item.dinner_recipe_id || null,
-      lunch_players: Number(item.lunch_players) || 25,
-      dinner_players: Number(item.dinner_players) || 20,
-      lunch_halal: Number(item.lunch_halal) || 0,
-      lunch_kosher: Number(item.lunch_kosher) || 0,
-      lunch_vegan: Number(item.lunch_vegan) || 0,
-      lunch_allergies: item.lunch_allergies || '',
-      dinner_halal: Number(item.dinner_halal) || 0,
-      dinner_kosher: Number(item.dinner_kosher) || 0,
-      dinner_vegan: Number(item.dinner_vegan) || 0,
-      dinner_allergies: item.dinner_allergies || '',
-      confirmado: false,
-      updated_at: new Date().toISOString()
-    }));
+      upserts.push({
+        date: item.date,
+        week_id: week?.id || null,
+        breakfast_recipe_id: item.breakfast_recipe_id || null,
+        lunch_recipe_id: item.lunch_recipe_id || null,
+        lunch_side_recipe_id: item.lunch_side_recipe_id || null,
+        dinner_recipe_id: item.dinner_recipe_id || null,
+        lunch_players: Number(item.lunch_players) || 25,
+        dinner_players: Number(item.dinner_players) || 20,
+        lunch_halal: Number(item.lunch_halal) || 0,
+        lunch_kosher: Number(item.lunch_kosher) || 0,
+        lunch_vegan: Number(item.lunch_vegan) || 0,
+        lunch_allergies: item.lunch_allergies || '',
+        dinner_halal: Number(item.dinner_halal) || 0,
+        dinner_kosher: Number(item.dinner_kosher) || 0,
+        dinner_vegan: Number(item.dinner_vegan) || 0,
+        dinner_allergies: item.dinner_allergies || '',
+        confirmado: false,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    if (upserts.length === 0) {
+      return { data: { success: true, message: 'Ningún día guardado (todas las semanas están confirmadas).' }, error: null };
+    }
 
     const { data, error } = await supabase
       .from('menu_planner')
@@ -404,15 +499,39 @@ export const guardarMenuYReservarStock = async (menuDays) => {
 // ── Guardar y Confirmar menú (Reserva stock_reservado explícitamente) ──
 export const guardarYConfirmarMenu = async (menuDays) => {
   try {
-    const res = await supabase.rpc('guardar_y_confirmar_menu', { p_menu_days: menuDays });
-    if (!res?.error) return res;
-  } catch (e) {
-    console.warn('RPC guardar_y_confirmar_menu fallo, ejecutando fallback JS:', e);
-  }
+    const upserts = [];
+    const uniqueWeeksToConfirm = new Map();
 
-  try {
+    for (const item of menuDays) {
+      const week = await obtenerORegistrarSemana(item.date);
+      if (week) {
+        uniqueWeeksToConfirm.set(week.id, week);
+      }
+
+      upserts.push({
+        date: item.date,
+        week_id: week?.id || null,
+        breakfast_recipe_id: item.breakfast_recipe_id || null,
+        lunch_recipe_id: item.lunch_recipe_id || null,
+        lunch_side_recipe_id: item.lunch_side_recipe_id || null,
+        dinner_recipe_id: item.dinner_recipe_id || null,
+        lunch_players: Number(item.lunch_players) || 25,
+        dinner_players: Number(item.dinner_players) || 20,
+        lunch_halal: Number(item.lunch_halal) || 0,
+        lunch_kosher: Number(item.lunch_kosher) || 0,
+        lunch_vegan: Number(item.lunch_vegan) || 0,
+        lunch_allergies: item.lunch_allergies || '',
+        dinner_halal: Number(item.dinner_halal) || 0,
+        dinner_kosher: Number(item.dinner_kosher) || 0,
+        dinner_vegan: Number(item.dinner_vegan) || 0,
+        dinner_allergies: item.dinner_allergies || '',
+        confirmado: true,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    // 1. Release existing reservations if previously confirmed
     for (const day of menuDays) {
-      // 1. Release existing reservations if previously confirmed
       const { data: existingPlan } = await supabase
         .from('menu_planner')
         .select('*')
@@ -457,24 +576,21 @@ export const guardarYConfirmarMenu = async (menuDays) => {
       }
     }
 
-    const upserts = menuDays.map(item => ({
-      date: item.date,
-      breakfast_recipe_id: item.breakfast_recipe_id || null,
-      lunch_recipe_id: item.lunch_recipe_id || null,
-      lunch_side_recipe_id: item.lunch_side_recipe_id || null,
-      dinner_recipe_id: item.dinner_recipe_id || null,
-      lunch_players: Number(item.lunch_players) || 25,
-      dinner_players: Number(item.dinner_players) || 20,
-      confirmado: true,
-      updated_at: new Date().toISOString()
-    }));
-
     const { error: upsertErr } = await supabase
       .from('menu_planner')
       .upsert(upserts, { onConflict: 'date' });
 
     if (upsertErr) return { error: upsertErr };
 
+    // 2. Mark weeks as confirmed
+    for (const weekId of uniqueWeeksToConfirm.keys()) {
+      await supabase
+        .from('menu_weeks')
+        .update({ confirmado: true, updated_at: new Date().toISOString() })
+        .eq('id', weekId);
+    }
+
+    // 3. Reserve stock for the new recipes
     for (const day of menuDays) {
       const recipesToReserve = [
         { recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
