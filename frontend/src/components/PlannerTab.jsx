@@ -8,7 +8,8 @@ import {
   getMadridTodayStr, 
   getMadridTodayDateObject, 
   getMadridWeekdayIndex, 
-  isTodayInMadrid 
+  isTodayInMadrid,
+  getMadridWeekRange
 } from '../utils/dateUtils';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
@@ -126,6 +127,8 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   // Modals
   const [dayModalOpen, setDayModalOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedDayMonth, setSelectedDayMonth] = useState(null);
+  const [selectedDayYear, setSelectedDayYear] = useState(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -285,7 +288,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           if (typeof window.toast === 'function') window.toast('⚠️ Selecciona primero un día para vaciar');
           return;
         }
-        const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+        const rYear = selectedDayYear !== null ? selectedDayYear : year;
+        const rMonth = selectedDayMonth !== null ? selectedDayMonth : month;
+        const dateISO = `${rYear}-${String(rMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
         datesToReset = [dateISO];
       } else if (resetScope === 'week') {
         if (!selectedWeeks || selectedWeeks.length === 0) {
@@ -294,11 +299,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         }
         // Calculate days belonging to selected weeks in current month
         selectedWeeks.forEach(w => {
-          const startDay = (w - 1) * 7 + 1;
-          const endDay = Math.min(w * 7, new Date(year, month + 1, 0).getDate());
-          for (let d = startDay; d <= endDay; d++) {
-            datesToReset.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
-          }
+          const weekDaysList = getMadridWeekRange(year, month, w);
+          weekDaysList.forEach(({ dateStr }) => {
+            datesToReset.push(dateStr);
+          });
         });
       } else {
         // Full Month
@@ -334,8 +338,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     }
   };
 
-  const handleClearDay = (day) => {
+  const handleClearDay = (day, optMonth, optYear) => {
     setSelectedDay(day);
+    setSelectedDayMonth(optMonth !== undefined ? optMonth : currentDate.getMonth());
+    setSelectedDayYear(optYear !== undefined ? optYear : currentDate.getFullYear());
     setResetScope('day');
     setResetModalOpen(true);
   };
@@ -348,8 +354,8 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
 
   const handleSaveDay = async () => {
     if (!selectedDay) return;
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    const year = selectedDayYear !== null ? selectedDayYear : currentDate.getFullYear();
+    const month = selectedDayMonth !== null ? selectedDayMonth : currentDate.getMonth();
     const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
     addLog(`Guardando día ${selectedDay} (${formattedDate})...`, 'info');
     try {
@@ -393,10 +399,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     }
   };
 
-  const openDayEditor = (day) => {
+  const openDayEditor = (day, optMonth, optYear) => {
     setSelectedDay(day);
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    const year = optYear !== undefined ? optYear : currentDate.getFullYear();
+    const month = optMonth !== undefined ? optMonth : currentDate.getMonth();
+    setSelectedDayMonth(month);
+    setSelectedDayYear(year);
     const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     
     // Search plannerData using ISO date string first, then by numeric day
@@ -1010,82 +1018,90 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           {/* ── VISTA SEMANA ── */}
           {viewMode === 'week' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
-                <h3 className="font-bold text-indigo-900 text-sm">
-                  Semana {selectedWeeks[0] || 1} (Días {((selectedWeeks[0] || 1) - 1) * 7 + 1} a {Math.min(31, (selectedWeeks[0] || 1) * 7)})
-                </h3>
-                <span className="text-xs text-indigo-600 font-semibold">
-                  {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                </span>
-              </div>
+              {(() => {
+                const weekNum = selectedWeeks[0] || 1;
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const weekDaysList = getMadridWeekRange(year, month, weekNum);
+                const firstDay = weekDaysList[0];
+                const lastDay = weekDaysList[6];
+                
+                const getMonthShortName = (m) => {
+                  return new Date(2026, m, 1).toLocaleDateString('es-ES', { month: 'short' });
+                };
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2.5">
-                {(() => {
-                  const weekNum = selectedWeeks[0] || 1;
-                  const startDay = (weekNum - 1) * 7 + 1;
-                  const endDay = Math.min(31, weekNum * 7);
-                  const year = currentDate.getFullYear();
-                  const month = currentDate.getMonth();
-                  const now = getMadridTodayDateObject();
-                  const isCurrentMonthYear = now.getFullYear() === year && now.getMonth() === month;
-                  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                return (
+                  <>
+                    <div className="flex items-center justify-between bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
+                      <h3 className="font-bold text-indigo-900 text-sm">
+                        Semana {weekNum} ({firstDay.dayNum} de {getMonthShortName(firstDay.month)} al {lastDay.dayNum} de {getMonthShortName(lastDay.month)})
+                      </h3>
+                      <span className="text-xs text-indigo-600 font-semibold">
+                        {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'Europe/Madrid' })}
+                      </span>
+                    </div>
 
-                  const cards = [];
-                  for (let d = startDay; d <= endDay; d++) {
-                    const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    const isToday = isCurrentMonthYear && d === now.getDate();
-                    const menu = plannerData[dateISO] || plannerData[d] || null;
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2.5">
+                      {(() => {
+                        const now = getMadridTodayDateObject();
+                        const cards = [];
+                        
+                        weekDaysList.forEach(({ dateStr, dayNum, month: dMonth, year: dYear, dayLabel }) => {
+                          const isToday = now.getFullYear() === dYear && now.getMonth() === dMonth && dayNum === now.getDate();
+                          const menu = plannerData[dateStr] || plannerData[dayNum] || null;
 
-                    const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
-                    const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
-                    const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
-                    const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
-                    const dayNameIndex = getMadridWeekdayIndex(year, month, d);
+                          const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
+                          const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
+                          const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                          const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
 
-                    cards.push(
-                      <div 
-                        key={`week-card-${d}`}
-                        onClick={() => openDayEditor(d)}
-                        className={`card p-3 min-h-[160px] flex flex-col justify-between cursor-pointer transition-all ${
-                          isToday ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' : 'bg-white hover:border-brand/40 shadow-xs'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-2">
-                            <span className="text-[11px] font-bold text-slate-400 uppercase">{weekDays[dayNameIndex]}</span>
-                            <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <div>
-                              <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
-                              <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
-                            </div>
-
-                            {lunchSideName && (
+                          cards.push(
+                            <div 
+                              key={`week-card-${dateStr}`}
+                              onClick={() => openDayEditor(dayNum, dMonth, dYear)}
+                              className={`card p-3 min-h-[160px] flex flex-col justify-between cursor-pointer transition-all ${
+                                isToday ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' : 'bg-white hover:border-brand/40 shadow-xs'
+                              }`}
+                            >
                               <div>
-                                <span className="text-[9px] font-bold text-emerald-700 block uppercase">Guarnición</span>
-                                <p className="text-[11px] font-medium text-slate-600 truncate">{lunchSideName}</p>
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-2">
+                                  <span className="text-[11px] font-bold text-slate-400 uppercase">{dayLabel}</span>
+                                  <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{dayNum}</span>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <div>
+                                    <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                    <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
+                                  </div>
+
+                                  {lunchSideName && (
+                                    <div>
+                                      <span className="text-[9px] font-bold text-emerald-700 block uppercase">Guarnición</span>
+                                      <p className="text-[11px] font-medium text-slate-600 truncate">{lunchSideName}</p>
+                                    </div>
+                                  )}
+
+                                  <div>
+                                    <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                    <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
+                                  </div>
+                                </div>
                               </div>
-                            )}
 
-                            <div>
-                              <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
-                              <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
+                              <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
+                                <span>Editar</span>
+                                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
-                          <span>Editar</span>
-                          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return cards;
-                })()}
-              </div>
+                          );
+                        });
+                        return cards;
+                      })()}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -1323,7 +1339,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <div className="flex justify-between items-center mb-5 flex-shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>Planificar Día</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedDay} de Julio 2026</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {selectedDay} de {new Date(selectedDayYear !== null ? selectedDayYear : currentDate.getFullYear(), selectedDayMonth !== null ? selectedDayMonth : currentDate.getMonth(), 1).toLocaleDateString('es-ES', { month: 'long' })} del {selectedDayYear !== null ? selectedDayYear : currentDate.getFullYear()}
+                </p>
               </div>
               <button onClick={() => setDayModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
                 <X size={18} />
@@ -1482,7 +1500,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                 />
                 <div>
                   <span className="text-xs font-bold text-slate-800 block">Día actual / seleccionado</span>
-                  <span className="text-[11px] text-slate-500">Vacía únicamente las comidas del día {selectedDay || 'actual'}.</span>
+                  <span className="text-[11px] text-slate-500">
+                    Vacía únicamente las comidas del día {selectedDay ? `${selectedDay} de ${new Date(selectedDayYear || currentDate.getFullYear(), selectedDayMonth || currentDate.getMonth(), 1).toLocaleDateString('es-ES', { month: 'long' })}` : 'seleccionado'}.
+                  </span>
                 </div>
               </label>
 

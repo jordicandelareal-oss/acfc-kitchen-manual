@@ -124,3 +124,48 @@ export function getMadridWeekRangeLabel(monDate) {
   
   return `${monMonth} ${monDate.getDate()} - ${sunMonth} ${sunDate.getDate()}, ${monDate.getFullYear()}`;
 }
+
+// Get the days of a specific week of a month (1-indexed weekNum, e.g. 1 to 5)
+// formatted and computed using Europe/Madrid timezone. Always starts on Monday and ends on Sunday.
+export function getMadridWeekRange(year, month, weekNum) {
+  // Find the 1st of the month
+  const firstOfMonth = new Date(year, month, 1);
+  // Get the Spanish weekday index of the 1st (Mon=0, ..., Sun=6)
+  const firstWeekdayIndex = getMadridWeekdayIndexForDate(firstOfMonth);
+  
+  // The Monday of Week 1
+  const startOfWeek1 = new Date(firstOfMonth);
+  startOfWeek1.setDate(firstOfMonth.getDate() - firstWeekdayIndex);
+  startOfWeek1.setHours(0, 0, 0, 0);
+  
+  // The Monday of the requested weekNum (1-indexed)
+  const startOfWeek = new Date(startOfWeek1);
+  startOfWeek.setDate(startOfWeek1.getDate() + (weekNum - 1) * 7);
+  
+  const days = [];
+  const weekdaysText = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    
+    const dtf = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const dateStr = dtf.format(d);
+    
+    days.push({
+      dateStr: dateStr,
+      dayNum: d.getDate(),
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      dayLabel: weekdaysText[i]
+    });
+  }
+  
+  return days;
+}
+
