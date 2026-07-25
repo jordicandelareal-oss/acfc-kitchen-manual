@@ -752,6 +752,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       setTimeout(() => {
         setGeneralSaveStatus('idle');
       }, 2000);
+    } finally {
+      // Safety net: if somehow status is still 'saving' after 10s, unblock the button
+      setTimeout(() => {
+        setGeneralSaveStatus(prev => prev === 'saving' ? 'idle' : prev);
+      }, 10000);
     }
   };
 

@@ -342,79 +342,85 @@ export const fetchMenuWeeks = async () => {
   return supabase.from('menu_weeks').select('*').order('start_date', { ascending: true });
 };
 
+// ── Helper: race a promise against a timeout so menu_weeks never hangs ────────
+const withTimeout = (promise, ms = 5000, label = 'operation') =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`[menu_weeks] Timeout after ${ms}ms (${label})`)), ms)
+    )
+  ]);
+
 // ── Helper to resolve or register week in menu_weeks using Madrid timezone ──
 export const obtenerORegistrarSemana = async (dateStr) => {
   if (!dateStr) return null;
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  
-  // Find weekday index in Europe/Madrid timezone (Mon=0, ..., Sun=6)
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Europe/Madrid',
-    weekday: 'short'
-  });
-  const weekdayStr = dtf.format(dateObj);
-  const mapping = { 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6 };
-  const weekdayIndex = mapping[weekdayStr] ?? 0;
-  
-  const monday = new Date(dateObj);
-  monday.setDate(dateObj.getDate() - weekdayIndex);
-  
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  
-  const dtfISO = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Europe/Madrid',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  
-  const start_date = dtfISO.format(monday);
-  const end_date = dtfISO.format(sunday);
-  const monParts = start_date.split('-').map(Number);
-  
-  // Try to find the week in menu_weeks
-  const { data: existingWeek, error: selectErr } = await supabase
-    .from('menu_weeks')
-    .select('*')
-    .eq('start_date', start_date)
-    .eq('end_date', end_date)
-    .maybeSingle();
-    
-  if (selectErr) {
-    console.error('Error fetching week:', selectErr);
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+
+    // Find weekday index in Europe/Madrid timezone (Mon=0, ..., Sun=6)
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Madrid',
+      weekday: 'short'
+    });
+    const weekdayStr = dtf.format(dateObj);
+    const mapping = { 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6 };
+    const weekdayIndex = mapping[weekdayStr] ?? 0;
+
+    const monday = new Date(dateObj);
+    monday.setDate(dateObj.getDate() - weekdayIndex);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const dtfISO = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+
+    const start_date = dtfISO.format(monday);
+    const end_date   = dtfISO.format(sunday);
+    const monParts   = start_date.split('-').map(Number);
+
+    // Try to find existing week (with 5s timeout)
+    const { data: existingWeek, error: selectErr } = await withTimeout(
+      supabase.from('menu_weeks').select('*')
+        .eq('start_date', start_date)
+        .eq('end_date', end_date)
+        .maybeSingle(),
+      5000, 'select week'
+    );
+    if (selectErr) console.warn('[menu_weeks] Error fetching week:', selectErr);
+    if (existingWeek) return existingWeek;
+
+    // Upsert to prevent race condition 400 error (with 5s timeout)
+    const { data: newWeek, error: upsertErr } = await withTimeout(
+      supabase.from('menu_weeks')
+        .upsert(
+          [{ start_date, end_date, year: monParts[0], month: monParts[1] }],
+          { onConflict: 'start_date,end_date' }
+        )
+        .select()
+        .maybeSingle(),
+      5000, 'upsert week'
+    );
+
+    if (upsertErr) {
+      console.warn('[menu_weeks] Upsert error (non-blocking):', upsertErr);
+      // Retry fetch one last time
+      const { data: retryWeek } = await supabase.from('menu_weeks').select('*')
+        .eq('start_date', start_date).eq('end_date', end_date).maybeSingle();
+      return retryWeek ?? null;
+    }
+
+    return newWeek ?? null;
+  } catch (err) {
+    // Timeout or unexpected error — log and return null so callers can continue
+    console.warn('[menu_weeks] obtenerORegistrarSemana failed (non-blocking):', err.message);
+    return null;
   }
-  
-  if (existingWeek) {
-    return existingWeek;
-  }
-  
-  // If not found, upsert it to prevent race condition 400 error
-  const { data: newWeek, error: insertErr } = await supabase
-    .from('menu_weeks')
-    .upsert([{
-      start_date,
-      end_date,
-      year: monParts[0],
-      month: monParts[1]
-    }], { onConflict: 'start_date,end_date' })
-    .select()
-    .maybeSingle();
-    
-  if (insertErr) {
-    console.warn('Error inserting/upserting week (possible race condition):', insertErr);
-    // Retry fetch
-    const { data: retryWeek } = await supabase
-      .from('menu_weeks')
-      .select('*')
-      .eq('start_date', start_date)
-      .eq('end_date', end_date)
-      .maybeSingle();
-    return retryWeek;
-  }
-  
-  return newWeek;
 };
 
 export const upsertPlannerDays = async (upsertsArray) => {
@@ -502,10 +508,14 @@ export const guardarYConfirmarMenu = async (menuDays) => {
     const uniqueWeeksToConfirm = new Map();
 
     for (const item of menuDays) {
-      const week = await obtenerORegistrarSemana(item.date);
-      if (week) {
-        uniqueWeeksToConfirm.set(week.id, week);
+      // menu_weeks registration is non-blocking — failure must NOT stop the save
+      let week = null;
+      try {
+        week = await obtenerORegistrarSemana(item.date);
+      } catch (weekErr) {
+        console.warn('[menu_weeks] Skipping week for', item.date, weekErr.message);
       }
+      if (week?.id) uniqueWeeksToConfirm.set(week.id, week);
 
       upserts.push({
         date: item.date,
