@@ -390,21 +390,20 @@ export const obtenerORegistrarSemana = async (dateStr) => {
     return existingWeek;
   }
   
-  // If not found, insert it
+  // If not found, upsert it to prevent race condition 400 error
   const { data: newWeek, error: insertErr } = await supabase
     .from('menu_weeks')
-    .insert([{
+    .upsert([{
       start_date,
       end_date,
       year: monParts[0],
-      month: monParts[1],
-      confirmado: false
-    }])
+      month: monParts[1]
+    }], { onConflict: 'start_date,end_date' })
     .select()
     .maybeSingle();
     
   if (insertErr) {
-    console.warn('Error inserting week (possible race condition):', insertErr);
+    console.warn('Error inserting/upserting week (possible race condition):', insertErr);
     // Retry fetch
     const { data: retryWeek } = await supabase
       .from('menu_weeks')
