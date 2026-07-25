@@ -179,6 +179,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   const [selectedDayMonth, setSelectedDayMonth] = useState(null);
   const [selectedDayYear, setSelectedDayYear] = useState(null);
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'success' | 'error'
+  const [generalSaveStatus, setGeneralSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'success' | 'error'
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -721,18 +722,36 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   // Save All and Confirm Menu
   const handleSaveAndConfirm = async () => {
     addLog('Guardando menú y descontando reservas de existencias en stock...', 'info');
+    setGeneralSaveStatus('saving');
     try {
       const menuDays = Object.values(plannerData);
       if (menuDays.length === 0) {
         addLog('No hay días planificados para confirmar', 'warn');
+        setGeneralSaveStatus('idle');
         return;
       }
       const { error } = await api.guardarYConfirmarMenu(menuDays);
       if (error) throw error;
+      
       addLog('¡Inventario reservado y menú semanal confirmado con éxito!', 'success');
+      if (typeof window.toast === 'function') {
+        window.toast('🟢 ¡Inventario reservado y menú semanal confirmado con éxito!');
+      }
+      setGeneralSaveStatus('success');
       loadData();
+      
+      setTimeout(() => {
+        setGeneralSaveStatus('idle');
+      }, 2000);
     } catch (e) {
       addLog(`Error al guardar y confirmar stock: ${e.message}`, 'error');
+      if (typeof window.toast === 'function') {
+        window.toast(`🔴 Error: ${e.message}`);
+      }
+      setGeneralSaveStatus('error');
+      setTimeout(() => {
+        setGeneralSaveStatus('idle');
+      }, 2000);
     }
   };
 
@@ -986,12 +1005,40 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
           {/* Save / Reserve Stock button */}
           {canEdit && (
-            <button 
+            <button
               onClick={handleSaveAndConfirm}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap"
+              disabled={generalSaveStatus === 'saving' || generalSaveStatus === 'success'}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 text-white rounded-xl text-xs font-semibold hover:shadow-md transition-all whitespace-nowrap cursor-pointer ${
+                generalSaveStatus === 'saving' ? 'bg-slate-500 cursor-wait' :
+                generalSaveStatus === 'success' ? 'bg-green-600' :
+                generalSaveStatus === 'error' ? 'bg-rose-600' :
+                'bg-emerald-600 hover:bg-emerald-700'
+              }`}
             >
-              <Check size={14} />
-              <span>Guardar</span>
+              {generalSaveStatus === 'saving' && (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              )}
+              {generalSaveStatus === 'success' && (
+                <>
+                  <Check size={14} className="scale-110" />
+                  <span>¡Guardado!</span>
+                </>
+              )}
+              {generalSaveStatus === 'error' && (
+                <>
+                  <AlertTriangle size={14} />
+                  <span>¡Error!</span>
+                </>
+              )}
+              {generalSaveStatus === 'idle' && (
+                <>
+                  <Check size={14} />
+                  <span>Guardar</span>
+                </>
+              )}
             </button>
           )}
 
