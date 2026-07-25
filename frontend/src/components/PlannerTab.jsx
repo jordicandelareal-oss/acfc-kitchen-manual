@@ -10,7 +10,8 @@ import {
   getMadridWeekdayIndex, 
   isTodayInMadrid,
   getMadridWeekRange,
-  getMadridWeeksInMonth
+  getMadridWeeksInMonth,
+  getMadridWeekdayIndexForDate
 } from '../utils/dateUtils';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
