@@ -13,6 +13,14 @@ export const PLANNER_RULES = {
       section: 'personalizable'
     },
     {
+      key: 'menu_setting_no_repetir_semana',
+      label: 'Prohibir repetir plato durante la semana',
+      desc: 'Evita planificar la misma receta más de una vez en toda la semana en curso (para todos los turnos).',
+      type: 'boolean',
+      defaultValue: false,
+      section: 'personalizable'
+    },
+    {
       key: 'menu_setting_no_repetir_carbohidratos',
       label: 'Evitar repetir Carbohidratos',
       desc: 'Evita planificar recetas de tipo Pasta o Arroz en almuerzo y cena del mismo día.',

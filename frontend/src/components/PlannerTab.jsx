@@ -599,6 +599,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           return;
         }
 
+        const weeklyUsedRecipeIds = new Set();
+        const breakfastId = sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944');
+        if (breakfastId) {
+          weeklyUsedRecipeIds.add(breakfastId);
+        }
+
         weekDaysList.forEach(({ dateStr, dayNum, dayLabel }, offset) => {
           const isWeekend = (offset === 5 || offset === 6);
           const dateISO = dateStr;
@@ -608,6 +614,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           const shuffledMainsForLunch = shuffleArray(mainRecipes);
 
           for (const candidate of shuffledMainsForLunch) {
+            if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(candidate.id)) {
+              continue;
+            }
             const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch');
             if (check.valid) {
               lunchRecipe = candidate;
@@ -617,12 +626,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
           if (!lunchRecipe) {
             // Fallback to any main recipe not recently served if strict rules exclude all
-            lunchRecipe = shuffledMainsForLunch.find(r => !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForLunch[0] || null;
+            lunchRecipe = shuffledMainsForLunch.find(r => {
+              if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(r.id)) return false;
+              return !recentRecipeIds.slice(-5).includes(r.id);
+            }) || shuffledMainsForLunch.find(r => !settings['menu_setting_no_repetir_semana'] || !weeklyUsedRecipeIds.has(r.id)) || shuffledMainsForLunch[0] || null;
           }
 
           const randLunch = lunchRecipe?.id || null;
           if (randLunch) {
             recentRecipeIds.push(randLunch);
+            weeklyUsedRecipeIds.add(randLunch);
           }
 
           // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
@@ -635,25 +648,33 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
             // Filtrar guarniciones válidas:
             // 1. Que no se hayan servido el día inmediatamente anterior (no consecutivas)
-            // 2. Que no superen el máximo de 2 repeticiones en la misma semana
+            // 2. Que no superen el máximo de 2 repeticiones en la misma semana (o 1 si repetir_semana es activo)
             const allowedSides = shuffledSides.filter(candidate => {
+              if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(candidate.id)) {
+                return false;
+              }
               const countInWeek = weekSideCounts[week][candidate.id] || 0;
               const wasServedYesterday = recentSideIds.length > 0 && recentSideIds[recentSideIds.length - 1] === candidate.id;
               const check = PLANNER_RULES.isRecipeValid(candidate, [], settings, isWeekend, 'lunch_side');
-              return check.valid && !wasServedYesterday && countInWeek < 2;
+              const maxAllowed = settings['menu_setting_no_repetir_semana'] ? 1 : 2;
+              return check.valid && !wasServedYesterday && countInWeek < maxAllowed;
             });
 
             if (allowedSides.length > 0) {
               randSide = allowedSides[0].id;
             } else if (sideRecipes.length > 0) {
               // Fallback: seleccionar cualquier guarnición no servida ayer
-              const fallbackSide = shuffledSides.find(s => recentSideIds.length === 0 || recentSideIds[recentSideIds.length - 1] !== s.id) || shuffledSides[0];
+              const fallbackSide = shuffledSides.find(s => {
+                if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(s.id)) return false;
+                return recentSideIds.length === 0 || recentSideIds[recentSideIds.length - 1] !== s.id;
+              }) || shuffledSides.find(s => !settings['menu_setting_no_repetir_semana'] || !weeklyUsedRecipeIds.has(s.id)) || shuffledSides[0];
               randSide = fallbackSide?.id || null;
             }
 
             if (randSide) {
               recentRecipeIds.push(randSide);
               recentSideIds.push(randSide);
+              weeklyUsedRecipeIds.add(randSide);
               weekSideCounts[week][randSide] = (weekSideCounts[week][randSide] || 0) + 1;
             }
           }
@@ -663,6 +684,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           const shuffledMainsForDinner = shuffleArray(mainRecipes);
 
           for (const candidate of shuffledMainsForDinner) {
+            if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(candidate.id)) {
+              continue;
+            }
             const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'dinner', lunchRecipe);
             if (check.valid) {
               dinnerRecipe = candidate;
@@ -671,12 +695,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           }
 
           if (!dinnerRecipe) {
-            dinnerRecipe = shuffledMainsForDinner.find(r => r.id !== randLunch && !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForDinner[0] || null;
+            dinnerRecipe = shuffledMainsForDinner.find(r => {
+              if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(r.id)) return false;
+              return r.id !== randLunch && !recentRecipeIds.slice(-5).includes(r.id);
+            }) || shuffledMainsForDinner.find(r => !settings['menu_setting_no_repetir_semana'] || !weeklyUsedRecipeIds.has(r.id)) || shuffledMainsForDinner[0] || null;
           }
 
           const randDinner = dinnerRecipe?.id || null;
           if (randDinner) {
             recentRecipeIds.push(randDinner);
+            weeklyUsedRecipeIds.add(randDinner);
           }
 
           // Mantener cola de rotación amplia (últimos 14 platos servidos)
