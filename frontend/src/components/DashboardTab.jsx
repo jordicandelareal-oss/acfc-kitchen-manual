@@ -4,7 +4,7 @@ import {
   Utensils, Euro, Shield, Users, 
   CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb } from '../api';
+import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
@@ -22,6 +22,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const setRole = propsSetRole !== undefined ? propsSetRole : setLocalRole;
   const [ingredients, setIngredients] = useState([]);
   const [plannerData, setPlannerData] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
@@ -39,9 +40,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [ingRes, plannerRes] = await Promise.all([
+      const [ingRes, plannerRes, poRes] = await Promise.all([
         fetchIngredients(),
-        fetchPlannerDataDb()
+        fetchPlannerDataDb(),
+        fetchPurchaseOrders()
       ]);
 
       if (ingRes && !ingRes.error) {
@@ -50,6 +52,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
 
       if (plannerRes && !plannerRes.error) {
         setPlannerData(plannerRes.data || []);
+      }
+
+      if (poRes && !poRes.error) {
+        setPurchaseOrders(poRes.data || []);
       }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
@@ -170,14 +176,39 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     };
   }, [weekMenus, plannerData, recipes]);
 
+  // ── Coste Real de Órdenes de Compra de la Semana Activa ──
+  const weeklyActualSpent = useMemo(() => {
+    if (!selectedWeek || purchaseOrders.length === 0) return 0;
+    const start = new Date(selectedWeek);
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      weekDates.push([
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0')
+      ].join('-'));
+    }
+
+    return purchaseOrders.reduce((sum, po) => {
+      if (po.status === 'cancelled') return sum;
+      const poDate = po.order_date || (po.created_at ? po.created_at.split('T')[0] : '');
+      if (weekDates.includes(poDate)) {
+        return sum + Number(po.total_amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [purchaseOrders, selectedWeek]);
+
   // Presupuesto y Gasto Estimado Semanal con Barra de Progreso
   const budgetAnalysis = useMemo(() => {
-    const spent = weeklyPlannedCost || 0;
+    const spent = weeklyActualSpent || 0;
     const budget = weeklyBudget;
     const percentage = budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0;
     const isOverBudget = spent > budget;
     return { spent, budget, percentage, isOverBudget };
-  }, [weeklyPlannedCost, weeklyBudget]);
+  }, [weeklyActualSpent, weeklyBudget]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -582,23 +613,23 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
           </div>
         </div>
 
-        {/* KPI: Coste Teórico Planificado */}
+        {/* KPI: Gasto en Compras Reales */}
         <div className={`p-3.5 sm:p-5 rounded-2xl border shadow-sm transition-all relative overflow-hidden flex flex-col justify-between ${role === 'admin' ? 'bg-white border-slate-200/60' : 'bg-slate-50/50 border-slate-200/40 opacity-75'}`}>
           <div className="flex justify-between items-start">
             <div className="p-1.5 sm:p-2.5 bg-indigo-50 text-brand rounded-xl">
               <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <span className="badge badge-indigo text-[10px] py-0.5 px-1.5">
-              Planificado
+              Compras Reales
             </span>
           </div>
           
           {role === 'admin' ? (
             <div>
               <p className="text-lg sm:text-2xl font-extrabold text-slate-800 mt-2 sm:mt-4" style={{ fontFamily: 'Outfit' }}>
-                {loading ? '—' : weeklyPlannedCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                {loading ? '—' : weeklyActualSpent.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
               </p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Semanal</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Gasto Semanal</p>
             </div>
           ) : (
             <div className="mt-2 sm:mt-4">
@@ -606,7 +637,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
                 <Shield size={10} />
                 <span>Solo Admin</span>
               </p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Coste Semanal</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">Gasto Semanal</p>
             </div>
           )}
         </div>
