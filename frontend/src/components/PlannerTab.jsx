@@ -501,119 +501,114 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       const month = currentDate.getMonth();
 
       selectedWeeks.forEach(week => {
-        const startDay = (week - 1) * 7 + 1;
-        for (let offset = 0; offset < 7; offset++) {
-          const day = startDay + offset;
+        const weekDaysList = getMadridWeekRange(year, month, week);
+        weekDaysList.forEach(({ dateStr, dayNum, dayLabel }, offset) => {
           const isWeekend = (offset === 5 || offset === 6);
-          const daysInMonth = new Date(year, month + 1, 0).getDate();
-          
-          if (day <= daysInMonth) {
-            const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dateISO = dateStr;
 
-            // ── EVALUACIÓN PASO A PASO: ALMUERZO ──
-            let lunchRecipe = null;
-            const shuffledMainsForLunch = shuffleArray(mainRecipes);
+          // ── EVALUACIÓN PASO A PASO: ALMUERZO ──
+          let lunchRecipe = null;
+          const shuffledMainsForLunch = shuffleArray(mainRecipes);
 
-            for (const candidate of shuffledMainsForLunch) {
-              const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch');
-              if (check.valid) {
-                lunchRecipe = candidate;
-                break;
-              }
+          for (const candidate of shuffledMainsForLunch) {
+            const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'lunch');
+            if (check.valid) {
+              lunchRecipe = candidate;
+              break;
             }
-
-            if (!lunchRecipe) {
-              // Fallback to any main recipe not recently served if strict rules exclude all
-              lunchRecipe = shuffledMainsForLunch.find(r => !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForLunch[0] || null;
-            }
-
-            const randLunch = lunchRecipe?.id || null;
-            if (randLunch) {
-              recentRecipeIds.push(randLunch);
-            }
-
-            // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
-            let randSide = null;
-            if (settings['menu_setting_incluir_guarniciones'] !== false) {
-              const shuffledSides = shuffleArray(sideRecipes);
-              
-              // Inicializar mapa de uso por semana si no existe
-              if (!weekSideCounts[week]) weekSideCounts[week] = {};
-
-              // Filtrar guarniciones válidas:
-              // 1. Que no se hayan servido el día inmediatamente anterior (no consecutivas)
-              // 2. Que no superen el máximo de 2 repeticiones en la misma semana
-              const allowedSides = shuffledSides.filter(candidate => {
-                const countInWeek = weekSideCounts[week][candidate.id] || 0;
-                const wasServedYesterday = recentSideIds.length > 0 && recentSideIds[recentSideIds.length - 1] === candidate.id;
-                const check = PLANNER_RULES.isRecipeValid(candidate, [], settings, isWeekend, 'lunch_side');
-                return check.valid && !wasServedYesterday && countInWeek < 2;
-              });
-
-              if (allowedSides.length > 0) {
-                randSide = allowedSides[0].id;
-              } else if (sideRecipes.length > 0) {
-                // Fallback: seleccionar cualquier guarnición no servida ayer
-                const fallbackSide = shuffledSides.find(s => recentSideIds.length === 0 || recentSideIds[recentSideIds.length - 1] !== s.id) || shuffledSides[0];
-                randSide = fallbackSide?.id || null;
-              }
-
-              if (randSide) {
-                recentRecipeIds.push(randSide);
-                recentSideIds.push(randSide);
-                weekSideCounts[week][randSide] = (weekSideCounts[week][randSide] || 0) + 1;
-              }
-            }
-
-            // ── EVALUACIÓN PASO A PASO: CENA ──
-            let dinnerRecipe = null;
-            const shuffledMainsForDinner = shuffleArray(mainRecipes);
-
-            for (const candidate of shuffledMainsForDinner) {
-              const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'dinner', lunchRecipe);
-              if (check.valid) {
-                dinnerRecipe = candidate;
-                break;
-              }
-            }
-
-            if (!dinnerRecipe) {
-              dinnerRecipe = shuffledMainsForDinner.find(r => r.id !== randLunch && !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForDinner[0] || null;
-            }
-
-            const randDinner = dinnerRecipe?.id || null;
-            if (randDinner) {
-              recentRecipeIds.push(randDinner);
-            }
-
-            // Mantener cola de rotación amplia (últimos 14 platos servidos)
-            if (recentRecipeIds.length > 14) {
-              recentRecipeIds = recentRecipeIds.slice(-14);
-            }
-
-            // Número de comensales asignado específicamente a esta semana (Comida y Cena independientes)
-            const weekLunchPlayers = Number(weeklyPlayers[week]?.lunch) || defaultLunchPlayers;
-            const weekDinnerPlayers = Number(weeklyPlayers[week]?.dinner) || defaultDinnerPlayers;
-
-            upserts.push({
-              date: dateISO,
-              breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
-              lunch_recipe_id: randLunch,
-              lunch_side_recipe_id: randSide,
-              dinner_recipe_id: randDinner,
-              lunch_players: weekLunchPlayers,
-              lunch_halal: Math.round(weekLunchPlayers * 0.08),
-              lunch_kosher: Math.round(weekLunchPlayers * 0.04),
-              lunch_vegan: Math.round(weekLunchPlayers * 0.08),
-              lunch_allergies: '1 Celíaco',
-              dinner_players: weekDinnerPlayers,
-              dinner_halal: Math.round(weekDinnerPlayers * 0.05),
-              dinner_kosher: 0,
-              dinner_vegan: Math.round(weekDinnerPlayers * 0.05),
-              dinner_allergies: ''
-            });
           }
-        }
+
+          if (!lunchRecipe) {
+            // Fallback to any main recipe not recently served if strict rules exclude all
+            lunchRecipe = shuffledMainsForLunch.find(r => !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForLunch[0] || null;
+          }
+
+          const randLunch = lunchRecipe?.id || null;
+          if (randLunch) {
+            recentRecipeIds.push(randLunch);
+          }
+
+          // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
+          let randSide = null;
+          if (settings['menu_setting_incluir_guarniciones'] !== false) {
+            const shuffledSides = shuffleArray(sideRecipes);
+            
+            // Inicializar mapa de uso por semana si no existe
+            if (!weekSideCounts[week]) weekSideCounts[week] = {};
+
+            // Filtrar guarniciones válidas:
+            // 1. Que no se hayan servido el día inmediatamente anterior (no consecutivas)
+            // 2. Que no superen el máximo de 2 repeticiones en la misma semana
+            const allowedSides = shuffledSides.filter(candidate => {
+              const countInWeek = weekSideCounts[week][candidate.id] || 0;
+              const wasServedYesterday = recentSideIds.length > 0 && recentSideIds[recentSideIds.length - 1] === candidate.id;
+              const check = PLANNER_RULES.isRecipeValid(candidate, [], settings, isWeekend, 'lunch_side');
+              return check.valid && !wasServedYesterday && countInWeek < 2;
+            });
+
+            if (allowedSides.length > 0) {
+              randSide = allowedSides[0].id;
+            } else if (sideRecipes.length > 0) {
+              // Fallback: seleccionar cualquier guarnición no servida ayer
+              const fallbackSide = shuffledSides.find(s => recentSideIds.length === 0 || recentSideIds[recentSideIds.length - 1] !== s.id) || shuffledSides[0];
+              randSide = fallbackSide?.id || null;
+            }
+
+            if (randSide) {
+              recentRecipeIds.push(randSide);
+              recentSideIds.push(randSide);
+              weekSideCounts[week][randSide] = (weekSideCounts[week][randSide] || 0) + 1;
+            }
+          }
+
+          // ── EVALUACIÓN PASO A PASO: CENA ──
+          let dinnerRecipe = null;
+          const shuffledMainsForDinner = shuffleArray(mainRecipes);
+
+          for (const candidate of shuffledMainsForDinner) {
+            const check = PLANNER_RULES.isRecipeValid(candidate, recentRecipeIds, settings, isWeekend, 'dinner', lunchRecipe);
+            if (check.valid) {
+              dinnerRecipe = candidate;
+              break;
+            }
+          }
+
+          if (!dinnerRecipe) {
+            dinnerRecipe = shuffledMainsForDinner.find(r => r.id !== randLunch && !recentRecipeIds.slice(-5).includes(r.id)) || shuffledMainsForDinner[0] || null;
+          }
+
+          const randDinner = dinnerRecipe?.id || null;
+          if (randDinner) {
+            recentRecipeIds.push(randDinner);
+          }
+
+          // Mantener cola de rotación amplia (últimos 14 platos servidos)
+          if (recentRecipeIds.length > 14) {
+            recentRecipeIds = recentRecipeIds.slice(-14);
+          }
+
+          // Número de comensales asignado específicamente a esta semana (Comida y Cena independientes)
+          const weekLunchPlayers = Number(weeklyPlayers[week]?.lunch) || defaultLunchPlayers;
+          const weekDinnerPlayers = Number(weeklyPlayers[week]?.dinner) || defaultDinnerPlayers;
+
+          upserts.push({
+            date: dateISO,
+            breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
+            lunch_recipe_id: randLunch,
+            lunch_side_recipe_id: randSide,
+            dinner_recipe_id: randDinner,
+            lunch_players: weekLunchPlayers,
+            lunch_halal: Math.round(weekLunchPlayers * 0.08),
+            lunch_kosher: Math.round(weekLunchPlayers * 0.04),
+            lunch_vegan: Math.round(weekLunchPlayers * 0.08),
+            lunch_allergies: '1 Celíaco',
+            dinner_players: weekDinnerPlayers,
+            dinner_halal: Math.round(weekDinnerPlayers * 0.05),
+            dinner_kosher: 0,
+            dinner_vegan: Math.round(weekDinnerPlayers * 0.05),
+            dinner_allergies: ''
+          });
+        });
       });
 
       const { error } = await api.guardarMenuBorrador(upserts);
