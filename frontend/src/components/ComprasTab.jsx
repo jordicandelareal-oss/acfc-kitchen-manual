@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   ShoppingCart, PackageCheck, History, Save, CheckCircle2, 
   Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw, 
-  MessageCircle, Mail, ChevronDown, ChevronUp, Store
+  MessageCircle, Mail, ChevronDown, ChevronUp, Store, Trash2
 } from 'lucide-react';
 import { 
   fetchShoppingList, 
@@ -10,7 +10,8 @@ import {
   createPurchaseOrder, 
   confirmOrderReception, 
   validarRecepcionPedido,
-  fetchPlannerFullWithIngredients
+  fetchPlannerFullWithIngredients,
+  deletePurchaseOrder
 } from '../api';
 import { 
   calcularCosteLineaIngrediente, 
@@ -328,46 +329,36 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const extractUuid = (str) => {
         if (typeof str !== 'string') return null;
         const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-        if (match) return match[0];
-        // fallback split parsing
-        if (str.includes('_')) {
-          const parts = str.replace('cairo_', '').replace('elcairo_', '').split('_');
-          const possibleUuid = parts[0];
-          const checkMatch = possibleUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-          if (checkMatch) return checkMatch[0];
+        return match ? match[0] : null;
+      };
+
+      const resolveSupplierIdClean = (idStr) => {
+        if (!idStr || typeof idStr !== 'string') return null;
+        if (idStr.includes('cairo') || idStr.includes('Cairo') || idStr === 'cairo-supplier') {
+          return '351af4c6-eb24-46d3-9564-8781a0d54246';
+        }
+        const ext = extractUuid(idStr);
+        if (ext) {
+          if (ext === 'd257d90b-ad0b-4f84-97a0-fee73612953c' || ext === '351af4c6-eb24-46d3-9564-8781a0d54246') {
+            return '351af4c6-eb24-46d3-9564-8781a0d54246';
+          }
+          return ext;
+        }
+        if (idStr !== 'no-supplier' && idStr !== 'general') {
+          return idStr;
         }
         return null;
       };
 
       if (supplierGroup) {
-        const extGroup = extractUuid(supplierGroup.supplierId);
-        if (extGroup) {
-          resolvedSupplierId = extGroup;
-        } else if (supplierGroup.supplierId === 'cairo-supplier' || supplierGroup.isElCairo) {
-          const itemWithUuid = supplierGroup.items?.find(i => extractUuid(i.supplierId) || extractUuid(i.id));
-          if (itemWithUuid) {
-            resolvedSupplierId = extractUuid(itemWithUuid.supplierId) || extractUuid(itemWithUuid.id);
-          }
-          if (!resolvedSupplierId) {
-            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
-          }
-        } else if (supplierGroup.supplierId && supplierGroup.supplierId !== 'no-supplier' && supplierGroup.supplierId !== 'general') {
-          resolvedSupplierId = supplierGroup.supplierId;
-        }
+        resolvedSupplierId = resolveSupplierIdClean(supplierGroup.supplierId);
       }
       if (!resolvedSupplierId && itemsToOrder.length > 0) {
         const firstItem = itemsToOrder[0];
-        const extFirst = extractUuid(firstItem.supplierId) || extractUuid(firstItem.id);
-        if (extFirst) {
-          resolvedSupplierId = extFirst;
-        } else {
-          const isCairoItem = firstItem.isElCairo || isElCairoSupplier(firstItem.supplierName, firstItem.supplierId, firstItem.name);
-          if (isCairoItem) {
-            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
-          } else if (firstItem.supplierId && firstItem.supplierId !== 'no-supplier' && firstItem.supplierId !== 'general' && firstItem.supplierId !== 'cairo-supplier') {
-            resolvedSupplierId = firstItem.supplierId;
-          }
-        }
+        resolvedSupplierId = resolveSupplierIdClean(firstItem.supplierId);
+      }
+      if (!resolvedSupplierId && supplierGroup && (supplierGroup.isElCairo || supplierGroup.supplierName?.toLowerCase().includes('cairo'))) {
+        resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
       }
 
       const orderPayload = {
@@ -378,11 +369,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
 
       const itemsPayload = itemsToOrder.map(i => {
-        let resolvedIngredientId = i.ingredientId || i.ingredient_id || i.id;
-        const extIng = extractUuid(resolvedIngredientId);
-        if (extIng) {
-          resolvedIngredientId = extIng;
-        }
+        const rawIngId = i.ingredientId || i.ingredient_id || i.id;
+        const resolvedIngredientId = extractUuid(rawIngId);
         return {
           ingredient_id: resolvedIngredientId,
           ingredient_name: i.name,
@@ -394,8 +382,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
+      if (!createdPO) throw new Error('No se recibió confirmación de la orden de Supabase');
 
-      // INSTANTLY remove saved ingredients from React UI state
+      // ONLY remove saved ingredients from React UI state if insertion was successful
       setJustOrderedIds(prev => {
         const next = new Set(prev);
         itemsToOrder.forEach(i => next.add(i.id));
@@ -415,6 +404,21 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     } finally {
       setIsSavingOrder(false);
       setSavingSupplierMap(prev => ({ ...prev, [sKey]: false, global: false }));
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden de compra?")) return;
+    try {
+      const res = await deletePurchaseOrder(orderId);
+      if (res.error) throw res.error;
+      
+      setHistoryOrders(prev => prev.filter(po => po.id !== orderId));
+      if (window.toast) window.toast("🗑️ Orden de compra eliminada correctamente");
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error al eliminar la orden:', err);
+      if (window.toast) window.toast('❌ Error al eliminar la orden: ' + (err.message || 'Fallo de base de datos'));
     }
   };
 
@@ -846,20 +850,31 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                             <StatusBadge status={order.status} />
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {order.status !== 'received' ? (
-                              <button
-                                onClick={() => openReceptionModal(order)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
-                              >
-                                <PackageCheck size={14} />
-                                <span>📦 Validar Recepción</span>
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
-                                <CheckCircle2 size={14} className="text-emerald-500" />
-                                Ingresado a Stock
-                              </span>
-                            )}
+                            <div className="flex items-center justify-end gap-2">
+                              {order.status === 'pending' && (
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  className="p-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Eliminar Orden de Compra"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                              {order.status !== 'received' ? (
+                                <button
+                                  onClick={() => openReceptionModal(order)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
+                                >
+                                  <PackageCheck size={14} />
+                                  <span>📦 Validar Recepción</span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
+                                  <CheckCircle2 size={14} className="text-emerald-500" />
+                                  Ingresado a Stock
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

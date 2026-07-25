@@ -895,24 +895,28 @@ export const createPurchaseOrder = async (orderData, itemsArray) => {
     const extractUuid = (str) => {
       if (typeof str !== 'string') return null;
       const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (match) return match[0];
-      if (str.includes('_')) {
-        const parts = str.replace('cairo_', '').replace('elcairo_', '').split('_');
-        const possibleUuid = parts[0];
-        const checkMatch = possibleUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-        if (checkMatch) return checkMatch[0];
+      return match ? match[0] : null;
+    };
+
+    const resolveSupplierIdClean = (idStr) => {
+      if (!idStr || typeof idStr !== 'string') return null;
+      if (idStr.includes('cairo') || idStr.includes('Cairo') || idStr === 'cairo-supplier') {
+        return '351af4c6-eb24-46d3-9564-8781a0d54246';
+      }
+      const ext = extractUuid(idStr);
+      if (ext) {
+        if (ext === 'd257d90b-ad0b-4f84-97a0-fee73612953c' || ext === '351af4c6-eb24-46d3-9564-8781a0d54246') {
+          return '351af4c6-eb24-46d3-9564-8781a0d54246';
+        }
+        return ext;
+      }
+      if (idStr !== 'no-supplier' && idStr !== 'general') {
+        return idStr;
       }
       return null;
     };
 
-    if (typeof rawSupplierId === 'string') {
-      const ext = extractUuid(rawSupplierId);
-      if (ext) {
-        resolvedSupplierId = ext;
-      } else if (rawSupplierId === 'cairo-supplier' || rawSupplierId === 'd257d90b-ad0b-4f84-97a0-fee73612953c') {
-        resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
-      }
-    }
+    resolvedSupplierId = resolveSupplierIdClean(rawSupplierId);
 
     const poPayload = {
       supplier_id: resolvedSupplierId,
@@ -937,7 +941,7 @@ export const createPurchaseOrder = async (orderData, itemsArray) => {
     if (itemsArray && itemsArray.length > 0) {
       const poiRecords = itemsArray.map(item => {
         const rawIngId = item.ingredient_id || item.id;
-        const resolvedIngredientId = extractUuid(rawIngId) || rawIngId || null;
+        const resolvedIngredientId = extractUuid(rawIngId);
 
         return {
           purchase_order_id: poData.id,
@@ -1035,3 +1039,50 @@ export const confirmOrderReception = async (orderId, itemsArray) => {
   }
 };
 
+export const deletePurchaseOrder = async (orderId) => {
+  try {
+    // 1. Delete order items first
+    const { error: itemsErr } = await supabase
+      .from('purchase_order_items')
+      .delete()
+      .eq('purchase_order_id', orderId);
+
+    if (itemsErr) throw itemsErr;
+
+    // 2. Delete parent order
+    const { error: poErr } = await supabase
+      .from('purchase_orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (poErr) throw poErr;
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('❌ Error al eliminar la orden de compra:', err);
+    return { success: false, error: err };
+  }
+};
+
+export const resetearCompras = async () => {
+  try {
+    const { error: itemsErr } = await supabase
+      .from('purchase_order_items')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (itemsErr) throw itemsErr;
+
+    const { error: ordersErr } = await supabase
+      .from('purchase_orders')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (ordersErr) throw ordersErr;
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('❌ Error al resetear compras:', err);
+    return { success: false, error: err };
+  }
+};

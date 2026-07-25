@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Play, RotateCcw, AlertTriangle, Calendar, Sparkles, X } from 'lucide-react';
-import { simularCierreTurno, resetearEntornoPruebas } from '../api';
+import { Play, RotateCcw, AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Calendar, Sparkles, X } from 'lucide-react';
+import { simularCierreTurno, resetearEntornoPruebas, resetearCompras } from '../api';
 
 export default function TestingToolbar({ onRefresh }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +49,23 @@ export default function TestingToolbar({ onRefresh }) {
     } catch (err) {
       console.error(err);
       if (window.toast) window.toast('❌ Error al resetear entorno de pruebas: ' + err.message);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleResetPurchases = async () => {
+    if (!window.confirm("¿Seguro que deseas vaciar todas las órdenes de compra y sus ítems de prueba?")) return;
+    setLoadingAction('reset_purchases');
+    try {
+      const res = await resetearCompras();
+      if (res.error) throw res.error;
+
+      if (window.toast) window.toast('🔄 Órdenes de compra y pendientes reseteados correctamente');
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
+      if (window.toast) window.toast('❌ Error al resetear compras: ' + err.message);
     } finally {
       setLoadingAction(null);
     }
@@ -136,6 +153,16 @@ export default function TestingToolbar({ onRefresh }) {
                 >
                   <RotateCcw size={12} />
                   <span>{loadingAction === 'reset' ? 'Reseteando...' : 'Resetear Entorno Sandbox'}</span>
+                </button>
+
+                <button
+                  onClick={handleResetPurchases}
+                  disabled={loadingAction !== null}
+                  className="w-full px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50 mt-1"
+                  title="Vacía todas las órdenes de compra y sus líneas de detalle"
+                >
+                  <RotateCcw size={12} />
+                  <span>{loadingAction === 'reset_purchases' ? 'Vaciando...' : 'Resetear Compras'}</span>
                 </button>
               </div>
             </div>
