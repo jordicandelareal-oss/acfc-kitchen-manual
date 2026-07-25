@@ -328,46 +328,36 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const extractUuid = (str) => {
         if (typeof str !== 'string') return null;
         const match = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-        if (match) return match[0];
-        // fallback split parsing
-        if (str.includes('_')) {
-          const parts = str.replace('cairo_', '').replace('elcairo_', '').split('_');
-          const possibleUuid = parts[0];
-          const checkMatch = possibleUuid.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-          if (checkMatch) return checkMatch[0];
+        return match ? match[0] : null;
+      };
+
+      const resolveSupplierIdClean = (idStr) => {
+        if (!idStr || typeof idStr !== 'string') return null;
+        if (idStr.includes('cairo') || idStr.includes('Cairo') || idStr === 'cairo-supplier') {
+          return '351af4c6-eb24-46d3-9564-8781a0d54246';
+        }
+        const ext = extractUuid(idStr);
+        if (ext) {
+          if (ext === 'd257d90b-ad0b-4f84-97a0-fee73612953c' || ext === '351af4c6-eb24-46d3-9564-8781a0d54246') {
+            return '351af4c6-eb24-46d3-9564-8781a0d54246';
+          }
+          return ext;
+        }
+        if (idStr !== 'no-supplier' && idStr !== 'general') {
+          return idStr;
         }
         return null;
       };
 
       if (supplierGroup) {
-        const extGroup = extractUuid(supplierGroup.supplierId);
-        if (extGroup) {
-          resolvedSupplierId = extGroup;
-        } else if (supplierGroup.supplierId === 'cairo-supplier' || supplierGroup.isElCairo) {
-          const itemWithUuid = supplierGroup.items?.find(i => extractUuid(i.supplierId) || extractUuid(i.id));
-          if (itemWithUuid) {
-            resolvedSupplierId = extractUuid(itemWithUuid.supplierId) || extractUuid(itemWithUuid.id);
-          }
-          if (!resolvedSupplierId) {
-            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
-          }
-        } else if (supplierGroup.supplierId && supplierGroup.supplierId !== 'no-supplier' && supplierGroup.supplierId !== 'general') {
-          resolvedSupplierId = supplierGroup.supplierId;
-        }
+        resolvedSupplierId = resolveSupplierIdClean(supplierGroup.supplierId);
       }
       if (!resolvedSupplierId && itemsToOrder.length > 0) {
         const firstItem = itemsToOrder[0];
-        const extFirst = extractUuid(firstItem.supplierId) || extractUuid(firstItem.id);
-        if (extFirst) {
-          resolvedSupplierId = extFirst;
-        } else {
-          const isCairoItem = firstItem.isElCairo || isElCairoSupplier(firstItem.supplierName, firstItem.supplierId, firstItem.name);
-          if (isCairoItem) {
-            resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
-          } else if (firstItem.supplierId && firstItem.supplierId !== 'no-supplier' && firstItem.supplierId !== 'general' && firstItem.supplierId !== 'cairo-supplier') {
-            resolvedSupplierId = firstItem.supplierId;
-          }
-        }
+        resolvedSupplierId = resolveSupplierIdClean(firstItem.supplierId);
+      }
+      if (!resolvedSupplierId && supplierGroup && (supplierGroup.isElCairo || supplierGroup.supplierName?.toLowerCase().includes('cairo'))) {
+        resolvedSupplierId = '351af4c6-eb24-46d3-9564-8781a0d54246';
       }
 
       const orderPayload = {
@@ -378,11 +368,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
 
       const itemsPayload = itemsToOrder.map(i => {
-        let resolvedIngredientId = i.ingredientId || i.ingredient_id || i.id;
-        const extIng = extractUuid(resolvedIngredientId);
-        if (extIng) {
-          resolvedIngredientId = extIng;
-        }
+        const rawIngId = i.ingredientId || i.ingredient_id || i.id;
+        const resolvedIngredientId = extractUuid(rawIngId);
         return {
           ingredient_id: resolvedIngredientId,
           ingredient_name: i.name,
@@ -394,8 +381,9 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       const { data: createdPO, error } = await createPurchaseOrder(orderPayload, itemsPayload);
       if (error) throw error;
+      if (!createdPO) throw new Error('No se recibió confirmación de la orden de Supabase');
 
-      // INSTANTLY remove saved ingredients from React UI state
+      // ONLY remove saved ingredients from React UI state if insertion was successful
       setJustOrderedIds(prev => {
         const next = new Set(prev);
         itemsToOrder.forEach(i => next.add(i.id));
