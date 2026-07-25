@@ -129,6 +129,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedDayMonth, setSelectedDayMonth] = useState(null);
   const [selectedDayYear, setSelectedDayYear] = useState(null);
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'success' | 'error'
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -358,6 +359,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     const month = selectedDayMonth !== null ? selectedDayMonth : currentDate.getMonth();
     const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
     addLog(`Guardando día ${selectedDay} (${formattedDate})...`, 'info');
+    setSaveStatus('saving');
     try {
       
       const payload = {
@@ -391,11 +393,26 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         return nextMap;
       });
       
+      setSaveStatus('success');
       addLog(`Día ${selectedDay} guardado con éxito`, 'success');
-      setDayModalOpen(false);
-      loadData();
+      if (typeof window.toast === 'function') {
+        window.toast(`✅ Día ${selectedDay} guardado con éxito`);
+      }
+      
+      setTimeout(() => {
+        setDayModalOpen(false);
+        setSaveStatus('idle');
+        loadData();
+      }, 1500);
     } catch (e) {
+      setSaveStatus('error');
       addLog(`Error al guardar día ${selectedDay}: ${e.message}`, 'error');
+      if (typeof window.toast === 'function') {
+        window.toast(`❌ Error al guardar: ${e.message}`);
+      }
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
     }
   };
 
@@ -1468,8 +1485,36 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
               <button onClick={() => setDayModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                 Cancelar
               </button>
-              <button onClick={handleSaveDay} className="px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all">
-                Guardar Día
+              <button 
+                onClick={handleSaveDay} 
+                disabled={saveStatus === 'saving' || saveStatus === 'success'}
+                className={`px-5 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 ${
+                  saveStatus === 'saving' 
+                    ? 'bg-slate-500 cursor-not-allowed' 
+                    : saveStatus === 'success' 
+                      ? 'bg-emerald-600 hover:bg-emerald-700' 
+                      : saveStatus === 'error' 
+                        ? 'bg-red-600 hover:bg-red-700' 
+                        : 'bg-brand hover:bg-brand-dark'
+                }`}
+              >
+                {saveStatus === 'saving' && (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Guardando...</span>
+                  </>
+                )}
+                {saveStatus === 'success' && (
+                  <>
+                    <span>✓ ¡Guardado!</span>
+                  </>
+                )}
+                {saveStatus === 'error' && (
+                  <>
+                    <span>❌ Error</span>
+                  </>
+                )}
+                {saveStatus === 'idle' && <span>Guardar Día</span>}
               </button>
             </div>
           </div>
