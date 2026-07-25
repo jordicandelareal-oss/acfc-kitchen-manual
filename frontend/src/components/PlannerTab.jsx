@@ -67,10 +67,60 @@ const isSideRecipe = (r) => {
   return SIDE_CATEGORIES.some(s => cat === s || cat.includes(s));
 };
 
+const getDaysInRange = (startStr, endStr) => {
+  const days = [];
+  if (!startStr || !endStr) return days;
+  
+  const [sY, sM, sD] = startStr.split('-').map(Number);
+  const [eY, eM, eD] = endStr.split('-').map(Number);
+  
+  const start = new Date(sY, sM - 1, sD);
+  const end = new Date(eY, eM - 1, eD);
+  
+  const current = new Date(start);
+  const weekdaysText = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  
+  let iterations = 0;
+  while (current <= end && iterations < 100) {
+    iterations++;
+    const dtfISO = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const dateStr = dtfISO.format(current);
+    
+    days.push({
+      dateStr: dateStr,
+      dayNum: current.getDate(),
+      month: current.getMonth(),
+      year: current.getFullYear(),
+      dayLabel: weekdaysText[current.getDay()]
+    });
+    
+    current.setDate(current.getDate() + 1);
+  }
+  return days;
+};
+
 // PlannerTab Component
 export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   const [plannerData, setPlannerData] = useState({});
   const [menuWeeks, setMenuWeeks] = useState([]);
+  const [customStartDate, setCustomStartDate] = useState(() => getMadridTodayStr());
+  const [customEndDate, setCustomEndDate] = useState(() => {
+    const today = getMadridTodayDateObject();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    const dtf = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return dtf.format(nextWeek);
+  });
   const [plannerSettings, setPlannerSettings] = useState(() => PLANNER_RULES.getSettings());
   const [inventory, setInventory] = useState([]);
   const [selectedWeeks, setSelectedWeeks] = useState(() => {
@@ -233,13 +283,19 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       }
 
       // Calculate calendar start & end boundaries in Madrid timezone
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-      const numWeeks = getMadridWeeksInMonth(year, month);
-      const firstWeekDays = getMadridWeekRange(year, month, 1);
-      const lastWeekDays = getMadridWeekRange(year, month, numWeeks);
-      const startDate = firstWeekDays[0].dateStr;
-      const endDate = lastWeekDays[6].dateStr;
+      let startDate, endDate;
+      if (viewMode === 'range') {
+        startDate = customStartDate;
+        endDate = customEndDate;
+      } else {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const numWeeks = getMadridWeeksInMonth(year, month);
+        const firstWeekDays = getMadridWeekRange(year, month, 1);
+        const lastWeekDays = getMadridWeekRange(year, month, numWeeks);
+        startDate = firstWeekDays[0].dateStr;
+        endDate = lastWeekDays[6].dateStr;
+      }
 
       const [plannerRes, ingredientsRes, weeksRes] = await Promise.all([
         api.fetchPlannerDataDb(startDate, endDate),
@@ -277,7 +333,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
     } finally {
       setLoading(false);
     }
-  }, [addLog, currentDate]);
+  }, [addLog, currentDate, viewMode, customStartDate, customEndDate]);
 
   useEffect(() => {
     loadData();
@@ -746,12 +802,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
         </div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
           
-          {/* View Mode Selector (Día | Semana | Mes) */}
+          {/* View Mode Selector (Día | Semana | Mes | Rango) */}
           <div className="col-span-2 sm:col-span-1 flex items-center justify-center bg-slate-200/80 p-0.5 rounded-xl border border-slate-300">
             <button
               type="button"
               onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'day' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -760,7 +816,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <button
               type="button"
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'week' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -769,11 +825,20 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
             <button
               type="button"
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'month' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Mes
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('range')}
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'range' ? 'bg-brand text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Rango
             </button>
           </div>
 
@@ -789,27 +854,53 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           )}
 
           {/* Week selector */}
-          <div className="flex flex-wrap items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Semanas:</span>
-            {(() => {
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth();
-              const numWeeks = getMadridWeeksInMonth(year, month);
-              const weeksArr = [];
-              for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
-              return weeksArr.map(w => (
-                <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors whitespace-nowrap">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedWeeks.includes(w)}
-                    onChange={() => handleWeekToggle(w)}
-                    className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
-                  />
-                  <span>{getMadridWeekRangeLabelForSelector(year, month, w)}</span>
-                </label>
-              ));
-            })()}
-          </div>
+          {viewMode === 'week' && (
+            <div className="flex flex-wrap items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Semanas:</span>
+              {(() => {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const numWeeks = getMadridWeeksInMonth(year, month);
+                const weeksArr = [];
+                for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
+                return weeksArr.map(w => (
+                  <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors whitespace-nowrap">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedWeeks.includes(w)}
+                      onChange={() => handleWeekToggle(w)}
+                      className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
+                    />
+                    <span>{getMadridWeekRangeLabelForSelector(year, month, w)}</span>
+                  </label>
+                ));
+              })()}
+            </div>
+          )}
+
+          {/* Custom Date Range selector */}
+          {viewMode === 'range' && (
+            <div className="flex flex-wrap items-center justify-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Inicio:</span>
+                <input 
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold text-slate-755 outline-hidden"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Fin:</span>
+                <input 
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold text-slate-755 outline-hidden"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}
           {(() => {
@@ -1166,6 +1257,83 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
                           );
                         });
                         return cards;
+                      })()}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+          {/* ── VISTA RANGO PERSONALIZADO ── */}
+          {viewMode === 'range' && (
+            <div className="space-y-3">
+              {(() => {
+                const rangeDays = getDaysInRange(customStartDate, customEndDate);
+                if (rangeDays.length === 0) {
+                  return <div className="text-center text-slate-500 py-6">Selecciona fechas de inicio y fin válidas.</div>;
+                }
+                
+                return (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 gap-2">
+                      <h3 className="font-bold text-indigo-900 text-sm">
+                        Rango Personalizado: {customStartDate} al {customEndDate} ({rangeDays.length} días)
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-2.5">
+                      {(() => {
+                        const now = getMadridTodayDateObject();
+                        return rangeDays.map(({ dateStr, dayNum, month: dMonth, year: dYear, dayLabel }) => {
+                          const isToday = now.getFullYear() === dYear && now.getMonth() === dMonth && dayNum === now.getDate();
+                          const menu = plannerData[dateStr] || null;
+
+                          const lunchName = menu?.lunch_recipe?.name || getRecipeName(menu?.lunch_recipe_id || menu?.lunch_recipe, 'Sin asignar');
+                          const rawSideId = menu?.lunch_side_recipe_id || menu?.lunch_side_recipe || menu?.side_dish || menu?.guarnicion;
+                          const lunchSideName = menu?.lunch_side_recipe?.name || (typeof rawSideId === 'object' ? rawSideId?.name : getRecipeName(rawSideId, ''));
+                          const dinnerName = menu?.dinner_recipe?.name || getRecipeName(menu?.dinner_recipe_id || menu?.dinner_recipe, 'Sin asignar');
+
+                          return (
+                            <div 
+                              key={`range-card-${dateStr}`}
+                              onClick={() => openDayEditor(dayNum, dMonth, dYear)}
+                              className={`card p-3 min-h-[160px] flex flex-col justify-between cursor-pointer transition-all ${
+                                isToday ? 'ring-2 ring-brand bg-brand-muted/30 border-brand' : 'bg-white hover:border-brand/40 shadow-xs'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-2">
+                                  <span className="text-[11px] font-bold text-slate-400 uppercase">{dayLabel}</span>
+                                  <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{dayNum}/{dMonth + 1}</span>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <div>
+                                    <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                    <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
+                                  </div>
+
+                                  {lunchSideName && (
+                                    <div>
+                                      <span className="text-[9px] font-bold text-emerald-700 block uppercase">Guarnición</span>
+                                      <p className="text-[11px] font-medium text-slate-600 truncate">{lunchSideName}</p>
+                                    </div>
+                                  )}
+
+                                  <div>
+                                    <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                    <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
+                                <span>Editar</span>
+                                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
+                              </div>
+                            </div>
+                          );
+                        });
                       })()}
                     </div>
                   </>
