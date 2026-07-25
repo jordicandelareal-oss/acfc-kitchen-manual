@@ -515,7 +515,10 @@ export const guardarYConfirmarMenu = async (menuDays) => {
       } catch (weekErr) {
         console.warn('[menu_weeks] Skipping week for', item.date, weekErr.message);
       }
-      if (week?.id) uniqueWeeksToConfirm.set(week.id, week);
+      if (week) {
+        const key = `${week.start_date}_${week.end_date}`;
+        uniqueWeeksToConfirm.set(key, week);
+      }
 
       upserts.push({
         date: item.date,
@@ -591,12 +594,23 @@ export const guardarYConfirmarMenu = async (menuDays) => {
 
     if (upsertErr) return { error: upsertErr };
 
-    // 2. Mark weeks as confirmed
-    for (const weekId of uniqueWeeksToConfirm.keys()) {
-      await supabase
-        .from('menu_weeks')
-        .update({ confirmado: true, updated_at: new Date().toISOString() })
-        .eq('id', weekId);
+    // 2. Mark weeks as confirmed via robust upsert
+    for (const week of uniqueWeeksToConfirm.values()) {
+      if (!week.start_date || !week.end_date) continue;
+      try {
+        await supabase
+          .from('menu_weeks')
+          .upsert([{
+            start_date: week.start_date,
+            end_date: week.end_date,
+            year: week.year,
+            month: week.month,
+            confirmado: true,
+            updated_at: new Date().toISOString()
+          }], { onConflict: 'start_date,end_date' });
+      } catch (confirmErr) {
+        console.warn('[menu_weeks] Failed to confirm week:', week.start_date, confirmErr.message);
+      }
     }
 
     // 3. Reserve stock for the new recipes
