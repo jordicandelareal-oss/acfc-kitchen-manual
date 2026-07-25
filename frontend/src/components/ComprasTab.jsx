@@ -751,7 +751,18 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                     {group.items.map(item => (
                       <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4">
-                          <span className="font-bold text-slate-900 block text-xs">{item.name}</span>
+                          <span className="font-bold text-slate-900 block text-xs">
+                            {group.isElCairo && item.dishName ? (
+                              <span>
+                                {item.rawName} - {item.tipoCorte || 'Entera'}
+                                <span className="text-brand font-medium ml-1.5">
+                                  (Para: {item.dishName})
+                                </span>
+                              </span>
+                            ) : (
+                              item.name
+                            )}
+                          </span>
                           <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
                         </td>
                         <td className="py-3 px-3 text-center">

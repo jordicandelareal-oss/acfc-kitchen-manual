@@ -326,7 +326,10 @@ export function formatSupplierMessage(supplierName, itemsList, isElCairo = false
       const lowerCorte = corte.toLowerCase();
       const isEntera = lowerCorte.startsWith('entera') || lowerCorte.startsWith('entero') || lowerRaw.includes('entera') || lowerRaw.includes('entero');
       const hasCorteInName = corte && lowerRaw.includes(lowerCorte);
-      const label = (corte && !hasCorteInName && !isEntera) ? `${rawName} (${corte})` : rawName;
+      let label = (corte && !hasCorteInName && !isEntera) ? `${rawName} (${corte})` : rawName;
+      
+      // Explicitly strip any internal recipe references to protect privacy
+      label = label.replace(/\s*\(Para:[^)]*\)/gi, '').trim();
 
       msg += `- ${label} - ${qtyStr}\n`;
     });
