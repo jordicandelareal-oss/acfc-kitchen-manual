@@ -4,6 +4,7 @@ import * as mathUtils from '../utils/mathUtils';
 import { PLANNER_RULES } from '../utils/plannerRules';
 import PlannerSettingsModal from './PlannerSettingsModal';
 import ShoppingListModal from './ShoppingListModal';
+import ComensalesModal from './ComensalesModal';
 import { 
   getMadridTodayStr, 
   getMadridTodayDateObject, 
@@ -183,6 +184,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [comensalesModalOpen, setComensalesModalOpen] = useState(false);
 
   // Day Form State
   const [dayForm, setDayForm] = useState({
@@ -1095,6 +1097,17 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </button>
           )}
 
+          {/* Comensales button — only for chef/admin */}
+          {canEdit && (
+            <button 
+              onClick={() => setComensalesModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-xs font-semibold hover:bg-indigo-100 transition-all whitespace-nowrap"
+            >
+              <Users size={14} />
+              <span>Comensales</span>
+            </button>
+          )}
+
           {/* Month Navigator */}
           <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 flex-shrink-0">
             <button 
@@ -1916,6 +1929,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           setPlannerSettings(newSettings);
           addLog('Ajustes del generador guardados. Regenerando caché de reglas...', 'success');
         }}
+      />
+
+      {/* ── MODAL: GESTIÓN DE COMENSALES (REACT) ── */}
+      <ComensalesModal 
+        isOpen={comensalesModalOpen}
+        onClose={() => setComensalesModalOpen(false)}
       />
 
     </div>

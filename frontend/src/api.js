@@ -203,6 +203,23 @@ export const deleteSupplier = async (id) => {
   return supabase.from('suppliers').delete().eq('id', id);
 };
 
+// ── Comensales ──
+export const fetchComensales = async () => {
+  return supabase.from('comensales').select('*').order('nombre');
+};
+
+export const insertComensal = async (payload) => {
+  return supabase.from('comensales').insert([payload]).select().single();
+};
+
+export const updateComensal = async (id, payload) => {
+  return supabase.from('comensales').update(payload).eq('id', id);
+};
+
+export const deleteComensal = async (id) => {
+  return supabase.from('comensales').delete().eq('id', id);
+};
+
 // ── Ingredients ──
 export const fetchIngredients = async () => {
   return supabase.from('ingredients').select('*').order('name');

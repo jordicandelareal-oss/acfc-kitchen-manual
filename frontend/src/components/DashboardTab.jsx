@@ -4,7 +4,7 @@ import {
   Utensils, Euro, Shield, Users, 
   CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders } from '../api';
+import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales } from '../api';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
@@ -23,6 +23,7 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const [ingredients, setIngredients] = useState([]);
   const [plannerData, setPlannerData] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [comensales, setComensales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
@@ -40,10 +41,11 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [ingRes, plannerRes, poRes] = await Promise.all([
+      const [ingRes, plannerRes, poRes, comRes] = await Promise.all([
         fetchIngredients(),
         fetchPlannerDataDb(),
-        fetchPurchaseOrders()
+        fetchPurchaseOrders(),
+        fetchComensales()
       ]);
 
       if (ingRes && !ingRes.error) {
@@ -56,6 +58,10 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
 
       if (poRes && !poRes.error) {
         setPurchaseOrders(poRes.data || []);
+      }
+
+      if (comRes && !comRes.error) {
+        setComensales(comRes.data || []);
       }
     } catch (err) {
       console.error('Error loading dashboard data:', err);
@@ -237,20 +243,27 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     };
   }, [ingredients]);
 
-  // Special diets sum for selected week
+  // Special diets sum counted from comensales profiles table
   const diets = useMemo(() => {
     let halal = 0;
     let kosher = 0;
     let vegan = 0;
 
-    weekMenus.forEach(m => {
-      halal += (Number(m.breakfast_halal) || 0) + (Number(m.lunch_halal) || 0) + (Number(m.dinner_halal) || 0);
-      kosher += (Number(m.breakfast_kosher) || 0) + (Number(m.lunch_kosher) || 0) + (Number(m.dinner_kosher) || 0);
-      vegan += (Number(m.breakfast_vegan) || 0) + (Number(m.lunch_vegan) || 0) + (Number(m.dinner_vegan) || 0);
+    // Filter comensales to count active players
+    const activeComensales = comensales.filter(c => c.activo !== false);
+    activeComensales.forEach(c => {
+      const dietStr = (c.dieta || '').toLowerCase().trim();
+      if (dietStr === 'halal') {
+        halal++;
+      } else if (dietStr === 'kosher') {
+        kosher++;
+      } else if (dietStr === 'vegano' || dietStr === 'vegan') {
+        vegan++;
+      }
     });
 
     return { halal, kosher, vegan };
-  }, [weekMenus]);
+  }, [comensales]);
 
   // Carnicería El Cairo cuts consolidator
   const cairoCuts = useMemo(() => {
@@ -788,9 +801,9 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
             
             {loading ? (
               <div className="text-center p-4 text-slate-400 text-xs italic">Cargando dietas...</div>
-            ) : weekMenus.length === 0 ? (
+            ) : comensales.length === 0 ? (
               <div className="text-slate-400 text-xs italic text-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                Sin menús planificados para esta semana.
+                Sin perfiles de comensales registrados en Supabase.
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 text-center">
