@@ -923,3 +923,27 @@ export const confirmOrderReception = async (orderId, itemsArray) => {
   }
 };
 
+export const deletePurchaseOrder = async (orderId) => {
+  try {
+    // 1. Delete order items first
+    const { error: itemsErr } = await supabase
+      .from('purchase_order_items')
+      .delete()
+      .eq('purchase_order_id', orderId);
+
+    if (itemsErr) throw itemsErr;
+
+    // 2. Delete parent order
+    const { error: poErr } = await supabase
+      .from('purchase_orders')
+      .delete()
+      .eq('id', orderId);
+
+    if (poErr) throw poErr;
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error('❌ Error al eliminar la orden de compra:', err);
+    return { success: false, error: err };
+  }
+};

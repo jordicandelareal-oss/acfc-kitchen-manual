@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   ShoppingCart, PackageCheck, History, Save, CheckCircle2, 
   Search, X, Bell, Calendar, Truck, FileText, AlertCircle, RefreshCw, 
-  MessageCircle, Mail, ChevronDown, ChevronUp, Store
+  MessageCircle, Mail, ChevronDown, ChevronUp, Store, Trash2
 } from 'lucide-react';
 import { 
   fetchShoppingList, 
@@ -10,7 +10,8 @@ import {
   createPurchaseOrder, 
   confirmOrderReception, 
   validarRecepcionPedido,
-  fetchPlannerFullWithIngredients
+  fetchPlannerFullWithIngredients,
+  deletePurchaseOrder
 } from '../api';
 import { 
   calcularCosteLineaIngrediente, 
@@ -403,6 +404,21 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     } finally {
       setIsSavingOrder(false);
       setSavingSupplierMap(prev => ({ ...prev, [sKey]: false, global: false }));
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta orden de compra?")) return;
+    try {
+      const res = await deletePurchaseOrder(orderId);
+      if (res.error) throw res.error;
+      
+      setHistoryOrders(prev => prev.filter(po => po.id !== orderId));
+      if (window.toast) window.toast("🗑️ Orden de compra eliminada correctamente");
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error al eliminar la orden:', err);
+      if (window.toast) window.toast('❌ Error al eliminar la orden: ' + (err.message || 'Fallo de base de datos'));
     }
   };
 
@@ -834,20 +850,31 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                             <StatusBadge status={order.status} />
                           </td>
                           <td className="py-3 px-4 text-right">
-                            {order.status !== 'received' ? (
-                              <button
-                                onClick={() => openReceptionModal(order)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
-                              >
-                                <PackageCheck size={14} />
-                                <span>📦 Validar Recepción</span>
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
-                                <CheckCircle2 size={14} className="text-emerald-500" />
-                                Ingresado a Stock
-                              </span>
-                            )}
+                            <div className="flex items-center justify-end gap-2">
+                              {order.status === 'pending' && (
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  className="p-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Eliminar Orden de Compra"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                              {order.status !== 'received' ? (
+                                <button
+                                  onClick={() => openReceptionModal(order)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
+                                >
+                                  <PackageCheck size={14} />
+                                  <span>📦 Validar Recepción</span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
+                                  <CheckCircle2 size={14} className="text-emerald-500" />
+                                  Ingresado a Stock
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
