@@ -35,20 +35,29 @@ export default function MenuTvView() {
   useEffect(() => {
     loadMenuData();
 
-    // Polling every 60 seconds
-    const interval = setInterval(loadMenuData, 60000);
+    // Polling every 3 minutes as backup/fallback
+    const interval = setInterval(loadMenuData, 180000);
 
-    // Realtime changes listener
-    const subscription = supabase
+    // Realtime changes listener for menu_planner
+    const plannerSubscription = supabase
       .channel('tv_menu_planner_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_planner' }, () => {
         loadMenuData();
       })
       .subscribe();
 
+    // Realtime changes listener for recipes
+    const recipesSubscription = supabase
+      .channel('tv_recipes_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, () => {
+        loadMenuData();
+      })
+      .subscribe();
+
     return () => {
       clearInterval(interval);
-      subscription.unsubscribe();
+      plannerSubscription.unsubscribe();
+      recipesSubscription.unsubscribe();
     };
   }, []);
 
