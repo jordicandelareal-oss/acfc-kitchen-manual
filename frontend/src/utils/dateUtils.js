@@ -198,5 +198,21 @@ export function getMadridMondayOfWeek(dateInput) {
   return dtf.format(monday);
 }
 
+// Get readable date range label for a week (Monday to Sunday)
+export function getMadridWeekRangeLabelForSelector(year, month, weekNum) {
+  const days = getMadridWeekRange(year, month, weekNum);
+  if (!days || days.length < 7) return `Sem ${weekNum}`;
+  const start = days[0];
+  const end = days[6];
+  
+  const monthsShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  if (start.month === end.month) {
+    return `${start.dayNum} - ${end.dayNum} ${monthsShort[start.month]}`;
+  } else {
+    return `${start.dayNum} ${monthsShort[start.month]} - ${end.dayNum} ${monthsShort[end.month]}`;
+  }
+}
+
 
 

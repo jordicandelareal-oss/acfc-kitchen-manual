@@ -12,7 +12,8 @@ import {
   getMadridWeekRange,
   getMadridWeeksInMonth,
   getMadridWeekdayIndexForDate,
-  getMadridMondayOfWeek
+  getMadridMondayOfWeek,
+  getMadridWeekRangeLabelForSelector
 } from '../utils/dateUtils';
 import { 
   LayoutDashboard, Bell, Search, Filter, Tag, Plus, Check, Trash2, 
@@ -503,6 +504,22 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
 
       selectedWeeks.forEach(week => {
         const weekDaysList = getMadridWeekRange(year, month, week);
+        
+        // Regla de Protección contra Sobrescritura:
+        const hasExistingMenu = weekDaysList.some(({ dateStr }) => {
+          const existing = plannerData[dateStr];
+          return existing && (existing.lunch_recipe_id || existing.dinner_recipe_id || existing.breakfast_recipe_id);
+        });
+
+        if (hasExistingMenu) {
+          const rangeLabel = getMadridWeekRangeLabelForSelector(year, month, week);
+          addLog(`⚠️ Omitida generación para la semana [${rangeLabel}]: ya tiene menús registrados`, 'warn');
+          if (typeof window.toast === 'function') {
+            window.toast(`⚠️ Semana [${rangeLabel}] omitida: ya tiene menús`);
+          }
+          return;
+        }
+
         weekDaysList.forEach(({ dateStr, dayNum, dayLabel }, offset) => {
           const isWeekend = (offset === 5 || offset === 6);
           const dateISO = dateStr;
@@ -751,8 +768,8 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
           )}
 
           {/* Week selector */}
-          <div className="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Sem:</span>
+          <div className="flex flex-wrap items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Semanas:</span>
             {(() => {
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth();
@@ -760,14 +777,14 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
               const weeksArr = [];
               for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
               return weeksArr.map(w => (
-                <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
+                <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors whitespace-nowrap">
                   <input 
                     type="checkbox" 
                     checked={selectedWeeks.includes(w)}
                     onChange={() => handleWeekToggle(w)}
                     className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
                   />
-                  <span>{w}</span>
+                  <span>{getMadridWeekRangeLabelForSelector(year, month, w)}</span>
                 </label>
               ));
             })()}
