@@ -63,6 +63,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [savingSupplierMap, setSavingSupplierMap] = useState({});
   const [justOrderedIds, setJustOrderedIds] = useState(new Set());
+  const [manuallyClearedIds, setManuallyClearedIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
   // Auto-fetch real-time ingredients from Supabase
@@ -107,11 +108,28 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    // Clear local cache/temporary states to avoid visual ghosts
+    setJustOrderedIds(new Set());
+    setManuallyClearedIds(new Set());
+    setCustomQuantities({});
+    
+    // Clear potential cache keys
+    localStorage.removeItem('acfc_compras_cache');
+    sessionStorage.removeItem('acfc_compras_cache');
+    
+    // Reload database datasets
+    await Promise.all([
+      loadIngredientsList(),
+      loadPlannerData(),
+      loadHistory()
+    ]);
+    if (onRefresh) onRefresh();
+  }, [loadIngredientsList, loadPlannerData, loadHistory, onRefresh]);
+
   useEffect(() => {
-    loadIngredientsList();
-    loadPlannerData();
-    loadHistory();
-  }, [loadIngredientsList, loadPlannerData, loadHistory]);
+    handleRefresh();
+  }, [handleRefresh]);
 
   const safeData = useMemo(() => {
     if (data && data.length > 0) return data;
@@ -164,7 +182,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         calculatedNeeded: tray.neededQuantity,
         totalCost
       };
-    }).filter(i => (!justOrderedIds.has(i.id)) && Number(i.neededQuantity) > 0);
+    }).filter(i => (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
     // 2. Insumos independientes de El Cairo en catálogo que no estén en trays pero tengan stock_reservado > stock_actual
     const cairoItemsFromCatalog = safeData.map(item => {
@@ -207,7 +225,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         supplierObj,
         isElCairo: true
       };
-    }).filter(i => i && (!justOrderedIds.has(i.id)) && Number(i.neededQuantity) > 0);
+    }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
     const allCairoItems = [...cairoItemsFromTrays, ...cairoItemsFromCatalog];
 
@@ -260,10 +278,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         supplierObj,
         isElCairo: false
       };
-    }).filter(i => i && (!justOrderedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
+    }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
 
     return [...allCairoItems, ...generalItems];
-  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds]);
+  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -395,9 +413,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (window.toast) window.toast(`✅ Orden de compra registrada para ${groupName} (Los insumos se han movido a Pedidos Pendientes)`);
       
       setCustomQuantities({});
-      await loadHistory();
-      await loadIngredientsList();
-      if (onRefresh) onRefresh();
+      await handleRefresh();
     } catch (e) {
       console.error('Error guardando orden de compra:', e);
       if (window.toast) window.toast('❌ Error al registrar la orden de compra: ' + (e.message || e.details || 'Fallo de base de datos'));
@@ -415,11 +431,25 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       
       setHistoryOrders(prev => prev.filter(po => po.id !== orderId));
       if (window.toast) window.toast("🗑️ Orden de compra eliminada correctamente");
-      if (onRefresh) onRefresh();
+      await handleRefresh();
     } catch (err) {
       console.error('Error al eliminar la orden:', err);
       if (window.toast) window.toast('❌ Error al eliminar la orden: ' + (err.message || 'Fallo de base de datos'));
     }
+  };
+
+  const handleClearCalculatedItem = (itemId) => {
+    setCustomQuantities(prev => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setManuallyClearedIds(prev => {
+      const next = new Set(prev);
+      next.add(itemId);
+      return next;
+    });
+    if (window.toast) window.toast("🗑️ Insumo ocultado de la lista de compras");
   };
 
   // Enviar por WhatsApp
@@ -522,9 +552,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (window.toast) window.toast(`✅ Entrada al almacén confirmada (${itemsToUpdate.length} insumos sumados al stock actual)`);
       setReceptionModalOpen(false);
       
-      await loadIngredientsList();
-      await loadHistory();
-      if (onRefresh) onRefresh();
+      await handleRefresh();
     } catch (e) {
       console.error(e);
       if (window.toast) window.toast('❌ Error al validar recepción de pedido: ' + e.message);
@@ -716,6 +744,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                       <th className="py-3 px-3 text-center">Cant. a Pedir</th>
                       <th className="py-3 px-3 text-right">Precio Unid.</th>
                       <th className="py-3 px-4 text-right">Coste Total</th>
+                      <th className="py-3 px-3 text-center">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white font-medium">
@@ -755,6 +784,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                         </td>
                         <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-xs">
                           €{item.totalCost.toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            onClick={() => handleClearCalculatedItem(item.id)}
+                            className="p-1 text-slate-400 hover:text-red-650 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                            title="Eliminar insumo de la lista"
+                          >
+                            <X size={14} />
+                          </button>
                         </td>
                       </tr>
                     ))}
