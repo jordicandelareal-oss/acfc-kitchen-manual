@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { fetchIngredients, fetchPlannerDataDb } from '../api';
 
-export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole }) {
+export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
   const todayISO = useMemo(() => {
     const d = new Date();
@@ -59,8 +59,9 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   };
 
   useEffect(() => {
+    if (isInitializing) return;
     loadDashboardData();
-  }, []);
+  }, [isInitializing]);
 
   const [viewDayOffset, setViewDayOffset] = useState(0); // -1: Ayer, 0: Hoy, 1: Mañana
   const [weeklyBudget, setWeeklyBudget] = useState(() => Number(localStorage.getItem('acfc_weekly_budget')) || 1250); // Presupuesto por defecto

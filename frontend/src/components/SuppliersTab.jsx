@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchSuppliers, insertSupplier, updateSupplier } from '../api';
 
-export default function SuppliersTab() {
+export default function SuppliersTab({ role, canEdit = true, isInitializing = false }) {
   const [suppliers, setSuppliers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -43,13 +43,14 @@ export default function SuppliersTab() {
   }, []);
 
   useEffect(() => {
+    if (isInitializing) return;
     loadSuppliers();
     // Expose reload function to global window for interoperability
     window.fetchAndRenderSuppliers = loadSuppliers;
     return () => {
       window.fetchAndRenderSuppliers = null;
     };
-  }, [loadSuppliers]);
+  }, [loadSuppliers, isInitializing]);
 
   // Search filter
   const filteredSuppliers = suppliers.filter(s => {

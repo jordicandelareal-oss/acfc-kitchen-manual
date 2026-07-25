@@ -9,7 +9,7 @@ import {
   updateSubcategory
 } from '../api';
 
-export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit }) {
+export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, isInitializing = false }) {
   const localRole = localStorage.getItem('acfc_user_role') || 'chef';
   const role = propsRole !== undefined ? propsRole : localRole;
   const isAssistant = role === 'assistant';
@@ -136,12 +136,13 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit })
   }, []);
 
   useEffect(() => {
+    if (isInitializing) return;
     loadInventory();
     window.loadSupabaseInventory = loadInventory;
     return () => {
       window.loadSupabaseInventory = null;
     };
-  }, [loadInventory]);
+  }, [loadInventory, isInitializing]);
 
   // Derived filter arrays
   const categories = [...new Set(inventory.map(i => i.cat).filter(Boolean))].sort();

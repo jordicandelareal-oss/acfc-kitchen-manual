@@ -105,7 +105,7 @@ const getDaysInRange = (startStr, endStr) => {
 };
 
 // PlannerTab Component
-export default function PlannerTab({ recipes = [], role, canEdit = true }) {
+export default function PlannerTab({ recipes = [], role, canEdit = true, isInitializing = false }) {
   const [plannerData, setPlannerData] = useState({});
   const [menuWeeks, setMenuWeeks] = useState([]);
   const [customStartDate, setCustomStartDate] = useState(() => getMadridTodayStr());
@@ -336,6 +336,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
   }, [addLog, currentDate, viewMode, customStartDate, customEndDate]);
 
   useEffect(() => {
+    if (isInitializing) return;
     loadData();
     window.refreshReactPlanner = loadData;
     window.addPlannerAuditLog = (msg, type = 'info') => addLog(msg, type);
@@ -345,7 +346,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true }) {
       window.addPlannerAuditLog = null;
       window.openPlannerDayModal = null;
     };
-  }, [loadData, addLog]);
+  }, [loadData, addLog, isInitializing]);
 
   const handleWeekToggle = (w) =>
     setSelectedWeeks(prev => prev.includes(w) ? prev.filter(x => x !== w) : [...prev, w]);

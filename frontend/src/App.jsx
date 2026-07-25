@@ -27,10 +27,7 @@ import NotificationsPanel from './components/NotificationsPanel';
 import MenuTvView from './components/MenuTvView';
 
 function App() {
-  if (window.location.pathname === '/menu-tv') {
-    return <MenuTvView />;
-  }
-
+  const [isInitializing, setIsInitializing] = useState(true);
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('introPlayed');
   });
@@ -119,6 +116,7 @@ function App() {
       } finally {
         if (isMounted) {
           setAuthChecking(false);
+          setIsInitializing(false);
         }
       }
     }
@@ -290,15 +288,27 @@ function App() {
     }
   };
 
-  if (authChecking) {
+  if (isInitializing) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <span>Verificando sesión segura con Supabase Auth...</span>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-4 animate-pulse">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg">
+            <span className="material-symbols-outlined text-white text-4xl">restaurant</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="font-display font-bold text-slate-200 tracking-wide text-sm" style={{ fontFamily: 'Outfit' }}>
+              Cargando ACFC Kitchen...
+            </span>
+          </div>
         </div>
       </div>
     );
+  }
+
+  // Render TV Menu view if requested route
+  if (window.location.pathname === '/menu-tv') {
+    return <MenuTvView />;
   }
 
   if (!userSession) {
@@ -411,14 +421,14 @@ function App() {
 
         {/* MAIN CONTENT */}
         <main className="content">
-          {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} recipes={globalRecipes} role={role} setRole={setRole} />}
-          {activeTab === 'inventory' && <InventoryTab role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'suppliers' && <SuppliersTab role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'menus' && <MenusTab data={data} loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} onRefresh={loadData} role={role} canEdit={role === 'admin' || role === 'chef'} />}
-          {activeTab === 'insumos' && <InsumosTab loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} />}
+          {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} recipes={globalRecipes} role={role} setRole={setRole} isInitializing={isInitializing} />}
+          {activeTab === 'inventory' && <InventoryTab role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'suppliers' && <SuppliersTab role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'menus' && <MenusTab data={data} loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} onRefresh={loadData} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'insumos' && <InsumosTab loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
         </main>
 
         {/* Mobile Footer Tab Bar */}

@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
   window.insertRecipeCategory = insertRecipeCategory;
 }
 
-export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit = true }) {
+export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit = true, isInitializing = false }) {
   const [recipeCategories, setRecipeCategories] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
+    if (isInitializing) return;
     console.log('RecipesTab: Iniciando carga...');
     loadAllData();
     
@@ -86,7 +87,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
       window.refreshReactRecipes = null;
       window.loadSupabaseRecipes = null;
     };
-  }, []);
+  }, [isInitializing]);
 
   const loadAllData = async () => {
     setLoading(true);
