@@ -100,16 +100,18 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const { data: poList, error } = await fetchPurchaseOrders();
       console.log('[AUDIT COMPRAS] Datos recibidos de Supabase:', poList);
       
-      const usingFallback = !poList || poList.length === 0;
-      console.log('[AUDIT COMPRAS] ¿Usando datos de respaldo o estáticos?:', usingFallback ? 'Sí (vacío o no hay datos)' : 'No (se usan datos reales de Supabase)');
+      console.log('[AUDIT COMPRAS] ¿Usando datos de respaldo o estáticos?: No');
       
       console.log('[AUDIT COMPRAS] Estado actual del array de compras antes de renderizar:', poList || []);
 
-      if (!error && poList) {
+      if (!error && poList && poList.length > 0) {
         setHistoryOrders(poList);
+      } else {
+        setHistoryOrders([]);
       }
     } catch (e) {
       console.error('Error cargando historial de pedidos:', e);
+      setHistoryOrders([]);
     } finally {
       setLoadingHistory(false);
     }
