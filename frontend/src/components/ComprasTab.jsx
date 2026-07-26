@@ -65,6 +65,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [justOrderedIds, setJustOrderedIds] = useState(new Set());
   const [manuallyClearedIds, setManuallyClearedIds] = useState(new Set());
   const [showCalculatedNeeds, setShowCalculatedNeeds] = useState(false);
+  const [hasAutoExpanded, setHasAutoExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Auto-fetch real-time ingredients from Supabase
@@ -329,6 +330,14 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       return min > 0 && stock < min && reserved <= 0;
     });
   }, [safeData, getStock, getMin, getReserved]);
+
+  // Auto-expand the supplier breakdown as soon as there are calculated items
+  useEffect(() => {
+    if (!hasAutoExpanded && activeOrderCalculatedItems.length > 0) {
+      setShowCalculatedNeeds(true);
+      setHasAutoExpanded(true);
+    }
+  }, [activeOrderCalculatedItems.length, hasAutoExpanded]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -733,16 +742,16 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
             <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
               <ShoppingCart size={24} />
             </div>
-            <p className="font-bold text-slate-800 text-sm">Generación de pedido basado en menú planificado</p>
+            <p className="font-bold text-slate-800 text-sm">Sin necesidades de compra activas</p>
             <p className="text-slate-400 max-w-md mx-auto">
-              La pantalla está limpia. Pulsa el botón para calcular las necesidades reales de compra cruzando los ingredientes de los menús planificados con el stock actual disponible.
+              El stock actual cubre todas las reservas del menú planificado, o no hay menús configurados para el período seleccionado.
             </p>
             <button
-              onClick={() => setShowCalculatedNeeds(true)}
-              className="px-6 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2"
+              onClick={() => { setShowCalculatedNeeds(true); setHasAutoExpanded(true); }}
+              className="px-6 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2"
             >
-              <ShoppingCart size={14} />
-              <span>🛒 Calcular Necesidades del Menú</span>
+              <RefreshCw size={14} />
+              <span>Recalcular Necesidades</span>
             </button>
           </div>
         ) : (
