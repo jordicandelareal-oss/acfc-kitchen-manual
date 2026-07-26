@@ -334,20 +334,55 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
     // 4. Ítems añadidos manualmente desde alertas del Dashboard
-    // Bypass el filtro reserved > 0 porque vienen de stock crítico, no de menús planificados
+    // Bypass el filtro reserved > 0 porque vienen de stock crítico.
+    // Reutilizan EXACTAMENTE la misma lógica matemática, mapeos y funciones que el resto de los ingredientes.
     const manualAlertItems = (manualCartItems || []).map(cartItem => {
       if (justOrderedIds.has(cartItem.id) || manuallyClearedIds.has(cartItem.id)) return null;
-      const neededQuantity = customQuantities[cartItem.id] !== undefined
-        ? customQuantities[cartItem.id]
-        : cartItem.neededQuantity;
-      if (neededQuantity <= 0) return null;
-      
-      const totalCost = calcularCosteLineaIngrediente(cartItem, neededQuantity);
-      
+
+      // Buscar el ingrediente real y fresco dentro de safeData para garantizar la misma consistencia de campos
+      const item = safeData.find(freshIng => freshIng.id === cartItem.id) || cartItem;
+
+      const supplierObj = item.suppliers || null;
+      const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
+      const supplierId = supplierObj?.id || item.supplier_id || 'no-supplier';
+
+      const stock = getStock(item);
+      const min = getMin(item);
+      const reserved = getReserved(item);
+      const alreadyOrdered = orderedPendingMap[item.id] || 0;
+
+      const neededRaw = Math.max(0, min - stock - alreadyOrdered);
+      const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : (cartItem.neededQuantity || neededRaw);
+
+      const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
+      const unit = (item.unit || '').toLowerCase();
+      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+
+      let unitPrice = 0;
+      if (isKgLt) {
+        unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+        if (unitPrice <= 0 && neededQuantity > 0 && totalCost > 0) {
+          unitPrice = totalCost / (neededQuantity / 1000);
+        }
+      } else {
+        unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_mas_bajo || 0);
+      }
+
       return {
-        ...cartItem,
+        ...item,
+        rawName: item.name,
+        stock,
+        min,
+        reserved,
+        alreadyOrdered,
         neededQuantity,
+        calculatedNeeded: neededRaw,
+        unitPrice,
         totalCost,
+        supplierId,
+        supplierName,
+        supplierObj,
+        isElCairo: false,
         fromAlert: true
       };
     }).filter(Boolean);
