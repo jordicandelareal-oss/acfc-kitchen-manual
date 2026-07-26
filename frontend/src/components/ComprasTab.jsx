@@ -25,16 +25,23 @@ const StatusBadge = ({ status }) => {
   let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
 
   if (status === 'received') {
-    label = 'Recibido';
+    label = '\u2705 Ingresado a Stock';
     badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  } else if (status === 'ordered' || status === 'pending' || status === 'sent') {
-    label = 'Pendiente de Recepción';
-    badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+  } else if (status === 'ordered' || status === 'sent') {
+    label = '\uD83D\uDE9A Enviado al Proveedor';
+    badgeStyle = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+  } else if (status === 'pending') {
+    label = '\uD83D\uDCCB Pedido Registrado \u00B7 En Camino';
+    badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
   }
 
   return (
     <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${badgeStyle} inline-flex items-center gap-1`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'received' ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${
+        status === 'received' ? 'bg-emerald-500' :
+        status === 'ordered' || status === 'sent' ? 'bg-indigo-500' :
+        'bg-amber-500'
+      }`} />
       {label}
     </span>
   );
@@ -921,7 +928,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         )}
       </div>
 
-      {/* SECCIÓN PLEGABLE DE HISTÓRICO Y RECEPCIÓN DE PEDIDOS PENDIENTES */}
+      {/* SECCIÓN PLEGABLE DE PEDIDOS REGISTRADOS E HISTÓRICO */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
         <button
           onClick={() => setShowHistorySection(prev => !prev)}
@@ -929,13 +936,13 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         >
           <div className="flex items-center gap-2">
             <History size={18} className="text-slate-500" />
-            <h3 className="text-sm font-bold text-slate-900">Histórico de Pedidos y Recepción</h3>
+            <h3 className="text-sm font-bold text-slate-900">Pedidos Registrados — Histórico</h3>
             <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-600 font-bold">
               {historyOrders.length}
             </span>
             {pendingOrdersForReception.length > 0 && (
-              <span className="px-2 py-0.5 text-[10px] rounded-full bg-blue-100 text-blue-800 font-extrabold">
-                {pendingOrdersForReception.length} pendientes
+              <span className="px-2 py-0.5 text-[10px] rounded-full bg-amber-100 text-amber-800 font-extrabold">
+                {pendingOrdersForReception.length} en camino
               </span>
             )}
           </div>
@@ -1006,10 +1013,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                               {order.status !== 'received' ? (
                                 <button
                                   onClick={() => openReceptionModal(order)}
-                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
+                                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-all"
                                 >
                                   <PackageCheck size={14} />
-                                  <span>📦 Validar Recepción</span>
+                                  <span>\uD83D\uDCE6 Registrar Entrada al Almacén</span>
                                 </button>
                               ) : (
                                 <span className="text-[11px] text-slate-400 font-medium flex items-center justify-end gap-1">
@@ -1049,12 +1056,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base leading-tight">
-                    Validar Recepción y Entrada al Almacén
+                    Registrar Entrada al Almacén
                   </h3>
                   <p className="text-xs text-slate-500">
                     {activeOrderForReception 
-                      ? `Pedido del ${activeOrderForReception.order_date || 'reciente'} (${activeOrderForReception.suppliers?.name || 'Proveedor'})`
-                      : 'Recepción directa de mercancía pendiente'}
+                      ? `Pedido del ${activeOrderForReception.order_date || 'reciente'} (${activeOrderForReception.suppliers?.name || 'Proveedor'}) · Confirmar cantidades físicas recibidas`
+                      : 'Introduce las cantidades recibidas para actualizar el stock del almacén'}
                   </p>
                 </div>
               </div>
