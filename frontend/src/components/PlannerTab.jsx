@@ -192,6 +192,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     lunch_recipe_id: '',
     lunch_side_recipe_id: '',
     dinner_recipe_id: '',
+    breakfast_players: 0,
+    breakfast_halal: 0,
+    breakfast_kosher: 0,
+    breakfast_vegan: 0,
+    breakfast_allergies: '',
     lunch_players: 0,
     lunch_halal: 0,
     lunch_kosher: 0,
@@ -447,6 +452,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         lunch_recipe_id: sanitizeRecipeId(dayForm.lunch_recipe_id),
         lunch_side_recipe_id: sanitizeRecipeId(dayForm.lunch_side_recipe_id),
         dinner_recipe_id: sanitizeRecipeId(dayForm.dinner_recipe_id),
+        breakfast_players: Number(dayForm.breakfast_players) || 0,
+        breakfast_halal: Number(dayForm.breakfast_halal) || 0,
+        breakfast_kosher: Number(dayForm.breakfast_kosher) || 0,
+        breakfast_vegan: Number(dayForm.breakfast_vegan) || 0,
+        breakfast_allergies: dayForm.breakfast_allergies || '',
         lunch_players: Number(dayForm.lunch_players) || 0,
         lunch_halal: Number(dayForm.lunch_halal) || 0,
         lunch_kosher: Number(dayForm.lunch_kosher) || 0,
@@ -512,6 +522,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       lunch_recipe_id: dayData.lunch_recipe_id || '',
       lunch_side_recipe_id: savedSideId,
       dinner_recipe_id: dayData.dinner_recipe_id || '',
+      breakfast_players: dayData.breakfast_players || 20,
+      breakfast_halal: dayData.breakfast_halal || 0,
+      breakfast_kosher: dayData.breakfast_kosher || 0,
+      breakfast_vegan: dayData.breakfast_vegan || 0,
+      breakfast_allergies: dayData.breakfast_allergies || '',
       lunch_players: dayData.lunch_players || 25,
       lunch_halal: dayData.lunch_halal || 0,
       lunch_kosher: dayData.lunch_kosher || 0,
@@ -719,12 +734,19 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           const weekLunchPlayers = Number(weeklyPlayers[weekMondayStr]?.lunch) || defaultLunchPlayers;
           const weekDinnerPlayers = Number(weeklyPlayers[weekMondayStr]?.dinner) || defaultDinnerPlayers;
 
+          const weekBreakfastPlayers = Number(weeklyPlayers[weekMondayStr]?.breakfast) || 20;
+
           upserts.push({
             date: dateISO,
             breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
             lunch_recipe_id: randLunch,
             lunch_side_recipe_id: randSide,
             dinner_recipe_id: randDinner,
+            breakfast_players: weekBreakfastPlayers,
+            breakfast_halal: Math.round(weekBreakfastPlayers * 0.08),
+            breakfast_kosher: 0,
+            breakfast_vegan: Math.round(weekBreakfastPlayers * 0.05),
+            breakfast_allergies: '',
             lunch_players: weekLunchPlayers,
             lunch_halal: Math.round(weekLunchPlayers * 0.08),
             lunch_kosher: Math.round(weekLunchPlayers * 0.04),
@@ -1680,117 +1702,224 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </div>
 
             <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-              
-              {/* Almuerzo Select */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">🌞 Almuerzo (Plato Principal)</label>
-                <select 
-                  value={dayForm.lunch_recipe_id} 
-                  onChange={e => {
-                    const val = e.target.value;
-                    setDayForm(prev => ({ ...prev, lunch_recipe_id: val }));
-                    autoSuggestSide(val);
-                  }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
-                >
-                  <option value="">Selecciona una receta...</option>
-                  {mainRecipes.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
+
+              {/* ═══════ SECCIÓN DESAYUNO ═══════ */}
+              <div className="border-l-4 border-amber-400 pl-3 space-y-3">
+                <label className="block text-xs font-bold text-amber-700 uppercase tracking-wide">🌅 Desayuno</label>
+                <p className="text-[10px] text-slate-400 -mt-2 italic">Receta fija asignada automáticamente.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.breakfast_players} 
+                      onChange={e => setDayForm(prev => ({ ...prev, breakfast_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-amber-200 rounded-lg text-sm outline-none focus:border-amber-400 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.breakfast_halal} 
+                      onChange={e => setDayForm(prev => ({ ...prev, breakfast_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.breakfast_kosher} 
+                      onChange={e => setDayForm(prev => ({ ...prev, breakfast_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.breakfast_vegan} 
+                      onChange={e => setDayForm(prev => ({ ...prev, breakfast_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas desayuno</label>
+                  <input 
+                    type="text" 
+                    value={dayForm.breakfast_allergies} 
+                    onChange={e => setDayForm(prev => ({ ...prev, breakfast_allergies: e.target.value }))}
+                    placeholder="Ej: Sin lactosa"
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                  />
+                </div>
               </div>
 
-              {/* Acompañamiento Select — auto-suggested, manually overridable */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">🥗 Acompañamiento (Guarnición)</label>
-                  {dayForm.lunch_side_recipe_id && (
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                      ✨ Auto-sugerida
-                    </span>
-                  )}
-                </div>
-                <select 
-                  value={dayForm.lunch_side_recipe_id} 
-                  onChange={e => setDayForm(prev => ({ ...prev, lunch_side_recipe_id: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
-                >
-                  <option value="">Sin guarnición</option>
-                  {sideRecipes.length === 0 ? (
-                    <option disabled value="">⚠️ Sin guarniciones en Supabase</option>
-                  ) : (
-                    sideRecipes.map(r => (
+              {/* ═══════ SECCIÓN ALMUERZO ═══════ */}
+              <div className="border-l-4 border-brand pl-3 space-y-3">
+                <label className="block text-xs font-bold text-brand uppercase tracking-wide">☀️ Almuerzo</label>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Plato Principal</label>
+                  <select 
+                    value={dayForm.lunch_recipe_id} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setDayForm(prev => ({ ...prev, lunch_recipe_id: val }));
+                      autoSuggestSide(val);
+                    }}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
+                  >
+                    <option value="">Selecciona una receta...</option>
+                    {mainRecipes.map(r => (
                       <option key={r.id} value={r.id}>{r.name}</option>
-                    ))
-                  )}
-                </select>
-                <p className="text-[10px] text-slate-400 mt-1 italic">Se sugiere automáticamente según el plato principal. Puedes cambiarla.</p>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Acompañamiento Select — auto-suggested, manually overridable */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">🥗 Guarnición</label>
+                    {dayForm.lunch_side_recipe_id && (
+                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        ✨ Auto-sugerida
+                      </span>
+                    )}
+                  </div>
+                  <select 
+                    value={dayForm.lunch_side_recipe_id} 
+                    onChange={e => setDayForm(prev => ({ ...prev, lunch_side_recipe_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
+                  >
+                    <option value="">Sin guarnición</option>
+                    {sideRecipes.length === 0 ? (
+                      <option disabled value="">⚠️ Sin guarniciones en Supabase</option>
+                    ) : (
+                      sideRecipes.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))
+                    )}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1 italic">Se sugiere automáticamente según el plato principal. Puedes cambiarla.</p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.lunch_players} 
+                      onChange={e => setDayForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-brand/30 rounded-lg text-sm outline-none focus:border-brand transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.lunch_halal} 
+                      onChange={e => setDayForm(prev => ({ ...prev, lunch_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.lunch_kosher} 
+                      onChange={e => setDayForm(prev => ({ ...prev, lunch_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.lunch_vegan} 
+                      onChange={e => setDayForm(prev => ({ ...prev, lunch_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas almuerzo</label>
+                  <input 
+                    type="text" 
+                    value={dayForm.lunch_allergies} 
+                    onChange={e => setDayForm(prev => ({ ...prev, lunch_allergies: e.target.value }))}
+                    placeholder="Ej: Celíacos, Sin frutos secos"
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                  />
+                </div>
               </div>
 
-              {/* Cena Select */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">🌙 Cena</label>
-                <select 
-                  value={dayForm.dinner_recipe_id} 
-                  onChange={e => setDayForm(prev => ({ ...prev, dinner_recipe_id: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
-                >
-                  <option value="">Selecciona una receta...</option>
-                  {mainRecipes.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* ═══════ SECCIÓN CENA ═══════ */}
+              <div className="border-l-4 border-indigo-400 pl-3 space-y-3">
+                <label className="block text-xs font-bold text-indigo-700 uppercase tracking-wide">🌙 Cena</label>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Plato</label>
+                  <select 
+                    value={dayForm.dinner_recipe_id} 
+                    onChange={e => setDayForm(prev => ({ ...prev, dinner_recipe_id: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none bg-white"
+                  >
+                    <option value="">Selecciona una receta...</option>
+                    {mainRecipes.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Stats & Players */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
-                  <input 
-                    type="number" 
-                    value={dayForm.lunch_players} 
-                    onChange={e => setDayForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Comensales</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.dinner_players} 
+                      onChange={e => setDayForm(prev => ({ ...prev, dinner_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm outline-none focus:border-indigo-400 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.dinner_halal} 
+                      onChange={e => setDayForm(prev => ({ ...prev, dinner_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.dinner_kosher} 
+                      onChange={e => setDayForm(prev => ({ ...prev, dinner_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={dayForm.dinner_vegan} 
+                      onChange={e => setDayForm(prev => ({ ...prev, dinner_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas cena</label>
                   <input 
-                    type="number" 
-                    value={dayForm.lunch_halal} 
-                    onChange={e => setDayForm(prev => ({ ...prev, lunch_halal: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
+                    type="text" 
+                    value={dayForm.dinner_allergies} 
+                    onChange={e => setDayForm(prev => ({ ...prev, dinner_allergies: e.target.value }))}
+                    placeholder="Ej: Sin marisco"
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-                  <input 
-                    type="number" 
-                    value={dayForm.lunch_kosher} 
-                    onChange={e => setDayForm(prev => ({ ...prev, lunch_kosher: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-                  <input 
-                    type="number" 
-                    value={dayForm.lunch_vegan} 
-                    onChange={e => setDayForm(prev => ({ ...prev, lunch_vegan: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas del día</label>
-                <input 
-                  type="text" 
-                  value={dayForm.lunch_allergies} 
-                  onChange={e => setDayForm(prev => ({ ...prev, lunch_allergies: e.target.value }))}
-                  placeholder="Ej: Celíacos, Sin frutos secos"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none"
-                />
               </div>
 
             </div>
