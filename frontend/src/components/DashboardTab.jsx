@@ -4,7 +4,8 @@ import {
   Utensils, Euro, Shield, Users, 
   CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales } from '../api';
+import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales, smartOrderFromAlert } from '../api';
+import { supabase } from '../supabaseClient';
 
 export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
@@ -541,16 +542,41 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
   }
 
   const handleOrderNow = async (item) => {
+    if (updatingIngredientId) return; // Prevenir doble click
     setUpdatingIngredientId(item.id);
-    if (typeof window.toast === 'function') {
-      window.toast(`🛒 Iniciando pedido rápido para ${item.name}...`);
-    }
-    setTimeout(() => {
-      setUpdatingIngredientId(null);
-      if (typeof window.toast === 'function') {
-        window.toast(`✅ Pedido para ${item.name} registrado con éxito.`);
+    try {
+      // Obtener datos completos del ingrediente (con supplier_id y precios)
+      const { data: ingData } = await supabase
+        .from('ingredients')
+        .select('id, name, unit, supplier_id, stock_actual, stock_minimo, stock_reservado, calculated_net_cost_kg, precio_por_kg, precio_por_u, purchase_price')
+        .eq('id', item.id)
+        .single();
+
+      const ingredient = ingData || item;
+      const { data: result, error } = await smartOrderFromAlert(ingredient);
+
+      if (error) throw error;
+
+      if (result?.merged) {
+        if (typeof window.toast === 'function') {
+          window.toast(`➕ ${item.name} añadido a la orden de compra activa del proveedor`);
+        }
+      } else {
+        if (typeof window.toast === 'function') {
+          window.toast(`✅ Nueva orden de compra creada para ${item.name}`);
+        }
       }
-    }, 1000);
+
+      // Refrescar datos del dashboard para reflejar la nueva orden
+      await loadDashboardData();
+    } catch (err) {
+      console.error('handleOrderNow error:', err);
+      if (typeof window.toast === 'function') {
+        window.toast(`❌ Error al registrar el pedido: ${err.message || 'Fallo de base de datos'}`);
+      }
+    } finally {
+      setUpdatingIngredientId(null);
+    }
   };
 
   return (

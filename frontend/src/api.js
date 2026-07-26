@@ -937,6 +937,127 @@ export const procesarDescuentosAutomaticosTurnos = async () => {
 };
 
 // ── Órdenes de Compra (Purchase Orders) ──
+
+/**
+ * smartOrderFromAlert: crea o agrupa un artículo en una orden de compra activa.
+ * Caso A – No existe orden activa para ese proveedor → crea nueva orden con el artículo.
+ * Caso B – Existe orden activa (pending/ordered/sent) para ese proveedor → añade el artículo
+ *           (o incrementa cantidad si ya estaba incluido) y recalcula el total.
+ *
+ * @param {Object} ingredient  Objeto completo del ingrediente (id, name, unit, supplier_id, stock_minimo, stock_actual, ...)
+ * @returns {{ data, error }}
+ */
+export const smartOrderFromAlert = async (ingredient) => {
+  try {
+    const supplierId = ingredient.supplier_id || null;
+    const neededQty = Math.max(
+      0,
+      Number(ingredient.stock_minimo || 0) - Number(ingredient.stock_actual || 0)
+    );
+    const unitPrice = Number(
+      ingredient.calculated_net_cost_kg ||
+      ingredient.precio_por_kg ||
+      ingredient.precio_por_u ||
+      ingredient.purchase_price ||
+      0
+    );
+    const totalCost = neededQty * unitPrice;
+
+    // 1. Buscar orden activa para este proveedor
+    let activeOrderQuery = supabase
+      .from('purchase_orders')
+      .select('id, total_cost, purchase_order_items(id, ingredient_id, quantity_ordered, unit_price)')
+      .in('status', ['pending', 'ordered', 'sent']);
+
+    if (supplierId) {
+      activeOrderQuery = activeOrderQuery.eq('supplier_id', supplierId);
+    } else {
+      activeOrderQuery = activeOrderQuery.is('supplier_id', null);
+    }
+
+    const { data: existingOrders, error: fetchErr } = await activeOrderQuery
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (fetchErr) throw fetchErr;
+
+    const existingOrder = existingOrders && existingOrders.length > 0 ? existingOrders[0] : null;
+
+    if (existingOrder) {
+      // Caso B: orden activa existe → buscar si el ingrediente ya está en ella
+      const existingItem = (existingOrder.purchase_order_items || []).find(
+        poi => poi.ingredient_id === ingredient.id
+      );
+
+      if (existingItem) {
+        // Incrementar cantidad del ítem existente
+        const newQty = Number(existingItem.quantity_ordered || 0) + neededQty;
+        const { error: updateItemErr } = await supabase
+          .from('purchase_order_items')
+          .update({ quantity_ordered: newQty })
+          .eq('id', existingItem.id);
+        if (updateItemErr) throw updateItemErr;
+      } else {
+        // Insertar nuevo ítem en la orden existente
+        const { error: insertItemErr } = await supabase
+          .from('purchase_order_items')
+          .insert([{
+            purchase_order_id: existingOrder.id,
+            ingredient_id: ingredient.id,
+            ingredient_name: ingredient.name,
+            quantity_ordered: neededQty,
+            unit_price: unitPrice,
+            tipo_corte: null
+          }]);
+        if (insertItemErr) throw insertItemErr;
+      }
+
+      // Recalcular total de la orden
+      const newTotal = Number(existingOrder.total_cost || 0) + totalCost;
+      const { error: updateOrderErr } = await supabase
+        .from('purchase_orders')
+        .update({ total_cost: newTotal })
+        .eq('id', existingOrder.id);
+      if (updateOrderErr) throw updateOrderErr;
+
+      return { data: { orderId: existingOrder.id, merged: true }, error: null };
+
+    } else {
+      // Caso A: no existe orden activa → crear nueva
+      const { data: newOrder, error: createErr } = await supabase
+        .from('purchase_orders')
+        .insert([{
+          supplier_id: supplierId,
+          budget_id: null,
+          status: 'pending',
+          total_cost: totalCost
+        }])
+        .select()
+        .single();
+
+      if (createErr || !newOrder) throw createErr || new Error('No se pudo crear la orden');
+
+      const { error: insertItemErr } = await supabase
+        .from('purchase_order_items')
+        .insert([{
+          purchase_order_id: newOrder.id,
+          ingredient_id: ingredient.id,
+          ingredient_name: ingredient.name,
+          quantity_ordered: neededQty,
+          unit_price: unitPrice,
+          tipo_corte: null
+        }]);
+
+      if (insertItemErr) throw insertItemErr;
+
+      return { data: { orderId: newOrder.id, merged: false }, error: null };
+    }
+  } catch (err) {
+    console.error('smartOrderFromAlert error:', err);
+    return { data: null, error: err };
+  }
+};
+
 export const createPurchaseOrder = async (orderData, itemsArray) => {
   try {
     const rawSupplierId = orderData.supplier_id;
