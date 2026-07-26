@@ -216,15 +216,16 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     return { spent, budget, percentage, isOverBudget };
   }, [weeklyActualSpent, weeklyBudget]);
 
-  // Statistics
+  // Statistics — alimentadas exclusivamente por fetchIngredients() (Supabase)
   const stats = useMemo(() => {
     const totalIngredients = ingredients.length;
     
+    // Alerta de stock crítico: solo cuando stock_minimo > 0 Y stock_actual < stock_minimo
+    // No se incluyen ingredientes sin stock mínimo configurado (min = 0)
     const criticalItems = ingredients.filter(i => {
-      const stock = i.stock_actual ?? i.current_stock ?? 0;
-      const reserved = i.stock_reservado ?? 0;
-      const min = i.stock_minimo ?? i.min_stock ?? 0;
-      return (stock - reserved) <= min;
+      const stock = Number(i.stock_actual ?? i.current_stock ?? 0);
+      const min = Number(i.stock_minimo ?? i.min_stock ?? 0);
+      return min > 0 && stock < min;
     });
 
     const lowStockAlerts = criticalItems.length;

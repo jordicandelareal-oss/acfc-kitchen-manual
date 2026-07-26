@@ -165,8 +165,9 @@ function App() {
         const alerts = data.filter(i => {
           const stock = Number(i.stock_actual) || 0;
           const min = Number(i.stock_minimo) || 0;
-          const reserved = Number(i.stock_reservado) || 0;
-          return (stock - reserved) <= min;
+          // Solo alertar si tiene stock mínimo configurado (min > 0)
+          // y el stock físico actual está estrictamente por debajo del mínimo
+          return min > 0 && stock < min;
         });
         setLowStockAlerts(alerts);
       }
