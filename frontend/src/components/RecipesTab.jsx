@@ -55,6 +55,12 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   const [recipeInstructions, setRecipeInstructions] = useState('');
   const [recipeImageUrl, setRecipeImageUrl] = useState('');
   const [recipeIngredients, setRecipeIngredients] = useState([]); // Array of { id, name, qty, unit, tipo_corte }
+  
+  // Dietary Restrictions
+  const [isVegetarian, setIsVegetarian] = useState(false);
+  const [isVegan, setIsVegan] = useState(false);
+  const [isHalal, setIsHalal] = useState(false);
+  const [isKosher, setIsKosher] = useState(false);
 
   // Recipe Editor autocomplete and inline form
   const [ingSearchQuery, setIngSearchQuery] = useState('');
@@ -292,6 +298,10 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         valoracion: existingRecipe?.valoracion || 1,
         dificultad: existingRecipe?.dificultad || 1,
         tiempo_elaboracion: existingRecipe?.tiempo_elaboracion || 1,
+        is_vegetarian: !!isVegetarian,
+        is_vegan: !!isVegan,
+        is_halal: !!isHalal,
+        is_kosher: !!isKosher,
         updated_at: new Date().toISOString()
       };
 
@@ -480,6 +490,10 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         setRecipeCategoryId(r.category_id || '');
         setRecipeImageUrl(r.image_url || '');
         setRecipeInstructions(r.instructions || '');
+        setIsVegetarian(!!r.is_vegetarian);
+        setIsVegan(!!r.is_vegan);
+        setIsHalal(!!r.is_halal);
+        setIsKosher(!!r.is_kosher);
         setRecipeIngredients((r.recipe_ingredients || []).map(ri => ({
           id: ri.ingredients?.id,
           name: ri.ingredients?.name || 'Sin nombre',
@@ -495,6 +509,10 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
       setRecipeCategoryId(recipeCategories[0]?.id || '');
       setRecipeImageUrl('');
       setRecipeInstructions('');
+      setIsVegetarian(false);
+      setIsVegan(false);
+      setIsHalal(false);
+      setIsKosher(false);
       setRecipeIngredients([]);
     }
     setRecipeModalOpen(true);
@@ -1258,6 +1276,52 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand resize-none placeholder-slate-400"
                   placeholder="Paso 1: Sofreír la cebolla y el ajo&#10;Paso 2: Añadir los ingredientes frescos"
                 />
+              </div>
+
+              {/* Dietary Restrictions */}
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Restricciones Alimentarias</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isVegetarian}
+                      onChange={e => setIsVegetarian(e.target.checked)}
+                      className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand accent-brand cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Vegetariano</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isVegan}
+                      onChange={e => setIsVegan(e.target.checked)}
+                      className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand accent-brand cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Vegano</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isHalal}
+                      onChange={e => setIsHalal(e.target.checked)}
+                      className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand accent-brand cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Halal</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isKosher}
+                      onChange={e => setIsKosher(e.target.checked)}
+                      className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand accent-brand cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-slate-700">Kosher</span>
+                  </label>
+                </div>
               </div>
             </div>
             
