@@ -503,23 +503,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       openReceptionModal(pendingOrdersForReception[0]);
       return;
     } else {
+      // No real pending orders in Supabase — show clean empty state
       setActiveOrderForReception(null);
-      const itemsFormatted = activeOrderCalculatedItems.map(i => ({
-        id: i.id,
-        ingredient_id: i.id,
-        name: i.name,
-        unit: i.unit || 'Kg',
-        orderedQty: i.neededQuantity,
-        stock_actual: i.stock,
-        stock_reservado: i.reserved
-      }));
-      setReceptionItems(itemsFormatted);
-
-      const qtyMap = {};
-      itemsFormatted.forEach(i => {
-        qtyMap[i.ingredient_id] = i.orderedQty;
-      });
-      setReceivedQtyMap(qtyMap);
+      setReceptionItems([]);
+      setReceivedQtyMap({});
     }
 
     setModalSearchTerm('');
@@ -1039,7 +1026,15 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               })}
 
               {filteredModalItems.length === 0 && (
-                <p className="text-center py-6 text-xs text-slate-400">No hay insumos para recepcionar.</p>
+                <div className="text-center py-8 space-y-2">
+                  <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+                    <PackageCheck size={24} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-700">No hay pedidos pendientes de recepción</p>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    No existen órdenes de compra registradas con estado pendiente en Supabase. Registra primero un pedido desde la lista de necesidades para poder validar su recepción.
+                  </p>
+                </div>
               )}
             </div>
 
