@@ -62,7 +62,12 @@ export function calcularCosteLineaIngrediente(item, qtyToBuy) {
       if (netCostKg <= 0) netCostKg = baseCost;
     }
 
-    return (qty / 1000) * netCostKg;
+    // Si la unidad de medida almacenada es gramos/ml (g, gr, ml), el coste unitario es por kg/l.
+    // Dividimos por 1000 para obtener la fracción correcta.
+    if (['gr', 'g', 'ml'].includes(unit)) {
+      return (qty / 1000) * netCostKg;
+    }
+    return qty * netCostKg;
   } else {
     const unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
     return qty * unitPrice;
