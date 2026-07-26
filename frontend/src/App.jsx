@@ -164,17 +164,9 @@ function App() {
 
   const handleAddToCart = useCallback((cartItem) => {
     setManualCartItems(prev => {
-      const existing = prev.find(i => i.id === cartItem.id);
-      let updated;
-      if (existing) {
-        // Incrementar cantidad si ya está en el carrito
-        updated = prev.map(i => i.id === cartItem.id
-          ? { ...i, neededQuantity: i.neededQuantity + cartItem.neededQuantity, totalCost: (i.neededQuantity + cartItem.neededQuantity) * (i.unitPrice || 0) }
-          : i
-        );
-      } else {
-        updated = [...prev, cartItem];
-      }
+      // Regla de Negocio: No acumular sumas infinitas al reintentar o re-añadir.
+      // Se establece limpiamente la cantidad nueva solicitada en lugar de sumarse.
+      const updated = prev.filter(i => i.id !== cartItem.id).concat(cartItem);
       localStorage.setItem('acfc_manual_cart', JSON.stringify(updated));
       return updated;
     });

@@ -150,6 +150,23 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   }, [loadIngredientsList, loadPlannerData, loadHistory, onRefresh]);
 
   useEffect(() => {
+    // Si un ingrediente se re-añade al carrito manual, nos aseguramos de que no esté bloqueado
+    if (manualCartItems && manualCartItems.length > 0) {
+      setManuallyClearedIds(prev => {
+        const next = new Set(prev);
+        let changed = false;
+        manualCartItems.forEach(item => {
+          if (next.has(item.id)) {
+            next.delete(item.id);
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [manualCartItems]);
+
+  useEffect(() => {
     // Force purge on mount
     localStorage.removeItem('purchase_orders');
     localStorage.removeItem('history_orders');
@@ -536,6 +553,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       next.add(itemId);
       return next;
     });
+    
+    // Si es un ítem proveniente de alerta, limpiarlo también de manualCartItems
+    if (onClearCartItems) {
+      onClearCartItems([itemId]);
+    }
+    
     if (window.toast) window.toast("🗑️ Insumo ocultado de la lista de compras");
   };
 
