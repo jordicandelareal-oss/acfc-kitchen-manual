@@ -341,10 +341,13 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         ? customQuantities[cartItem.id]
         : cartItem.neededQuantity;
       if (neededQuantity <= 0) return null;
+      
+      const totalCost = calcularCosteLineaIngrediente(cartItem, neededQuantity);
+      
       return {
         ...cartItem,
         neededQuantity,
-        totalCost: neededQuantity * (cartItem.unitPrice || 0),
+        totalCost,
         fromAlert: true
       };
     }).filter(Boolean);
