@@ -180,9 +180,11 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     return (historyOrders || []).filter(po => po.status === 'ordered' || po.status === 'pending' || po.status === 'sent');
   }, [historyOrders]);
 
-  // Calculate needed items for Active Order
-  // Rule 1: General suppliers consolidate globally: max(0, stock_reservado - stock_actual)
-  // Rule 2: Carnicería El Cairo independent cut ingredients calculate: max(0, stock_reservado - stock_actual) per cut ingredient.
+  // Calculate needed items for Active Order based ONLY on planned menu needs (stock_reservado).
+  // Stock minimum alerts (items below stock_minimo but not in any menu) are computed separately in lowStockAlerts.
+  // Rule 1: Only include items where stock_reservado > 0 (i.e., reserved by a planned menu)
+  // Rule 2: neededQuantity = max(0, stock_reservado - stock_actual - alreadyOrdered)
+  // Rule 3: Carnicería El Cairo uses chronological tray breakdown per dish
   const activeOrderCalculatedItems = useMemo(() => {
     // 1. Cronológicos Trays de El Cairo si existe plannerData
     const rawCairoTrays = generarBandejasCairoCronologicas(plannerDays);
@@ -249,6 +251,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     const allCairoItems = [...cairoItemsFromTrays, ...cairoItemsFromCatalog];
 
     // 3. Consolidación Global para Proveedores Generales (Mercadona, Makro, etc.)
+    // REGLA CRÍTICA: Solo incluir ingredientes con stock_reservado > 0 (en menú planificado).
+    // Ingredientes bajo stock_minimo pero sin reserva de menú → van a lowStockAlerts, NO aquí.
     const generalItems = safeData.map(item => {
       const supplierObj = item.suppliers || null;
       const supplierName = supplierObj?.name || item.proveedor_principal || 'Otros / Sin Proveedor';
@@ -258,13 +262,18 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       if (isElCairo) return null; // Los ítems de El Cairo ya fueron generados arriba en allCairoItems
 
       const stock = getStock(item);
-      const min = getMin(item);
       const reserved = getReserved(item);
       const alreadyOrdered = orderedPendingMap[item.id] || 0;
 
-      const targetRequired = Math.max(reserved, min);
-      const neededRaw = Math.max(0, targetRequired - stock - alreadyOrdered);
+      // Solo calcular necesidades de compra para ingredientes que están en menús planificados
+      if (reserved <= 0) return null;
+
+      // Necesidad basada exclusivamente en reservas de menú: max(0, stock_reservado - stock_actual - ya_pedido)
+      const neededRaw = Math.max(0, reserved - stock - alreadyOrdered);
       const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
+
+      // No incluir si no hay nada que pedir (stock cubre reservas)
+      if (neededQuantity <= 0 && neededRaw <= 0) return null;
       
       const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       
@@ -285,7 +294,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         ...item,
         rawName: item.name,
         stock,
-        min,
+        min: getMin(item),
         reserved,
         alreadyOrdered,
         neededQuantity,
@@ -297,10 +306,29 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         supplierObj,
         isElCairo: false
       };
-    }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && (Number(i.neededQuantity) > 0 || Number(i.calculatedNeeded) > 0));
+    }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
     return [...allCairoItems, ...generalItems];
   }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds]);
+
+  // Alertas de stock mínimo: ingredientes bajo su stock_minimo pero SIN reservas de menú.
+  // Estos NO generan órdenes de compra — solo aparecen como alertas informativas.
+  const lowStockAlerts = useMemo(() => {
+    return safeData.filter(item => {
+      const isElCairo = isElCairoSupplier(
+        item.suppliers?.name || item.proveedor_principal || '',
+        item.supplier_id || '',
+        item.name,
+        item.provider_ref
+      );
+      if (isElCairo) return false; // El Cairo se gestiona por bandejas
+      const stock = getStock(item);
+      const min = getMin(item);
+      const reserved = getReserved(item);
+      // Solo alertar si: está bajo mínimo Y no tiene reservas de menú (reserved === 0)
+      return min > 0 && stock < min && reserved <= 0;
+    });
+  }, [safeData, getStock, getMin, getReserved]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -671,21 +699,50 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       {/* BLOQUES AGRUPADOS POR PROVEEDOR */}
       <div className="space-y-5">
+        {/* PANEL DE ALERTAS DE STOCK MÍNIMO (ingredientes bajo mínimo sin reserva de menú) */}
+        {lowStockAlerts.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle size={16} className="text-amber-600 flex-shrink-0" />
+              <span className="text-sm font-bold text-amber-800">
+                {lowStockAlerts.length} ingrediente{lowStockAlerts.length > 1 ? 's' : ''} bajo stock mínimo (sin menú planificado)
+              </span>
+            </div>
+            <p className="text-xs text-amber-700 mb-3">
+              Estos ingredientes están por debajo de su stock mínimo pero no forman parte de ningún menú planificado. No generan órdenes de compra automáticas — reponer manualmente si lo consideras necesario desde el panel de Inventario.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {lowStockAlerts.map(item => (
+                <span
+                  key={item.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-[11px] font-bold"
+                >
+                  <AlertCircle size={11} />
+                  {item.name}
+                  <span className="text-amber-600 font-medium">
+                    ({getStock(item)}/{getMin(item)} {item.unit})
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {!showCalculatedNeeds ? (
           <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 text-xs shadow-sm space-y-4">
             <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
               <ShoppingCart size={24} />
             </div>
-            <p className="font-bold text-slate-800 text-sm">Flujo de pedido manual</p>
+            <p className="font-bold text-slate-800 text-sm">Generación de pedido basado en menú planificado</p>
             <p className="text-slate-400 max-w-md mx-auto">
-              No hay necesidades activas ni pedidos automáticos precargados en pantalla. Para calcular las necesidades de compra en tiempo real basadas en la planificación del menú y el stock disponible, presiona el botón.
+              La pantalla está limpia. Pulsa el botón para calcular las necesidades reales de compra cruzando los ingredientes de los menús planificados con el stock actual disponible.
             </p>
             <button
               onClick={() => setShowCalculatedNeeds(true)}
               className="px-6 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2"
             >
               <ShoppingCart size={14} />
-              <span>🛒 Pedir Ahora (Generar Pedido Semanal)</span>
+              <span>🛒 Calcular Necesidades del Menú</span>
             </button>
           </div>
         ) : (
