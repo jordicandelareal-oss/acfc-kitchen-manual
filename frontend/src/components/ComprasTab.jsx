@@ -125,7 +125,11 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     
     // Clear potential cache keys
     localStorage.removeItem('acfc_compras_cache');
+    localStorage.removeItem('purchase_orders');
+    localStorage.removeItem('history_orders');
     sessionStorage.removeItem('acfc_compras_cache');
+    sessionStorage.removeItem('purchase_orders');
+    sessionStorage.removeItem('history_orders');
     
     // Reload database datasets
     await Promise.all([
@@ -137,6 +141,11 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   }, [loadIngredientsList, loadPlannerData, loadHistory, onRefresh]);
 
   useEffect(() => {
+    // Force purge on mount
+    localStorage.removeItem('purchase_orders');
+    localStorage.removeItem('history_orders');
+    sessionStorage.removeItem('purchase_orders');
+    sessionStorage.removeItem('history_orders');
     handleRefresh();
   }, [handleRefresh]);
 
