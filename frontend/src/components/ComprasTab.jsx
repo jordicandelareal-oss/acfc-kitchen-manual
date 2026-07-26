@@ -64,6 +64,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [savingSupplierMap, setSavingSupplierMap] = useState({});
   const [justOrderedIds, setJustOrderedIds] = useState(new Set());
   const [manuallyClearedIds, setManuallyClearedIds] = useState(new Set());
+  const [showCalculatedNeeds, setShowCalculatedNeeds] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Auto-fetch real-time ingredients from Supabase
@@ -312,6 +313,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
   // Group calculated purchase items by Supplier
   const supplierGroups = useMemo(() => {
+    if (!showCalculatedNeeds) return [];
     const groupsMap = {};
 
     filteredItems.forEach(item => {
@@ -669,166 +671,187 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       {/* BLOQUES AGRUPADOS POR PROVEEDOR */}
       <div className="space-y-5">
-        {supplierGroups.map(group => {
-          const hasPhone = !!group.supplierPhone;
-          const hasEmail = !!group.supplierEmail;
-
-          return (
-            <div key={group.supplierId} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-              {/* CABECERA DEL PROVEEDOR */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold flex-shrink-0">
-                    <Store size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                      <span>{group.supplierName}</span>
-                      {group.isElCairo && (
-                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
-                          🥩 Regla Carnicería El Cairo (Desglose)
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {group.items.length} insumo(s) pendientes · Subtotal: <strong className="text-brand font-bold">€{group.totalGroupCost.toFixed(2)}</strong>
-                    </p>
-                  </div>
-                </div>
-
-                {/* BOTONES DE ACCIÓN POR PROVEEDOR */}
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => handleSendWhatsApp(group)}
-                    disabled={!hasPhone}
-                    title={hasPhone ? `Enviar pedido por WhatsApp a ${group.supplierPhone}` : 'Sin teléfono configurado'}
-                    className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <MessageCircle size={15} />
-                    <span>WhatsApp</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSendEmail(group)}
-                    disabled={!hasEmail}
-                    title={hasEmail ? `Enviar pedido por Email a ${group.supplierEmail}` : 'Sin correo configurado'}
-                    className="flex-1 sm:flex-none px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Mail size={15} />
-                    <span>Correo</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSavePurchaseOrderForSupplier(group)}
-                    disabled={isSavingOrder || savingSupplierMap[group.supplierId] || savingSupplierMap.global}
-                    className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {savingSupplierMap[group.supplierId] ? (
-                      <>
-                        <RefreshCw size={15} className="animate-spin" />
-                        <span>Registrando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save size={15} />
-                        <span>💾 Registrar Orden</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* TABLA DE INSUMOS PENDIENTES DE ESTE PROVEEDOR */}
-              <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">Ingrediente</th>
-                      <th className="py-3 px-3 text-center">Stock Actual</th>
-                      <th className="py-3 px-3 text-center">Stock Reservado</th>
-                      <th className="py-3 px-3 text-center">Cant. a Pedir</th>
-                      <th className="py-3 px-3 text-right">Precio Unid.</th>
-                      <th className="py-3 px-4 text-right">Coste Total</th>
-                      <th className="py-3 px-3 text-center">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white font-medium">
-                    {group.items.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-slate-900 block text-xs">
-                            {group.isElCairo && item.dishName ? (
-                              <span>
-                                {item.rawName} - {item.tipoCorte || 'Entera'}
-                                <span className="text-brand font-medium ml-1.5">
-                                  (Para: {item.dishName})
-                                </span>
-                              </span>
-                            ) : (
-                              item.name
-                            )}
-                          </span>
-                          <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">
-                            {item.stock} {item.unit}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded font-extrabold text-[11px]">
-                            {item.reserved} {item.unit}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <input
-                            type="number"
-                            step="any"
-                            value={item.neededQuantity}
-                            onChange={e => {
-                              const val = parseFloat(e.target.value);
-                              setCustomQuantities(prev => ({
-                                ...prev,
-                                [item.id]: isNaN(val) ? 0 : val
-                              }));
-                            }}
-                            className="w-20 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand outline-none text-xs"
-                          />
-                        </td>
-                        <td className="py-3 px-3 text-right text-slate-600 font-medium">
-                          €{item.unitPrice.toFixed(2)}
-                        </td>
-                        <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-xs">
-                          €{item.totalCost.toFixed(2)}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <button
-                            onClick={() => handleClearCalculatedItem(item.id)}
-                            className="p-1 text-slate-400 hover:text-red-650 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                            title="Eliminar insumo de la lista"
-                          >
-                            <X size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        {!showCalculatedNeeds ? (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 text-xs shadow-sm space-y-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <ShoppingCart size={24} />
             </div>
-          );
-        })}
-
-        {supplierGroups.length === 0 && (
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 text-xs shadow-sm space-y-2">
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
-              <CheckCircle2 size={24} />
-            </div>
-            <p className="font-bold text-slate-800 text-sm">¡No hay insumos pendientes de pedido!</p>
+            <p className="font-bold text-slate-800 text-sm">Flujo de pedido manual</p>
             <p className="text-slate-400 max-w-md mx-auto">
-              Todos los insumos requeridos ya han sido registrados en órdenes de compra pendientes o el stock físico actual cubre las reservas del menú.
+              No hay necesidades activas ni pedidos automáticos precargados en pantalla. Para calcular las necesidades de compra en tiempo real basadas en la planificación del menú y el stock disponible, presiona el botón.
             </p>
+            <button
+              onClick={() => setShowCalculatedNeeds(true)}
+              className="px-6 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-bold shadow-sm transition-all inline-flex items-center gap-2"
+            >
+              <ShoppingCart size={14} />
+              <span>🛒 Pedir Ahora (Generar Pedido Semanal)</span>
+            </button>
           </div>
+        ) : (
+          <>
+            {supplierGroups.map(group => {
+              const hasPhone = !!group.supplierPhone;
+              const hasEmail = !!group.supplierEmail;
+
+              return (
+                <div key={group.supplierId} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+                  {/* CABECERA DEL PROVEEDOR */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold flex-shrink-0">
+                        <Store size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                          <span>{group.supplierName}</span>
+                          {group.isElCairo && (
+                            <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
+                              🥩 Regla Carnicería El Cairo (Desglose)
+                            </span>
+                          )}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {group.items.length} insumo(s) pendientes · Subtotal: <strong className="text-brand font-bold">€{group.totalGroupCost.toFixed(2)}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* BOTONES DE ACCIÓN POR PROVEEDOR */}
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleSendWhatsApp(group)}
+                        disabled={!hasPhone}
+                        title={hasPhone ? `Enviar pedido por WhatsApp a ${group.supplierPhone}` : 'Sin teléfono configurado'}
+                        className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <MessageCircle size={15} />
+                        <span>WhatsApp</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleSendEmail(group)}
+                        disabled={!hasEmail}
+                        title={hasEmail ? `Enviar pedido por Email a ${group.supplierEmail}` : 'Sin correo configurado'}
+                        className="flex-1 sm:flex-none px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <Mail size={15} />
+                        <span>Correo</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleSavePurchaseOrderForSupplier(group)}
+                        disabled={isSavingOrder || savingSupplierMap[group.supplierId] || savingSupplierMap.global}
+                        className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {savingSupplierMap[group.supplierId] ? (
+                          <>
+                            <RefreshCw size={15} className="animate-spin" />
+                            <span>Registrando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save size={15} />
+                            <span>💾 Registrar Orden</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* TABLA DE INSUMOS PENDIENTES DE ESTE PROVEEDOR */}
+                  <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="py-3 px-4">Ingrediente</th>
+                          <th className="py-3 px-3 text-center">Stock Actual</th>
+                          <th className="py-3 px-3 text-center">Stock Reservado</th>
+                          <th className="py-3 px-3 text-center">Cant. a Pedir</th>
+                          <th className="py-3 px-3 text-right">Precio Unid.</th>
+                          <th className="py-3 px-4 text-right">Coste Total</th>
+                          <th className="py-3 px-3 text-center">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white font-medium">
+                        {group.items.map(item => (
+                          <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-900 block text-xs">
+                                {group.isElCairo && item.dishName ? (
+                                  <span>
+                                    {item.rawName} - {item.tipoCorte || 'Entera'}
+                                    <span className="text-brand font-medium ml-1.5">
+                                      (Para: {item.dishName})
+                                    </span>
+                                  </span>
+                                ) : (
+                                  item.name
+                                )}
+                              </span>
+                              <span className="text-[10px] text-slate-400">Unidad: {item.unit}</span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">
+                                {item.stock} {item.unit}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded font-extrabold text-[11px]">
+                                {item.reserved} {item.unit}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <input
+                                type="number"
+                                step="any"
+                                value={item.neededQuantity}
+                                onChange={e => {
+                                  const val = parseFloat(e.target.value);
+                                  setCustomQuantities(prev => ({
+                                    ...prev,
+                                    [item.id]: isNaN(val) ? 0 : val
+                                  }));
+                                }}
+                                className="w-20 px-2 py-1 border border-slate-200 rounded-lg text-center font-bold text-slate-900 focus:border-brand outline-none text-xs"
+                              />
+                            </td>
+                            <td className="py-3 px-3 text-right text-slate-600 font-medium">
+                              €{item.unitPrice.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-xs">
+                              €{item.totalCost.toFixed(2)}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <button
+                                onClick={() => handleClearCalculatedItem(item.id)}
+                                className="p-1 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                                title="Eliminar insumo de la lista"
+                              >
+                                <X size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+
+            {supplierGroups.length === 0 && (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center text-slate-500 text-xs shadow-sm space-y-2">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <CheckCircle2 size={24} />
+                </div>
+                <p className="font-bold text-slate-800 text-sm">¡No hay insumos pendientes de pedido!</p>
+                <p className="text-slate-400 max-w-md mx-auto">
+                  Todos los insumos requeridos ya han sido registrados en órdenes de compra pendientes o el stock físico actual cubre las reservas del menú.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
