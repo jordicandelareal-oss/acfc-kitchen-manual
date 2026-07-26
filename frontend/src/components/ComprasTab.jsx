@@ -47,7 +47,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canEdit }) => {
+const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canEdit, manualCartItems = [], onClearCartItems }) => {
   const [internalIngredients, setInternalIngredients] = useState([]);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
   const [plannerDays, setPlannerDays] = useState([]);
@@ -316,8 +316,24 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
     }).filter(i => i && (!justOrderedIds.has(i.id)) && (!manuallyClearedIds.has(i.id)) && Number(i.neededQuantity) > 0);
 
-    return [...allCairoItems, ...generalItems];
-  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds]);
+    // 4. Ítems añadidos manualmente desde alertas del Dashboard
+    // Bypass el filtro reserved > 0 porque vienen de stock crítico, no de menús planificados
+    const manualAlertItems = (manualCartItems || []).map(cartItem => {
+      if (justOrderedIds.has(cartItem.id) || manuallyClearedIds.has(cartItem.id)) return null;
+      const neededQuantity = customQuantities[cartItem.id] !== undefined
+        ? customQuantities[cartItem.id]
+        : cartItem.neededQuantity;
+      if (neededQuantity <= 0) return null;
+      return {
+        ...cartItem,
+        neededQuantity,
+        totalCost: neededQuantity * (cartItem.unitPrice || 0),
+        fromAlert: true
+      };
+    }).filter(Boolean);
+
+    return [...allCairoItems, ...generalItems, ...manualAlertItems];
+  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds, manualCartItems]);
 
   // Alertas de stock mínimo: ingredientes bajo su stock_minimo pero SIN reservas de menú.
   // Estos NO generan órdenes de compra — solo aparecen como alertas informativas.
@@ -340,11 +356,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
   // Auto-expand the supplier breakdown as soon as there are calculated items
   useEffect(() => {
-    if (!hasAutoExpanded && activeOrderCalculatedItems.length > 0) {
+    const hasItems = activeOrderCalculatedItems.length > 0 || (manualCartItems || []).length > 0;
+    if (!hasAutoExpanded && hasItems) {
       setShowCalculatedNeeds(true);
       setHasAutoExpanded(true);
     }
-  }, [activeOrderCalculatedItems.length, hasAutoExpanded]);
+  }, [activeOrderCalculatedItems.length, (manualCartItems || []).length, hasAutoExpanded]);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return activeOrderCalculatedItems;
@@ -472,6 +489,12 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         itemsToOrder.forEach(i => next.add(i.id));
         return next;
       });
+
+      // Limpiar del carrito de alertas los ítems de Dashboard que ya se registraron
+      const alertItemIds = itemsToOrder.filter(i => i.fromAlert).map(i => i.id);
+      if (alertItemIds.length > 0 && onClearCartItems) {
+        onClearCartItems(alertItemIds);
+      }
 
       const groupName = supplierGroup ? supplierGroup.supplierName : 'General';
       if (window.toast) window.toast(`✅ Orden de compra registrada para ${groupName} (Los insumos se han movido a Pedidos Pendientes)`);

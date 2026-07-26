@@ -156,6 +156,39 @@ function App() {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [globalRecipes, setGlobalRecipes] = useState([]);
 
+  // ── Carrito manual de prepedidos (alertas del Dashboard → Módulo de Compras) ──
+  const [manualCartItems, setManualCartItems] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('acfc_manual_cart') || '[]'); }
+    catch { return []; }
+  });
+
+  const handleAddToCart = useCallback((cartItem) => {
+    setManualCartItems(prev => {
+      const existing = prev.find(i => i.id === cartItem.id);
+      let updated;
+      if (existing) {
+        // Incrementar cantidad si ya está en el carrito
+        updated = prev.map(i => i.id === cartItem.id
+          ? { ...i, neededQuantity: i.neededQuantity + cartItem.neededQuantity, totalCost: (i.neededQuantity + cartItem.neededQuantity) * (i.unitPrice || 0) }
+          : i
+        );
+      } else {
+        updated = [...prev, cartItem];
+      }
+      localStorage.setItem('acfc_manual_cart', JSON.stringify(updated));
+      return updated;
+    });
+    setActiveTab('compras'); // Navegar automáticamente al módulo de compras
+  }, []);
+
+  const handleClearCartItems = useCallback((itemIds) => {
+    setManualCartItems(prev => {
+      const updated = prev.filter(i => !itemIds.includes(i.id));
+      localStorage.setItem('acfc_manual_cart', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const loadLowStockAlerts = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -422,13 +455,13 @@ function App() {
 
         {/* MAIN CONTENT */}
         <main className="content">
-          {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} recipes={globalRecipes} role={role} setRole={setRole} isInitializing={isInitializing} />}
+          {activeTab === 'dashboard' && <DashboardTab onNavigate={tab => setActiveTab(tab)} onAddToCart={handleAddToCart} recipes={globalRecipes} role={role} setRole={setRole} isInitializing={isInitializing} />}
           {activeTab === 'inventory' && <InventoryTab role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
           {activeTab === 'recipes' && <RecipesTab recipes={globalRecipes} reloadRecipes={loadGlobalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
           {activeTab === 'suppliers' && <SuppliersTab role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
           {activeTab === 'planner' && <PlannerTab recipes={globalRecipes} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
           {activeTab === 'menus' && <MenusTab data={data} loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
-          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} onRefresh={loadData} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
+          {activeTab === 'compras' && <ComprasTab data={data} loading={loading} month={month} onMonthChange={setMonth} onRefresh={loadData} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} manualCartItems={manualCartItems} onClearCartItems={handleClearCartItems} />}
           {activeTab === 'insumos' && <InsumosTab loading={loading} role={role} canEdit={role === 'admin' || role === 'chef'} isInitializing={isInitializing} />}
         </main>
 

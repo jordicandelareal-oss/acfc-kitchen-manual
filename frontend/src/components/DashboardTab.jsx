@@ -4,10 +4,10 @@ import {
   Utensils, Euro, Shield, Users, 
   CheckCircle, Calendar, Activity, Check, X, Sparkles, Tv
 } from 'lucide-react';
-import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales, smartOrderFromAlert } from '../api';
+import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales } from '../api';
 import { supabase } from '../supabaseClient';
 
-export default function DashboardTab({ onNavigate, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
+export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
   const todayISO = useMemo(() => {
     const d = new Date();
@@ -545,34 +545,63 @@ export default function DashboardTab({ onNavigate, recipes = [], role: propsRole
     if (updatingIngredientId) return; // Prevenir doble click
     setUpdatingIngredientId(item.id);
     try {
-      // Obtener datos completos del ingrediente (con supplier_id y precios)
+      // Obtener datos completos del ingrediente (con proveedor y precios)
       const { data: ingData } = await supabase
         .from('ingredients')
-        .select('id, name, unit, supplier_id, stock_actual, stock_minimo, stock_reservado, calculated_net_cost_kg, precio_por_kg, precio_por_u, purchase_price')
+        .select('id, name, unit, supplier_id, stock_actual, stock_minimo, stock_reservado, calculated_net_cost_kg, precio_por_kg, precio_por_u, purchase_price, suppliers(id, name, phone, email)')
         .eq('id', item.id)
         .single();
 
       const ingredient = ingData || item;
-      const { data: result, error } = await smartOrderFromAlert(ingredient);
+      const neededQty = Math.max(
+        0,
+        Number(ingredient.stock_minimo || 0) - Number(ingredient.stock_actual || 0)
+      );
+      const unitPrice = Number(
+        ingredient.calculated_net_cost_kg ||
+        ingredient.precio_por_kg ||
+        ingredient.precio_por_u ||
+        ingredient.purchase_price ||
+        0
+      );
+      const supplierObj = ingredient.suppliers || null;
 
-      if (error) throw error;
+      // Construir el ítem de carrito que irá al prepedido del Módulo de Compras
+      const cartItem = {
+        id: ingredient.id,
+        name: ingredient.name,
+        rawName: ingredient.name,
+        unit: ingredient.unit || 'g',
+        supplier_id: ingredient.supplier_id || null,
+        supplierId: ingredient.supplier_id || 'no-supplier',
+        supplierName: supplierObj?.name || 'Sin Proveedor Asignado',
+        supplierObj,
+        neededQuantity: neededQty,
+        calculatedNeeded: neededQty,
+        unitPrice,
+        totalCost: neededQty * unitPrice,
+        stock: Number(ingredient.stock_actual || 0),
+        min: Number(ingredient.stock_minimo || 0),
+        reserved: 0,
+        alreadyOrdered: 0,
+        isElCairo: false,
+        fromAlert: true, // Marca para identificar ítems de alertas (no de planificación)
+      };
 
-      if (result?.merged) {
+      if (onAddToCart) {
+        onAddToCart(cartItem); // Esto navega automáticamente a Compras y añade al prepedido
         if (typeof window.toast === 'function') {
-          window.toast(`➕ ${item.name} añadido a la orden de compra activa del proveedor`);
+          window.toast(`🛒 ${ingredient.name} añadido al prepedido → → Revisa el Módulo de Compras`);
         }
       } else {
         if (typeof window.toast === 'function') {
-          window.toast(`✅ Nueva orden de compra creada para ${item.name}`);
+          window.toast('⚠️ El módulo de compras no está disponible en este momento.');
         }
       }
-
-      // Refrescar datos del dashboard para reflejar la nueva orden
-      await loadDashboardData();
     } catch (err) {
       console.error('handleOrderNow error:', err);
       if (typeof window.toast === 'function') {
-        window.toast(`❌ Error al registrar el pedido: ${err.message || 'Fallo de base de datos'}`);
+        window.toast(`❌ Error al añadir al prepedido: ${err.message || 'Fallo de datos'}`);
       }
     } finally {
       setUpdatingIngredientId(null);
