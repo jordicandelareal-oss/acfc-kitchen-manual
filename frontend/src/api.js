@@ -886,18 +886,57 @@ export const generarListaComprasOptimizada = async () => {
     }
     console.log(`TRAZA 2b - Menús planificados: ${menuDays.length} días`);
 
-    // --- QUERY 4: recipe_ingredients PLANA (sin joins anidados) ---
-    // IMPORTANTE: .limit(10000) para no truncar por el límite por defecto de Supabase (1000 filas)
-    const { data: recipeIngs, error: riErr } = await supabase
-      .from('recipe_ingredients')
-      .select('id, recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte')
-      .limit(10000);
-    if (riErr) console.error("TRAZA ERROR recipe_ingredients:", riErr.message);
-    if (!recipeIngs || recipeIngs.length === 0) {
-      console.error("TRAZA ERROR: recipe_ingredients vacío. Sin ingredientes asociados a recetas.");
-      return { data: [], error: null };
+    // Helper para buscar alternativa vegetariana (definido temprano para calcular IDs objetivo)
+    const getAlternative = (mainRecipeId) => {
+      const main = recipes.find(r => r.id === mainRecipeId);
+      if (!main) return null;
+      if (main.is_vegetarian || main.category === 'Vegetariano') return main;
+      if (main.equivalent_recipe_id) {
+        const equiv = recipes.find(r => r.id === main.equivalent_recipe_id);
+        if (equiv) return equiv;
+      }
+      const exactMatch = recipes.find(r =>
+        r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetari') &&
+        (r.is_vegetarian || r.category === 'Vegetariano')
+      );
+      if (exactMatch) return exactMatch;
+      return recipes.find(r => r.is_vegetarian || r.category === 'Vegetariano') || main;
+    };
+
+    // Calcular la lista de recetas activas (principales + sus alternativas vegetarianas)
+    const targetRecipeIds = new Set();
+    for (const day of menuDays) {
+      const turnIds = [
+        day.breakfast_recipe_id,
+        day.lunch_recipe_id,
+        day.lunch_side_recipe_id,
+        day.dinner_recipe_id
+      ];
+      for (const id of turnIds) {
+        if (!id) continue;
+        targetRecipeIds.add(id);
+        // También añadimos su alternativa por si acaso se activa la Opción B
+        const alt = getAlternative(id);
+        if (alt) {
+          targetRecipeIds.add(alt.id);
+        }
+      }
     }
-    console.log(`TRAZA 5a - recipe_ingredients planos: ${recipeIngs.length} filas`);
+    const targetRecipeIdsArray = Array.from(targetRecipeIds);
+    console.log(`TRAZA 3a - IDs de recetas activas a consultar ingredientes:`, targetRecipeIdsArray);
+
+    // --- QUERY 4: recipe_ingredients FILTRADO (in_query) ---
+    // Consultamos únicamente los ingredientes asociados a las recetas del planificador para no superar el límite de 1000 de Supabase.
+    let recipeIngs = [];
+    if (targetRecipeIdsArray.length > 0) {
+      const { data: riData, error: riErr } = await supabase
+        .from('recipe_ingredients')
+        .select('id, recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte')
+        .in('recipe_id', targetRecipeIdsArray);
+      if (riErr) console.error("TRAZA ERROR recipe_ingredients:", riErr.message);
+      recipeIngs = riData || [];
+    }
+    console.log(`TRAZA 5a - recipe_ingredients planos consultados: ${recipeIngs.length} filas`);
 
     // --- QUERY 5: ingredients PLANA ---
     const { data: ingredientsData, error: ingErr } = await supabase
@@ -969,22 +1008,6 @@ export const generarListaComprasOptimizada = async () => {
     };
 
     // --- Motor de doble carril ---
-    const getAlternative = (mainRecipeId) => {
-      const main = recipes.find(r => r.id === mainRecipeId);
-      if (!main) return null;
-      if (main.is_vegetarian || main.category === 'Vegetariano') return main;
-      if (main.equivalent_recipe_id) {
-        const equiv = recipes.find(r => r.id === main.equivalent_recipe_id);
-        if (equiv) return equiv;
-      }
-      const exactMatch = recipes.find(r =>
-        r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetari') &&
-        (r.is_vegetarian || r.category === 'Vegetariano')
-      );
-      if (exactMatch) return exactMatch;
-      return recipes.find(r => r.is_vegetarian || r.category === 'Vegetariano') || main;
-    };
-
     const tempNeeds = [];
 
     for (const day of menuDays) {
