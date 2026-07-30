@@ -403,14 +403,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       // Solo calcular necesidades de compra para ingredientes que están en menús planificados
       if (reserved <= 0) return null;
 
-      // Necesidad basada exclusivamente en reservas de menú: max(0, stock_reservado - stock_actual - ya_pedido)
       const neededRaw = Math.max(0, reserved - stock - alreadyOrdered);
-      const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : neededRaw;
 
       // No incluir si no hay nada que pedir (stock cubre reservas)
-      if (neededQuantity <= 0 && neededRaw <= 0) return null;
-      
-      const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
+      if (neededRaw <= 0) return null;
       
       const unit = (item.unit || '').toLowerCase();
       const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
@@ -419,9 +415,6 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       let unitPrice = 0;
       if (isKgLt) {
         unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
-        if (unitPrice <= 0 && neededQuantity > 0 && totalCost > 0) {
-          unitPrice = totalCost / (neededQuantity / 1000);
-        }
       } else {
         unitPrice = Number(item.precio_por_u || 0);
         if (unitPrice <= 0) {
@@ -448,10 +441,10 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         min: getMin(item),
         reserved,
         alreadyOrdered,
-        neededQuantity,
+        neededQuantity: neededRaw,
         calculatedNeeded: neededRaw,
         unitPrice,
-        totalCost,
+        totalCost: 0,
         supplierId,
         supplierName,
         supplierObj,
@@ -478,9 +471,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const alreadyOrdered = orderedPendingMap[item.id] || 0;
 
       const neededRaw = Math.max(0, min - stock - alreadyOrdered);
-      const neededQuantity = customQuantities[item.id] !== undefined ? customQuantities[item.id] : (cartItem.neededQuantity || neededRaw);
+      const neededQuantity = cartItem.neededQuantity || neededRaw;
 
-      const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       const unit = (item.unit || '').toLowerCase();
       const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
       const isKgLt = !isIndividualUnit && (item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit));
@@ -488,9 +480,6 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       let unitPrice = 0;
       if (isKgLt) {
         unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
-        if (unitPrice <= 0 && neededQuantity > 0 && totalCost > 0) {
-          unitPrice = totalCost / (neededQuantity / 1000);
-        }
       } else {
         unitPrice = Number(item.precio_por_u || 0);
         if (unitPrice <= 0) {
@@ -520,7 +509,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
         neededQuantity,
         calculatedNeeded: neededRaw,
         unitPrice,
-        totalCost,
+        totalCost: 0,
         supplierId,
         supplierName,
         supplierObj,
@@ -534,7 +523,61 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       !justOrderedIds.has(i.id) && !manuallyClearedIds.has(i.id) && Number(i.neededQuantity) > 0
     );
 
-    return [...allCairoItems, ...generalItems, ...manualAlertItems, ...dualVegFiltered];
+    const rawItems = [...allCairoItems, ...generalItems, ...manualAlertItems, ...dualVegFiltered];
+
+    // Consolidación inteligente por proveedor (exceptuando El Cairo)
+    const consolidated = {};
+    const cairoItems = [];
+
+    rawItems.forEach(item => {
+      if (item.isElCairo) {
+        cairoItems.push(item);
+        return;
+      }
+
+      const ingId = item.ingredient_id || item.id;
+      const key = `${item.supplierId}_${ingId}`;
+
+      if (!consolidated[key]) {
+        consolidated[key] = {
+          ...item,
+          neededQuantity: 0,
+          calculatedNeeded: 0,
+          reserved: 0,
+          destinations: item.destinations ? [item.destinations] : []
+        };
+      }
+
+      consolidated[key].neededQuantity += item.neededQuantity || 0;
+      consolidated[key].calculatedNeeded += item.calculatedNeeded || 0;
+      consolidated[key].reserved += item.reserved || 0;
+
+      if (item.destinations && !consolidated[key].destinations.includes(item.destinations)) {
+        consolidated[key].destinations.push(item.destinations);
+      }
+    });
+
+    const consolidatedList = Object.values(consolidated).map(item => {
+      const ingId = item.ingredient_id || item.id;
+      const key = `${item.supplierId}_${ingId}`;
+      
+      // Aplicar el ID de grupo único para que los inputs guarden el valor personalizado en este casillero
+      item.id = key;
+
+      // Si existe una cantidad personalizada del usuario para este insumo consolidado, la aplicamos
+      if (customQuantities[key] !== undefined) {
+        item.neededQuantity = customQuantities[key];
+      }
+
+      item.totalCost = calcularCosteLineaIngrediente(item, item.neededQuantity);
+
+      if (Array.isArray(item.destinations)) {
+        item.destinations = item.destinations.filter(Boolean).join(', ');
+      }
+      return item;
+    });
+
+    return [...cairoItems, ...consolidatedList];
   }, [safeData, plannerDays, dualTrackVegItems, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds, manualCartItems]);
 
   // Alertas de stock mínimo: ingredientes bajo su stock_minimo pero SIN reservas de menú.
