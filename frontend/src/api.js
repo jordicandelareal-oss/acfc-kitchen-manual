@@ -856,15 +856,127 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
 
 export const generarListaComprasOptimizada = async () => {
   try {
-    // Para la auditoría, necesitamos obtener los días confirmados futuros o del menú actual (ahora incluimos borradores)
-    const { data: menuDays } = await supabase.from('menu_planner').select('*');
-    if (menuDays && menuDays.length > 0) {
-      await runDualTrackAudit(menuDays);
+    // 1. Fetch active vegetarians
+    const { data: comensales } = await supabase.from('comensales').select('dieta').eq('activo', true);
+    let vegCount = 0;
+    if (comensales) {
+      vegCount = comensales.filter(c => c.dieta && (c.dieta.toLowerCase().includes('veget') || c.dieta.toLowerCase().includes('vegan'))).length;
     }
+
+    // 2. Fetch data needed for calculation
+    const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
+    const { data: menuDays } = await supabase.from('menu_planner').select('*');
+    const { data: allRecipeIngredients } = await supabase.from('recipe_ingredients').select('recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte, ingredients(name, stock_actual, supplier_id, suppliers(name))');
+
+    if (!menuDays || !recipes || !allRecipeIngredients) {
+      return { data: [], error: null };
+    }
+
+    const getAlternative = (mainRecipeId) => {
+      const main = recipes.find(r => r.id === mainRecipeId);
+      if (!main) return null;
+      if (main.is_vegetarian || main.category === 'Vegetariano') return main;
+      if (main.equivalent_recipe_id) {
+        const equiv = recipes.find(r => r.id === main.equivalent_recipe_id);
+        if (equiv) return equiv;
+      }
+      const exactMatch = recipes.find(r => 
+        (r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetari')) &&
+        (r.is_vegetarian || r.category === 'Vegetariano')
+      );
+      if (exactMatch) return exactMatch;
+      return recipes.find(r => r.is_vegetarian || r.category === 'Vegetariano') || main;
+    };
+
+    const tempNeeds = [];
+    
+    // 3. Dual track calculation
+    for (const day of menuDays) {
+      const turns = [
+        { name: 'Desayuno', recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
+        { name: 'Almuerzo', recipeId: day.lunch_recipe_id, players: day.lunch_players || 25 },
+        { name: 'Guarnición Almuerzo', recipeId: day.lunch_side_recipe_id, players: day.lunch_players || 25 },
+        { name: 'Cena', recipeId: day.dinner_recipe_id, players: day.dinner_players || 20 },
+      ];
+
+      for (const turn of turns) {
+        if (!turn.recipeId || turn.players <= 0) continue;
+        
+        const mainRecipe = recipes.find(r => r.id === turn.recipeId);
+        if (!mainRecipe) continue;
+        
+        const stdPlayers = Math.max(0, turn.players - vegCount);
+        const vegPlayers = Math.min(turn.players, vegCount);
+
+        // Estándar
+        if (stdPlayers > 0) {
+          const stdIngs = allRecipeIngredients.filter(ri => ri.recipe_id === turn.recipeId);
+          for (const ri of stdIngs) {
+             tempNeeds.push({
+               ing_id: ri.ingredient_id,
+               ing_name: ri.ingredients?.name || 'Desconocido',
+               supp_name: ri.ingredients?.suppliers?.name || 'Sin proveedor asignado',
+               corte: ri.tipo_corte || 'Entera',
+               qty: (Number(ri.quantity_per_portion) || 0) * stdPlayers,
+               dest: `${mainRecipe.name} (${turn.name} Estándar)`,
+               stock_actual: Number(ri.ingredients?.stock_actual) || 0
+             });
+          }
+        }
+        
+        // Vegetariano
+        if (vegPlayers > 0) {
+          const altRecipe = getAlternative(turn.recipeId);
+          if (altRecipe) {
+            const altIngs = allRecipeIngredients.filter(ri => ri.recipe_id === altRecipe.id);
+            for (const ri of altIngs) {
+               tempNeeds.push({
+                 ing_id: ri.ingredient_id,
+                 ing_name: ri.ingredients?.name || 'Desconocido',
+                 supp_name: ri.ingredients?.suppliers?.name || 'Sin proveedor asignado',
+                 corte: ri.tipo_corte || 'Entera',
+                 qty: (Number(ri.quantity_per_portion) || 0) * vegPlayers,
+                 dest: `${altRecipe.name} (${turn.name} Veg)`,
+                 stock_actual: Number(ri.ingredients?.stock_actual) || 0
+               });
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Consolidate logic
+    const grouped = {};
+    for (const item of tempNeeds) {
+      if (item.qty <= 0) continue;
+      const key = `${item.ing_id}_${item.supp_name}_${item.corte}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+           fila_id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(),
+           nombre_ingrediente: item.ing_name,
+           proveedor: item.supp_name,
+           corte: item.corte,
+           cantidad_necesaria: 0,
+           a_comprar: 0,
+           stock_actual: item.stock_actual,
+           destinations: new Set()
+        };
+      }
+      grouped[key].cantidad_necesaria += item.qty;
+      grouped[key].destinations.add(item.dest);
+    }
+
+    const result = Object.values(grouped).map(g => {
+      g.a_comprar = Math.max(0, g.cantidad_necesaria - g.stock_actual);
+      g.destinations = Array.from(g.destinations).join(', ');
+      return g;
+    });
+
+    return { data: result, error: null };
   } catch(e) {
-    console.warn('No se pudo correr la auditoría de lista de compras', e);
+    console.error('Error en generarListaComprasOptimizada JS:', e);
+    return { data: [], error: e };
   }
-  return supabase.rpc('generar_lista_compras_optimizada');
 };
 
 export const liberarStockReservado = async (recipeId, comensales) => {
