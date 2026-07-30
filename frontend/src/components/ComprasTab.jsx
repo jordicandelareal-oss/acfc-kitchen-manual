@@ -126,7 +126,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
           const totalCost = calcularCosteLineaIngrediente(d, neededQuantity);
           
           const unit = (d.unit || '').toLowerCase();
-          const isKgLt = d.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+          const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
+          const isKgLt = !isIndividualUnit && (d.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit));
           
           let unitPrice = 0;
           if (isKgLt) {
@@ -135,7 +136,22 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
               unitPrice = totalCost / (neededQuantity / 1000);
             }
           } else {
-            unitPrice = Number(d.precio_por_u || d.purchase_price || 0);
+            unitPrice = Number(d.precio_por_u || 0);
+            if (unitPrice <= 0) {
+              unitPrice = Number(d.purchase_price || 0);
+            }
+            if (unitPrice > 5.0) {
+              const format = Number(d.purchase_format_gr || 1);
+              if (format > 1) {
+                unitPrice = unitPrice / format;
+              } else {
+                if (Number(d.precio_por_u) > 0 && Number(d.precio_por_u) <= 5.0) {
+                  unitPrice = Number(d.precio_por_u);
+                } else {
+                  unitPrice = unitPrice / 1000;
+                }
+              }
+            }
           }
 
           return {
@@ -324,9 +340,30 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       const unit = (item.unit || '').toLowerCase();
-      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
-      
-      let unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+      const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
+      const isKgLt = !isIndividualUnit && (item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit));
+       
+      let unitPrice = 0;
+      if (isKgLt) {
+        unitPrice = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || item.purchase_price || item.precio_por_kg || 0);
+      } else {
+        unitPrice = Number(item.precio_por_u || 0);
+        if (unitPrice <= 0) {
+          unitPrice = Number(item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+        }
+        if (unitPrice > 5.0) {
+          const format = Number(item.purchase_format_gr || 1);
+          if (format > 1) {
+            unitPrice = unitPrice / format;
+          } else {
+            if (Number(item.precio_por_u) > 0 && Number(item.precio_por_u) <= 5.0) {
+              unitPrice = Number(item.precio_por_u);
+            } else {
+              unitPrice = unitPrice / 1000;
+            }
+          }
+        }
+      }
 
       return {
         ...item,
@@ -376,7 +413,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       
       const unit = (item.unit || '').toLowerCase();
-      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+      const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
+      const isKgLt = !isIndividualUnit && (item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit));
       
       let unitPrice = 0;
       if (isKgLt) {
@@ -385,7 +423,22 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
           unitPrice = totalCost / (neededQuantity / 1000);
         }
       } else {
-        unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_mas_bajo || 0);
+        unitPrice = Number(item.precio_por_u || 0);
+        if (unitPrice <= 0) {
+          unitPrice = Number(item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+        }
+        if (unitPrice > 5.0) {
+          const format = Number(item.purchase_format_gr || 1);
+          if (format > 1) {
+            unitPrice = unitPrice / format;
+          } else {
+            if (Number(item.precio_por_u) > 0 && Number(item.precio_por_u) <= 5.0) {
+              unitPrice = Number(item.precio_por_u);
+            } else {
+              unitPrice = unitPrice / 1000;
+            }
+          }
+        }
       }
 
       return {
@@ -429,7 +482,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
 
       const totalCost = calcularCosteLineaIngrediente(item, neededQuantity);
       const unit = (item.unit || '').toLowerCase();
-      const isKgLt = item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+      const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
+      const isKgLt = !isIndividualUnit && (item.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit));
 
       let unitPrice = 0;
       if (isKgLt) {
@@ -438,7 +492,22 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
           unitPrice = totalCost / (neededQuantity / 1000);
         }
       } else {
-        unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_mas_bajo || 0);
+        unitPrice = Number(item.precio_por_u || 0);
+        if (unitPrice <= 0) {
+          unitPrice = Number(item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+        }
+        if (unitPrice > 5.0) {
+          const format = Number(item.purchase_format_gr || 1);
+          if (format > 1) {
+            unitPrice = unitPrice / format;
+          } else {
+            if (Number(item.precio_por_u) > 0 && Number(item.precio_por_u) <= 5.0) {
+              unitPrice = Number(item.precio_por_u);
+            } else {
+              unitPrice = unitPrice / 1000;
+            }
+          }
+        }
       }
 
       return {

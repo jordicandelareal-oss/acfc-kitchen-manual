@@ -45,7 +45,10 @@ export function calcularCosteLineaIngrediente(item, qtyToBuy) {
   if (qty <= 0) return 0;
 
   const unit = (item?.unit || '').toLowerCase();
-  const scenario = item?.output_scenario || (['gr', 'g', 'kg', 'ml', 'l'].includes(unit) ? 'KG_LT' : 'UNIDADES');
+  
+  // Si la unidad es una pieza o unidad discreta, forzamos el cálculo de coste por unidad
+  const isIndividualUnit = ['unidad', 'unidades', 'u', 'pcs', 'pieza', 'piezas', 'ud', 'uds'].includes(unit);
+  const scenario = isIndividualUnit ? 'UNIDADES' : (item?.output_scenario || (['gr', 'g', 'kg', 'ml', 'l'].includes(unit) ? 'KG_LT' : 'UNIDADES'));
 
   if (scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit)) {
     let netCostKg = Number(item.calculated_net_cost_kg || item.coste_neto_calculado || 0);
@@ -69,7 +72,25 @@ export function calcularCosteLineaIngrediente(item, qtyToBuy) {
     }
     return qty * netCostKg;
   } else {
-    const unitPrice = Number(item.precio_por_u || item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+    // Si tenemos precio_por_u, lo priorizamos siempre para evitar usar el precio del bulto/compra
+    let unitPrice = Number(item.precio_por_u || 0);
+    if (unitPrice <= 0) {
+      unitPrice = Number(item.purchase_price || item.precio_compra || item.precio_mas_bajo || 0);
+    }
+    
+    // Salvaguarda: si el precio de una unidad individual supera 5 € (ilógico para huevos, pan, etc.), normalizamos
+    if (unitPrice > 5.0) {
+      const format = Number(item.purchase_format_gr || 1);
+      if (format > 1) {
+        unitPrice = unitPrice / format;
+      } else {
+        if (Number(item.precio_por_u) > 0 && Number(item.precio_por_u) <= 5.0) {
+          unitPrice = Number(item.precio_por_u);
+        } else {
+          unitPrice = unitPrice / 1000;
+        }
+      }
+    }
     return qty * unitPrice;
   }
 }
