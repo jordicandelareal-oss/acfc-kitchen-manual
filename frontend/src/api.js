@@ -417,7 +417,7 @@ export const obtenerORegistrarSemana = async (dateStr) => {
       supabase.from('menu_weeks')
         .upsert(
           [{ start_date, end_date, year: monParts[0], month: monParts[1] }],
-          { onConflict: 'start_date,end_date' }
+          { onConflict: 'start_date' }
         )
         .select()
         .maybeSingle(),
@@ -523,9 +523,108 @@ export const guardarMenuYReservarStock = async (menuDays) => {
   return guardarMenuBorrador(menuDays);
 };
 
+// --- DUAL TRACK AUDIT & HELPER ---
+const runDualTrackAudit = async (menuDays) => {
+  try {
+    console.log('--- 🚀 INICIANDO AUDITORÍA DE DOBLE CARRIL (OPCIÓN B) ---');
+    
+    // 1. Fetch active vegetarians
+    const { data: comensales } = await supabase.from('comensales').select('dieta').eq('activo', true);
+    let vegCount = 0;
+    if (comensales) {
+      vegCount = comensales.filter(c => c.dieta && (c.dieta.toLowerCase().includes('vegetarian') || c.dieta.toLowerCase().includes('vegan') || c.dieta.toLowerCase().includes('vegano'))).length;
+    }
+    console.log(`a) 👥 Comensales vegetarianos detectados para el turno: ${vegCount}`);
+
+    // Fetch all recipes to find alternatives
+    const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category');
+
+    const getAlternative = (mainRecipeId) => {
+      if (!mainRecipeId || !recipes) return null;
+      const main = recipes.find(r => r.id === mainRecipeId);
+      if (!main) return null;
+      if (main.is_vegetarian || main.category === 'Vegetariano') return main;
+
+      const exactMatch = recipes.find(r => 
+        (r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetarian)') || 
+         r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetariano)')) &&
+        (r.is_vegetarian || r.category === 'Vegetariano')
+      );
+      if (exactMatch) return exactMatch;
+      return recipes.find(r => r.is_vegetarian || r.category === 'Vegetariano') || main;
+    };
+
+    for (const day of menuDays) {
+      console.log(`\\n📅 Analizando fecha: ${day.date}`);
+      const turns = [
+        { name: 'Desayuno', recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
+        { name: 'Almuerzo', recipeId: day.lunch_recipe_id, players: day.lunch_players || 25 },
+        { name: 'Guarnición Almuerzo', recipeId: day.lunch_side_recipe_id, players: day.lunch_players || 25 },
+        { name: 'Cena', recipeId: day.dinner_recipe_id, players: day.dinner_players || 20 },
+      ];
+
+      for (const turn of turns) {
+        if (!turn.recipeId || turn.players <= 0) continue;
+        
+        const mainRecipe = recipes?.find(r => r.id === turn.recipeId);
+        const stdPlayers = Math.max(0, turn.players - vegCount);
+        const vegPlayers = Math.min(turn.players, vegCount);
+        
+        console.log(`\\n  🍽️ Turno: ${turn.name} (Total: ${turn.players} pax | Estándar: ${stdPlayers} | Veg: ${vegPlayers})`);
+        console.log(`  b) Receta Principal: ${mainRecipe?.name || 'Desconocida'} (ID: ${turn.recipeId})`);
+        
+        if (vegPlayers > 0) {
+          const altRecipe = getAlternative(turn.recipeId);
+          console.log(`  c) Receta Alternativa Veg: ${altRecipe?.name || 'Ninguna'} (ID: ${altRecipe?.id})`);
+          
+          // Simular cálculo de ingredientes
+          const { data: stdIngs } = await supabase.from('recipe_ingredients').select('quantity_per_portion, ingredients(name)').eq('recipe_id', turn.recipeId);
+          const { data: altIngs } = await supabase.from('recipe_ingredients').select('quantity_per_portion, ingredients(name)').eq('recipe_id', altRecipe?.id);
+          
+          console.log(`  d) Ingredientes Integrados:`);
+          
+          const combined = {};
+          if (stdPlayers > 0 && stdIngs) {
+            stdIngs.forEach(ri => {
+              const name = ri.ingredients?.name;
+              if (!name) return;
+              const qty = (Number(ri.quantity_per_portion) * stdPlayers);
+              if (!combined[name]) combined[name] = { qty: 0, from: [] };
+              combined[name].qty += qty;
+              combined[name].from.push('Estándar');
+            });
+          }
+          if (vegPlayers > 0 && altIngs) {
+            altIngs.forEach(ri => {
+              const name = ri.ingredients?.name;
+              if (!name) return;
+              const qty = (Number(ri.quantity_per_portion) * vegPlayers);
+              if (!combined[name]) combined[name] = { qty: 0, from: [] };
+              combined[name].qty += qty;
+              combined[name].from.push('Veg');
+            });
+          }
+          
+          Object.keys(combined).forEach(ing => {
+            const info = combined[ing];
+            const isMerged = info.from.includes('Estándar') && info.from.includes('Veg');
+            console.log(`     - ${ing}: ${info.qty.toFixed(2)} (Origen: ${isMerged ? 'Fusión Estándar+Veg' : info.from[0]})`);
+          });
+        }
+      }
+    }
+    console.log('--- 🏁 FIN AUDITORÍA ---');
+  } catch (e) {
+    console.error('Error en auditoría de doble carril:', e);
+  }
+};
+
 // ── Guardar y Confirmar menú (Reserva stock_reservado explícitamente) ──
 export const guardarYConfirmarMenu = async (menuDays) => {
   try {
+    // 0. Ejecutar auditoría en consola
+    await runDualTrackAudit(menuDays);
+
     const upserts = [];
     const uniqueWeeksToConfirm = new Map();
 
@@ -634,7 +733,7 @@ export const guardarYConfirmarMenu = async (menuDays) => {
             month: week.month,
             confirmado: true,
             updated_at: new Date().toISOString()
-          }], { onConflict: 'start_date,end_date' });
+          }], { onConflict: 'start_date' });
       } catch (confirmErr) {
         console.warn('[menu_weeks] Failed to confirm week:', week.start_date, confirmErr.message);
       }
@@ -747,6 +846,15 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
 };
 
 export const generarListaComprasOptimizada = async () => {
+  try {
+    // Para la auditoría, necesitamos obtener los días confirmados futuros o del menú actual
+    const { data: menuDays } = await supabase.from('menu_planner').select('*').eq('confirmado', true);
+    if (menuDays && menuDays.length > 0) {
+      await runDualTrackAudit(menuDays);
+    }
+  } catch(e) {
+    console.warn('No se pudo correr la auditoría de lista de compras', e);
+  }
   return supabase.rpc('generar_lista_compras_optimizada');
 };
 
