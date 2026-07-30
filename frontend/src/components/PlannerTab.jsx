@@ -571,6 +571,56 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     return r ? r.name : fallback;
   };
 
+  const getVegAlternative = useCallback((id) => {
+    if (!id) return null;
+    const base = recipes.find(rec => rec.id === id);
+    if (!base) return null;
+    if (base.equivalent_recipe_id) {
+      return recipes.find(rec => rec.id === base.equivalent_recipe_id) || null;
+    }
+    return recipes.find(rec => rec.name === `${base.name} (vegetarian)` || rec.name === `${base.name} (Vegetarian)`) || null;
+  }, [recipes]);
+
+  const getLunchPlayers = useCallback((menu, dateStr) => {
+    if (menu?.lunch_players) return menu.lunch_players;
+    if (!dateStr) return 25;
+    const weekMondayStr = getMadridMondayOfWeek(dateStr);
+    return weeklyPlayers[weekMondayStr]?.lunch || 25;
+  }, [weeklyPlayers]);
+
+  const getDinnerPlayers = useCallback((menu, dateStr) => {
+    if (menu?.dinner_players) return menu.dinner_players;
+    if (!dateStr) return 20;
+    const weekMondayStr = getMadridMondayOfWeek(dateStr);
+    return weeklyPlayers[weekMondayStr]?.dinner || 20;
+  }, [weeklyPlayers]);
+
+  const renderVegIndicator = (baseId, mealPlayers) => {
+    const vegRecipe = getVegAlternative(baseId);
+    if (!vegRecipe || activeDietCounts.vegetarian <= 0) return null;
+    const vegCount = Math.min(mealPlayers, activeDietCounts.vegetarian);
+    if (vegCount <= 0) return null;
+    
+    return (
+      <div className="group relative flex items-center justify-center">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 shadow-sm cursor-help">
+          <span className="text-[10px] leading-none">🍃</span>
+          <span className="text-[9px] font-bold leading-none">Veg</span>
+        </div>
+        <div className="absolute bottom-full right-[-10px] md:left-1/2 md:-translate-x-1/2 mb-2 w-max max-w-[220px] bg-slate-900 text-white text-[11px] rounded-lg p-2.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[9999] shadow-xl border border-slate-700 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 mb-0.5 border-b border-slate-700 pb-1">
+            <span className="text-emerald-400">🍃</span>
+            <span className="font-bold text-emerald-400 uppercase tracking-wide text-[9px]">Opción Veg</span>
+          </div>
+          <p className="font-semibold text-slate-100 whitespace-normal text-left">{vegRecipe.name}</p>
+          <p className="text-emerald-300 font-medium text-[10px] text-left">{vegCount} comensales (confirmados)</p>
+          {/* Arrow */}
+          <div className="absolute top-full right-[16px] md:left-1/2 md:-translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+        </div>
+      </div>
+    );
+  };
+
   // Auto-generate weekly planner
   const handleGenerateWeekly = async () => {
     if (recipes.length === 0) {
@@ -1263,7 +1313,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                         <span className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
                           ☀️ Almuerzo
                         </span>
-                        <span className="badge badge-amber text-[10px]">{players.lunch} pax</span>
+                        <div className="flex items-center gap-2">
+                          {renderVegIndicator(menu?.lunch_recipe_id, players.lunch)}
+                          <span className="badge badge-amber text-[10px]">{players.lunch} pax</span>
+                        </div>
                       </div>
                       <p className="font-bold text-slate-800 text-base">{lunchName}</p>
                       {lunchSideName && lunchSideName !== 'Sin guarnición' && (
@@ -1278,7 +1331,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                         <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider flex items-center gap-1">
                           🌙 Cena
                         </span>
-                        <span className="badge badge-indigo text-[10px]">{players.dinner} pax</span>
+                        <div className="flex items-center gap-2">
+                          {renderVegIndicator(menu?.dinner_recipe_id, players.dinner)}
+                          <span className="badge badge-indigo text-[10px]">{players.dinner} pax</span>
+                        </div>
                       </div>
                       <p className="font-bold text-slate-800 text-base">{dinnerName}</p>
                     </div>
@@ -1364,7 +1420,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
                                 <div className="space-y-1.5">
                                   <div>
-                                    <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                      {renderVegIndicator(menu?.lunch_recipe_id, getLunchPlayers(menu, dateStr))}
+                                    </div>
                                     <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
                                   </div>
 
@@ -1376,7 +1435,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                                   )}
 
                                   <div>
-                                    <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                      {renderVegIndicator(menu?.dinner_recipe_id, getDinnerPlayers(menu, dateStr))}
+                                    </div>
                                     <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
                                   </div>
                                 </div>
@@ -1442,7 +1504,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
                                 <div className="space-y-1.5">
                                   <div>
-                                    <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[9px] font-bold text-amber-700 block uppercase">Almuerzo</span>
+                                      {renderVegIndicator(menu?.lunch_recipe_id, getLunchPlayers(menu, dateStr))}
+                                    </div>
                                     <p className="text-xs font-semibold text-slate-800 line-clamp-2">{lunchName}</p>
                                   </div>
 
@@ -1454,7 +1519,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                                   )}
 
                                   <div>
-                                    <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[9px] font-bold text-indigo-700 block uppercase">Cena</span>
+                                      {renderVegIndicator(menu?.dinner_recipe_id, getDinnerPlayers(menu, dateStr))}
+                                    </div>
                                     <p className="text-xs font-semibold text-slate-800 line-clamp-2">{dinnerName}</p>
                                   </div>
                                 </div>
@@ -1531,9 +1599,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             {hasLunch ? (
-                              <div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 truncate">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                                <span className="truncate">{menu?.lunch_recipe?.name || 'Almuerzo'}</span>
+                              <div className="flex items-center justify-between gap-1 w-full">
+                                <div className="flex items-center gap-1 text-[9px] font-bold text-amber-700 truncate">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                                  <span className="truncate">{menu?.lunch_recipe?.name || 'Almuerzo'}</span>
+                                </div>
+                                {renderVegIndicator(menu?.lunch_recipe_id, getLunchPlayers(menu, dateISO))}
                               </div>
                             ) : null}
                             {hasSide ? (
@@ -1543,9 +1614,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                               </div>
                             ) : null}
                             {hasDinner ? (
-                              <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-700 truncate">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
-                                <span className="truncate">{menu?.dinner_recipe?.name || 'Cena'}</span>
+                              <div className="flex items-center justify-between gap-1 w-full">
+                                <div className="flex items-center gap-1 text-[9px] font-bold text-indigo-700 truncate">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                                  <span className="truncate">{menu?.dinner_recipe?.name || 'Cena'}</span>
+                                </div>
+                                {renderVegIndicator(menu?.dinner_recipe_id, getDinnerPlayers(menu, dateISO))}
                               </div>
                             ) : null}
                             {!hasMeal && (
@@ -1647,15 +1721,18 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                           {/* 1. Almuerzo / Plato Principal */}
                           <div 
                             title={`Almuerzo: ${lunchName}`}
-                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
+                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border ${
                               menu?.lunch_recipe_id 
                                 ? 'bg-amber-50/90 border-amber-200 text-amber-950' 
                                 : 'bg-slate-50 border-slate-100 text-slate-400 italic'
                             }`}
                           >
-                            <div className="flex items-center gap-1 mb-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                              <span className="font-extrabold uppercase text-[9px] text-amber-800">Almuerzo</span>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                                <span className="font-extrabold uppercase text-[9px] text-amber-800">Almuerzo</span>
+                              </div>
+                              {renderVegIndicator(menu?.lunch_recipe_id, getLunchPlayers(menu, dateISO))}
                             </div>
                             <p className="truncate font-semibold">{lunchName}</p>
                           </div>
@@ -1664,7 +1741,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                           {lunchSideName ? (
                             <div 
                               title={`Guarnición: ${lunchSideName}`}
-                              className="p-1 rounded-md text-[10px] font-medium leading-tight bg-emerald-50/90 border border-emerald-200 text-emerald-950 overflow-hidden"
+                              className="p-1 rounded-md text-[10px] font-medium leading-tight bg-emerald-50/90 border border-emerald-200 text-emerald-950"
                             >
                               <div className="flex items-center gap-1 mb-0.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -1677,15 +1754,18 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                           {/* 3. Cena */}
                           <div 
                             title={`Cena: ${dinnerName}`}
-                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border overflow-hidden ${
+                            className={`p-1.5 rounded-md text-[10px] font-medium leading-tight border ${
                               menu?.dinner_recipe_id 
                                 ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950' 
                                 : 'bg-slate-50 border-slate-100 text-slate-400 italic'
                             }`}
                           >
-                            <div className="flex items-center gap-1 mb-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
-                              <span className="font-extrabold uppercase text-[9px] text-indigo-800">Cena</span>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <div className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0" />
+                                <span className="font-extrabold uppercase text-[9px] text-indigo-800">Cena</span>
+                              </div>
+                              {renderVegIndicator(menu?.dinner_recipe_id, getDinnerPlayers(menu, dateISO))}
                             </div>
                             <p className="truncate font-semibold">{dinnerName}</p>
                           </div>
