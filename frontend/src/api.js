@@ -537,7 +537,7 @@ const runDualTrackAudit = async (menuDays) => {
     console.log(`a) 👥 Comensales vegetarianos detectados para el turno: ${vegCount}`);
 
     // Fetch all recipes to find alternatives
-    const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category');
+    const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
 
     const getAlternative = (mainRecipeId) => {
       if (!mainRecipeId || !recipes) return null;
@@ -545,12 +545,21 @@ const runDualTrackAudit = async (menuDays) => {
       if (!main) return null;
       if (main.is_vegetarian || main.category === 'Vegetariano') return main;
 
+      // Prioridad 1 (Relación Directa)
+      if (main.equivalent_recipe_id) {
+        const equiv = recipes.find(r => r.id === main.equivalent_recipe_id);
+        if (equiv) return equiv;
+      }
+
+      // Prioridad 2 (Coincidencia de Nombre Base)
       const exactMatch = recipes.find(r => 
         (r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetarian)') || 
          r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetariano)')) &&
         (r.is_vegetarian || r.category === 'Vegetariano')
       );
       if (exactMatch) return exactMatch;
+      
+      // Prioridad 3 (Fallback Seguro)
       return recipes.find(r => r.is_vegetarian || r.category === 'Vegetariano') || main;
     };
 

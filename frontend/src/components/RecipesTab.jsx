@@ -61,6 +61,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
   const [isVegan, setIsVegan] = useState(false);
   const [isHalal, setIsHalal] = useState(false);
   const [isKosher, setIsKosher] = useState(false);
+  const [equivalentRecipeId, setEquivalentRecipeId] = useState('');
 
   // Recipe Editor autocomplete and inline form
   const [ingSearchQuery, setIngSearchQuery] = useState('');
@@ -293,6 +294,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         portions: parseInt(portions) || 1,
         category: categoryName,
         category_id: recipeCategoryId || null,
+        equivalent_recipe_id: equivalentRecipeId || null,
         instructions: recipeInstructions.trim(),
         image_url: recipeImageUrl || null,
         valoracion: existingRecipe?.valoracion || 1,
@@ -494,6 +496,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
         setIsVegan(!!r.is_vegan);
         setIsHalal(!!r.is_halal);
         setIsKosher(!!r.is_kosher);
+        setEquivalentRecipeId(r.equivalent_recipe_id || '');
         setRecipeIngredients((r.recipe_ingredients || []).map(ri => ({
           id: ri.ingredients?.id,
           name: ri.ingredients?.name || 'Sin nombre',
@@ -513,6 +516,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
       setIsVegan(false);
       setIsHalal(false);
       setIsKosher(false);
+      setEquivalentRecipeId('');
       setRecipeIngredients([]);
     }
     setRecipeModalOpen(true);
@@ -1042,6 +1046,24 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                       )}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Receta Equivalente (Opción B) */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Receta Vegetariana Equivalente (Opción B)</label>
+                  <select
+                    value={equivalentRecipeId}
+                    onChange={e => setEquivalentRecipeId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-brand bg-white"
+                  >
+                    <option value="">-- Ninguna (Búsqueda Automática) --</option>
+                    {recipes.filter(r => r.is_vegetarian || r.category === 'Vegetariano').map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">Si dejas esto en blanco, el sistema buscará un plato con el mismo nombre terminado en "(Vegetarian)".</p>
                 </div>
               </div>
 
