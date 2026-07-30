@@ -121,26 +121,51 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       // Convertir al formato que usa activeOrderCalculatedItems
       const vegItems = dualData
         .filter(d => d.destinations && d.destinations.toLowerCase().includes('veg'))
-        .map(d => ({
-          id: `dual-veg-${d.nombre_ingrediente}-${d.proveedor}`,
-          rawName: d.nombre_ingrediente,
-          name: d.nombre_ingrediente,
-          supplierName: d.proveedor || 'Sin proveedor asignado',
-          supplierId: 'dual-track-veg',
-          supplierObj: { name: d.proveedor || 'Sin proveedor asignado' },
-          stock: Number(d.stock_actual || 0),
-          min: 0,
-          reserved: d.cantidad_necesaria,
-          alreadyOrdered: 0,
-          neededQuantity: Number(d.a_comprar || 0),
-          calculatedNeeded: Number(d.a_comprar || 0),
-          unitPrice: 0,
-          totalCost: 0,
-          isElCairo: false,
-          fromDualTrackVeg: true,
-          destinations: d.destinations,
-          proveedor: d.proveedor
-        }))
+        .map(d => {
+          const neededQuantity = Number(d.a_comprar || 0);
+          const totalCost = calcularCosteLineaIngrediente(d, neededQuantity);
+          
+          const unit = (d.unit || '').toLowerCase();
+          const isKgLt = d.output_scenario === 'KG_LT' || ['gr', 'g', 'kg', 'ml', 'l'].includes(unit);
+          
+          let unitPrice = 0;
+          if (isKgLt) {
+            unitPrice = Number(d.calculated_net_cost_kg || d.precio_por_kg || d.purchase_price || 0);
+            if (unitPrice <= 0 && neededQuantity > 0 && totalCost > 0) {
+              unitPrice = totalCost / (neededQuantity / 1000);
+            }
+          } else {
+            unitPrice = Number(d.precio_por_u || d.purchase_price || 0);
+          }
+
+          return {
+            id: `dual-veg-${d.nombre_ingrediente}-${d.proveedor}`,
+            ingredient_id: d.ingredient_id,
+            rawName: d.nombre_ingrediente,
+            name: d.nombre_ingrediente,
+            unit: d.unit || 'gr',
+            output_scenario: d.output_scenario,
+            calculated_net_cost_kg: d.calculated_net_cost_kg,
+            precio_por_kg: d.precio_por_kg,
+            precio_por_u: d.precio_por_u,
+            purchase_price: d.purchase_price,
+            supplierName: d.proveedor || 'Sin proveedor asignado',
+            supplierId: 'dual-track-veg',
+            supplierObj: { name: d.proveedor || 'Sin proveedor asignado' },
+            stock: Number(d.stock_actual || 0),
+            min: 0,
+            reserved: d.cantidad_necesaria,
+            alreadyOrdered: 0,
+            neededQuantity,
+            calculatedNeeded: neededQuantity,
+            unitPrice,
+            totalCost,
+            isElCairo: false,
+            fromDualTrackVeg: true,
+            destinations: d.destinations,
+            proveedor: d.proveedor
+          };
+        })
         .filter(i => Number(i.neededQuantity) > 0);
       console.log(`TRAZA 3 - Ítems vegetarianos inyectados en lista de compras: ${vegItems.length}`);
       setDualTrackVegItems(vegItems);

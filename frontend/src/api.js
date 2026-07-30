@@ -941,7 +941,7 @@ export const generarListaComprasOptimizada = async () => {
     // --- QUERY 5: ingredients PLANA ---
     const { data: ingredientsData, error: ingErr } = await supabase
       .from('ingredients')
-      .select('id, name, stock_actual, supplier_id');
+      .select('id, name, stock_actual, supplier_id, unit, precio_por_kg, precio_por_u, calculated_net_cost_kg, purchase_price, output_scenario');
     if (ingErr) console.error("TRAZA ERROR ingredients:", ingErr.message);
     console.log(`TRAZA 5b - ingredients planos: ${ingredientsData?.length || 0} filas`);
 
@@ -970,6 +970,12 @@ export const generarListaComprasOptimizada = async () => {
         ing_name: ing.name || 'Desconocido',
         ing_stock: Number(ing.stock_actual) || 0,
         supp_name: supp.name || 'Sin proveedor asignado',
+        unit: ing.unit || ri.unit || 'gr',
+        precio_por_kg: ing.precio_por_kg,
+        precio_por_u: ing.precio_por_u,
+        calculated_net_cost_kg: ing.calculated_net_cost_kg,
+        purchase_price: ing.purchase_price,
+        output_scenario: ing.output_scenario,
       };
       if (!riByRecipe[recId]) riByRecipe[recId] = [];
       riByRecipe[recId].push(enriched);
@@ -1043,7 +1049,13 @@ export const generarListaComprasOptimizada = async () => {
               corte: ri.tipo_corte || 'Entera',
               qty: (Number(ri.quantity_per_portion) || 0) * stdPlayers,
               dest: `${mainRecipe.name} (${turn.name} Estándar)`,
-              stock_actual: ri.ing_stock
+              stock_actual: ri.ing_stock,
+              unit: ri.unit,
+              precio_por_kg: ri.precio_por_kg,
+              precio_por_u: ri.precio_por_u,
+              calculated_net_cost_kg: ri.calculated_net_cost_kg,
+              purchase_price: ri.purchase_price,
+              output_scenario: ri.output_scenario,
             });
           }
         }
@@ -1065,7 +1077,13 @@ export const generarListaComprasOptimizada = async () => {
                 corte: ri.tipo_corte || 'Entera',
                 qty: (Number(ri.quantity_per_portion) || 0) * vegPlayers,
                 dest: `${altRecipe.name} (${turn.name} Veg)`,
-                stock_actual: ri.ing_stock
+                stock_actual: ri.ing_stock,
+                unit: ri.unit,
+                precio_por_kg: ri.precio_por_kg,
+                precio_por_u: ri.precio_por_u,
+                calculated_net_cost_kg: ri.calculated_net_cost_kg,
+                purchase_price: ri.purchase_price,
+                output_scenario: ri.output_scenario,
               });
             }
           } else {
@@ -1089,7 +1107,14 @@ export const generarListaComprasOptimizada = async () => {
           cantidad_necesaria: 0,
           a_comprar: 0,
           stock_actual: item.stock_actual,
-          destinations: new Set()
+          destinations: new Set(),
+          unit: item.unit,
+          precio_por_kg: item.precio_por_kg,
+          precio_por_u: item.precio_por_u,
+          calculated_net_cost_kg: item.calculated_net_cost_kg,
+          purchase_price: item.purchase_price,
+          output_scenario: item.output_scenario,
+          ingredient_id: item.ing_id,
         };
       }
       grouped[key].cantidad_necesaria += item.qty;
