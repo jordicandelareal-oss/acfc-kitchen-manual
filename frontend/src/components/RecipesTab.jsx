@@ -163,7 +163,16 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
 
   // Filtering Recipes
   const filteredRecipes = useMemo(() => {
+    const childRecipeIds = new Set();
+    recipes.forEach(r => {
+      if (r.equivalent_recipe_id) childRecipeIds.add(r.equivalent_recipe_id);
+    });
+
     return recipes.filter(r => {
+      // HIDE VEGETARIAN CHILDREN FROM LIST
+      if (childRecipeIds.has(r.id)) return false;
+      if (r.name?.toLowerCase().endsWith('(vegetarian)')) return false;
+
       // Search text by name or category
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -709,21 +718,32 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
           <div className="text-center py-10 text-slate-400 italic">No se encontraron recetas con los filtros seleccionados.</div>
         ) : (
           filteredRecipes.map(r => {
-            const { parsedIngredients, totalGrams, portions: rPortions, costPerPortion, totalRecipeCost, suggestedPrice } = calculateRecipe(r);
+            const vegAlternative = r.equivalent_recipe_id 
+              ? recipes.find(rec => rec.id === r.equivalent_recipe_id)
+              : recipes.find(rec => rec.name === `${r.name} (vegetarian)` || rec.name === `${r.name} (Vegetarian)`);
+
             const viewType = viewStates[r.id] || 'cocina';
             const detailOpen = viewStates[r.id + '_open'] || false;
+            const variantType = viewStates[r.id + '_variant'] || 'standard';
+            const activeRecipe = (variantType === 'veg' && vegAlternative) ? vegAlternative : r;
+
+            const { parsedIngredients, totalGrams, portions: rPortions, costPerPortion, totalRecipeCost, suggestedPrice } = calculateRecipe(activeRecipe);
 
             return (
               <div key={r.id} className="card overflow-hidden flex flex-col">
-                {r.image_url && <img src={r.image_url} className="w-full h-32 object-cover" onError={e => e.target.style.display = 'none'} alt={r.name} />}
+                {activeRecipe.image_url && <img src={activeRecipe.image_url} className="w-full h-32 object-cover" onError={e => e.target.style.display = 'none'} alt={activeRecipe.name} />}
                 
                 <div className="px-6 py-5 flex flex-wrap justify-between items-start gap-4 cursor-pointer" onClick={() => setViewStates(prev => ({ ...prev, [r.id + '_open']: !detailOpen }))}>
                   <div className="flex items-center gap-4">
                     <div className="kpi-icon bg-brand-muted"><span className="material-symbols-outlined text-brand" style={{ fontSize: '22px' }}>restaurant_menu</span></div>
                     <div>
-                      <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>{r.name || 'Sin nombre'}</h3>
+                      <h3 className="font-bold text-slate-900 flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                        {activeRecipe.name || 'Sin nombre'}
+                        {variantType === 'veg' && <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Veg</span>}
+                        {variantType === 'standard' && vegAlternative && <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide cursor-help" title="Tiene versión vegetariana">🍃</span>}
+                      </h3>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        <span className="badge badge-slate mr-2">{r.category || 'Sin familia'}</span>
+                        <span className="badge badge-slate mr-2">{activeRecipe.category || 'Sin familia'}</span>
                         {rPortions} pax {canEdit && `· Coste total: ${totalRecipeCost.toFixed(2)}€`}
                       </p>
 
@@ -761,8 +781,8 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                           {[1, 2, 3].map(val => (
                             <span
                               key={val}
-                              onClick={() => handleUpdateMetric(r.id, 'tiempo_elaboracion', val)}
-                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (r.tiempo_elaboracion || 1) ? 'text-amber-500' : 'text-slate-200'}`}
+                              onClick={() => handleUpdateMetric(activeRecipe.id, 'tiempo_elaboracion', val)}
+                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (activeRecipe.tiempo_elaboracion || 1) ? 'text-amber-500' : 'text-slate-200'}`}
                             >
                               ★
                             </span>
@@ -775,8 +795,8 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                           {[1, 2, 3].map(val => (
                             <span
                               key={val}
-                              onClick={() => handleUpdateMetric(r.id, 'dificultad', val)}
-                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (r.dificultad || 1) ? 'text-amber-500' : 'text-slate-200'}`}
+                              onClick={() => handleUpdateMetric(activeRecipe.id, 'dificultad', val)}
+                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (activeRecipe.dificultad || 1) ? 'text-amber-500' : 'text-slate-200'}`}
                             >
                               ★
                             </span>
@@ -789,8 +809,8 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                           {[1, 2, 3].map(val => (
                             <span
                               key={val}
-                              onClick={() => handleUpdateMetric(r.id, 'valoracion', val)}
-                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (r.valoracion || 1) ? 'text-amber-500' : 'text-slate-200'}`}
+                              onClick={() => handleUpdateMetric(activeRecipe.id, 'valoracion', val)}
+                              className={`cursor-pointer text-[13px] leading-none transition-transform hover:scale-125 ${val <= (activeRecipe.valoracion || 1) ? 'text-amber-500' : 'text-slate-200'}`}
                             >
                               ★
                             </span>
@@ -814,24 +834,42 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                 {/* Detail Accordion Panel */}
                 {detailOpen && (
                   <div className="px-6 pb-6 border-t border-slate-100 pt-5">
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
                         <h4 className="text-sm font-bold text-slate-700">Ficha Técnica e Ingredientes</h4>
-                        {canEdit && (
-                          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                            <button
-                              onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'cocina' }))}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
-                            >
-                              Cocina
-                            </button>
-                            <button
-                              onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'escandallo' }))}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
-                            >
-                              Escandallo
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {vegAlternative && (
+                            <div className="flex items-center p-1 bg-emerald-50 rounded-xl border border-emerald-100 mr-1 shadow-sm">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setViewStates(prev => ({ ...prev, [r.id + '_variant']: 'standard' })); }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${variantType === 'standard' ? 'bg-white text-emerald-800 shadow-sm border border-emerald-200' : 'text-emerald-600/70 hover:text-emerald-700'}`}
+                              >
+                                🍽️ Estándar
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setViewStates(prev => ({ ...prev, [r.id + '_variant']: 'veg' })); }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${variantType === 'veg' ? 'bg-white text-emerald-800 shadow-sm border border-emerald-200' : 'text-emerald-600/70 hover:text-emerald-700'}`}
+                              >
+                                🍃 Opción Veg
+                              </button>
+                            </div>
+                          )}
+                          {canEdit && (
+                            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                              <button
+                                onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'cocina' }))}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'cocina' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
+                              >
+                                Cocina
+                              </button>
+                              <button
+                                onClick={() => setViewStates(prev => ({ ...prev, [r.id]: 'escandallo' }))}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${viewType === 'escandallo' ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-400 hover:text-slate-700'} transition-all`}
+                              >
+                                Escandallo
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* VISTA A: COCINA */}
@@ -876,7 +914,7 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instrucciones de Preparación</p>
                               <div className="text-sm text-slate-600 space-y-2">
-                                {r.instructions ? r.instructions.split('\n').map((step, idx) => (
+                                {activeRecipe.instructions ? activeRecipe.instructions.split('\n').map((step, idx) => (
                                   <p key={idx} className="leading-relaxed"><strong className="text-brand mr-1">{idx+1}.</strong> {step}</p>
                                 )) : <p className="italic text-slate-400">Sin instrucciones registradas.</p>}
                               </div>
@@ -885,13 +923,13 @@ export default function RecipesTab({ recipes = [], reloadRecipes, role, canEdit 
                             {canEdit && (
                               <div className="flex gap-2 flex-wrap">
                                 <button
-                                  onClick={() => openNewRecipeModal(r.id)}
+                                  onClick={() => openNewRecipeModal(activeRecipe.id)}
                                   className="flex-grow flex items-center justify-center gap-1.5 py-2 bg-brand text-white rounded-xl text-xs font-semibold hover:bg-brand-dark transition-colors"
                                 >
                                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>Editar
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteRecipe(r.id)}
+                                  onClick={() => handleDeleteRecipe(activeRecipe.id)}
                                   className="px-3 py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
                                   title="Eliminar Receta"
                                 >
