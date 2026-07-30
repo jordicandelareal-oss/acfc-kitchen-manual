@@ -55,7 +55,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND GREATEST(0, COALESCE(mp.breakfast_players, 20) - v_veg_count) > 0;
+  WHERE GREATEST(0, COALESCE(mp.breakfast_players, 20) - v_veg_count) > 0;
 
   -- Vegetariano
   INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest)
@@ -70,7 +70,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND LEAST(COALESCE(mp.breakfast_players, 20), v_veg_count) > 0;
+  WHERE LEAST(COALESCE(mp.breakfast_players, 20), v_veg_count) > 0;
 
   -- ================== ALMUERZO ==================
   -- Estándar
@@ -86,7 +86,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND GREATEST(0, COALESCE(mp.lunch_players, 20) - v_veg_count) > 0;
+  WHERE GREATEST(0, COALESCE(mp.lunch_players, 20) - v_veg_count) > 0;
 
   -- Vegetariano
   INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest)
@@ -101,7 +101,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND LEAST(COALESCE(mp.lunch_players, 20), v_veg_count) > 0;
+  WHERE LEAST(COALESCE(mp.lunch_players, 20), v_veg_count) > 0;
 
   -- ================== GUARNICIÓN ==================
   -- Estándar
@@ -117,7 +117,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND GREATEST(0, COALESCE(mp.lunch_players, 20) - v_veg_count) > 0;
+  WHERE GREATEST(0, COALESCE(mp.lunch_players, 20) - v_veg_count) > 0;
 
   -- Vegetariano
   INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest)
@@ -132,7 +132,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND LEAST(COALESCE(mp.lunch_players, 20), v_veg_count) > 0;
+  WHERE LEAST(COALESCE(mp.lunch_players, 20), v_veg_count) > 0;
 
   -- ================== CENA ==================
   -- Estándar
@@ -148,7 +148,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND GREATEST(0, COALESCE(mp.dinner_players, 20) - v_veg_count) > 0;
+  WHERE GREATEST(0, COALESCE(mp.dinner_players, 20) - v_veg_count) > 0;
 
   -- Vegetariano
   INSERT INTO temp_needs (ing_id, ing_name, ing_unit, supp_name, supp_id, supp_phone, supp_email, is_cairo, corte, qty, dest)
@@ -163,7 +163,7 @@ BEGIN
   JOIN public.recipe_ingredients ri ON ri.recipe_id = r.id
   JOIN public.ingredients i ON i.id = ri.ingredient_id
   LEFT JOIN public.suppliers s ON s.id = i.supplier_id
-  WHERE mp.confirmado = true AND LEAST(COALESCE(mp.dinner_players, 20), v_veg_count) > 0;
+  WHERE LEAST(COALESCE(mp.dinner_players, 20), v_veg_count) > 0;
 
   -- 3. Consolidar, calcular a_comprar contra stock y retornar
   FOR temp_row IN
