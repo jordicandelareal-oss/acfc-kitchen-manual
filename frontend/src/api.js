@@ -856,39 +856,80 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
 
 export const generarListaComprasOptimizada = async () => {
   try {
+
     console.log("=== INICIO GENERACIÓN DE COMPRAS ===");
-    
-    // 1. Fetch active vegetarians
-    const { data: comensales } = await supabase.from('comensales').select('dieta').eq('activo', true);
+
+    // --- QUERY 1: Comensales activos ---
+    const { data: comensales, error: comErr } = await supabase.from('comensales').select('id, dieta').eq('activo', true);
+    if (comErr) console.error("TRAZA ERROR comensales:", comErr.message);
     let vegCount = 0;
     if (comensales) {
       vegCount = comensales.filter(c => c.dieta && (c.dieta.toLowerCase().includes('veget') || c.dieta.toLowerCase().includes('vegan'))).length;
     }
-    const totalComensales = comensales ? comensales.length : 0;
-    console.log(`TRAZA 1 - Comensales totales y vegetarianos: Totales=${totalComensales}, Vegetarianos=${vegCount}`);
+    console.log(`TRAZA 1 - Comensales totales=${comensales?.length || 0}, Vegetarianos=${vegCount}`);
 
-    // 2. Fetch data needed for calculation
-    const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
+    // --- QUERY 2: Recetas ---
+    const { data: recipes, error: recErr } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
+    if (recErr) console.error("TRAZA ERROR recipes:", recErr.message);
     if (!recipes || recipes.length === 0) {
-      console.error("TRAZA ERROR: Array de recetas vacío o no encontrado en BD.");
-    }
-    
-    const { data: menuDays } = await supabase.from('menu_planner').select('*');
-    if (!menuDays || menuDays.length === 0) {
-      console.error("TRAZA ERROR: Array de menús cargados (menu_planner) llegó vacío.");
-    } else {
-      console.log(`TRAZA 2 - Menús cargados del planificador: ${menuDays.length} días planificados.`);
-    }
-
-    const { data: allRecipeIngredients } = await supabase.from('recipe_ingredients').select('recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte, ingredients(name, stock_actual, supplier_id, suppliers(name))');
-    if (!allRecipeIngredients || allRecipeIngredients.length === 0) {
-      console.error("TRAZA ERROR: No hay ingredientes mapeados en recipe_ingredients.");
-    }
-
-    if (!menuDays || !recipes || !allRecipeIngredients || menuDays.length === 0 || recipes.length === 0) {
+      console.error("TRAZA ERROR: Array de recetas vacío.");
       return { data: [], error: null };
     }
+    console.log(`TRAZA 2a - Recetas cargadas: ${recipes.length}`);
 
+    // --- QUERY 3: Días de menú ---
+    const { data: menuDays, error: menuErr } = await supabase.from('menu_planner').select('*');
+    if (menuErr) console.error("TRAZA ERROR menu_planner:", menuErr.message);
+    if (!menuDays || menuDays.length === 0) {
+      console.error("TRAZA ERROR: menu_planner vacío.");
+      return { data: [], error: null };
+    }
+    console.log(`TRAZA 2b - Menús planificados: ${menuDays.length} días`);
+
+    // --- QUERY 4: recipe_ingredients PLANA (sin joins anidados) ---
+    const { data: recipeIngs, error: riErr } = await supabase
+      .from('recipe_ingredients')
+      .select('id, recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte');
+    if (riErr) console.error("TRAZA ERROR recipe_ingredients:", riErr.message);
+    if (!recipeIngs || recipeIngs.length === 0) {
+      console.error("TRAZA ERROR: recipe_ingredients vacío. Sin ingredientes asociados a recetas.");
+      return { data: [], error: null };
+    }
+    console.log(`TRAZA 5a - recipe_ingredients planos: ${recipeIngs.length} filas`);
+
+    // --- QUERY 5: ingredients PLANA ---
+    const { data: ingredientsData, error: ingErr } = await supabase
+      .from('ingredients')
+      .select('id, name, stock_actual, supplier_id');
+    if (ingErr) console.error("TRAZA ERROR ingredients:", ingErr.message);
+    console.log(`TRAZA 5b - ingredients planos: ${ingredientsData?.length || 0} filas`);
+
+    // --- QUERY 6: suppliers PLANA ---
+    const { data: suppliersData, error: suppErr } = await supabase
+      .from('suppliers')
+      .select('id, name');
+    if (suppErr) console.error("TRAZA ERROR suppliers:", suppErr.message);
+    console.log(`TRAZA 5c - suppliers planos: ${suppliersData?.length || 0} filas`);
+
+    // --- JOIN en JS (sin depender de joins de Supabase) ---
+    const ingredientMap = {};
+    (ingredientsData || []).forEach(ing => { ingredientMap[ing.id] = ing; });
+    const supplierMap = {};
+    (suppliersData || []).forEach(s => { supplierMap[s.id] = s; });
+
+    const allRecipeIngredients = (recipeIngs || []).map(ri => {
+      const ing = ingredientMap[ri.ingredient_id] || {};
+      const supp = supplierMap[ing.supplier_id] || {};
+      return {
+        ...ri,
+        ing_name: ing.name || 'Desconocido',
+        ing_stock: Number(ing.stock_actual) || 0,
+        supp_name: supp.name || 'Sin proveedor asignado',
+      };
+    });
+    console.log(`TRAZA 5d - recipe_ingredients enriquecidos en JS: ${allRecipeIngredients.length} filas`);
+
+    // --- Motor de doble carril ---
     const getAlternative = (mainRecipeId) => {
       const main = recipes.find(r => r.id === mainRecipeId);
       if (!main) return null;
@@ -897,8 +938,8 @@ export const generarListaComprasOptimizada = async () => {
         const equiv = recipes.find(r => r.id === main.equivalent_recipe_id);
         if (equiv) return equiv;
       }
-      const exactMatch = recipes.find(r => 
-        (r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetari')) &&
+      const exactMatch = recipes.find(r =>
+        r.name.toLowerCase().startsWith(main.name.toLowerCase() + ' (vegetari') &&
         (r.is_vegetarian || r.category === 'Vegetariano')
       );
       if (exactMatch) return exactMatch;
@@ -906,8 +947,7 @@ export const generarListaComprasOptimizada = async () => {
     };
 
     const tempNeeds = [];
-    
-    // 3. Dual track calculation
+
     for (const day of menuDays) {
       const turns = [
         { name: 'Desayuno', recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
@@ -918,79 +958,72 @@ export const generarListaComprasOptimizada = async () => {
 
       for (const turn of turns) {
         if (!turn.recipeId || turn.players <= 0) continue;
-        
         const mainRecipe = recipes.find(r => r.id === turn.recipeId);
-        if (!mainRecipe) {
-          console.error(`TRAZA ERROR: No se encontró la receta (ID: ${turn.recipeId}) en memoria para ${turn.name}`);
-          continue;
-        }
-        
-        console.log(`TRAZA 3 - Receta principal detectada: "${mainRecipe.name}" (Turno: ${turn.name})`);
-        
+        if (!mainRecipe) continue;
+
         const stdPlayers = Math.max(0, turn.players - vegCount);
         const vegPlayers = Math.min(turn.players, vegCount);
+        console.log(`TRAZA 3 - "${mainRecipe.name}" | ${turn.name} | Std:${stdPlayers} Veg:${vegPlayers}`);
 
-        // Estándar
+        // Carril estándar
         if (stdPlayers > 0) {
           const stdIngs = allRecipeIngredients.filter(ri => ri.recipe_id === turn.recipeId);
-          console.log(`TRAZA 5 - Ingredientes estándar calculados: ${stdIngs.length} items para ${stdPlayers} pax.`);
-          if (stdIngs.length === 0) console.error(`TRAZA ERROR: La receta estándar "${mainRecipe.name}" no tiene ingredientes asociados.`);
-          
+          console.log(`TRAZA 5 - Estándar: ${stdIngs.length} ingredientes para "${mainRecipe.name}"`);
+          if (stdIngs.length === 0) console.error(`TRAZA ERROR: "${mainRecipe.name}" sin ingredientes en recipe_ingredients`);
           for (const ri of stdIngs) {
-             tempNeeds.push({
-               ing_id: ri.ingredient_id,
-               ing_name: ri.ingredients?.name || 'Desconocido',
-               supp_name: ri.ingredients?.suppliers?.name || 'Sin proveedor asignado',
-               corte: ri.tipo_corte || 'Entera',
-               qty: (Number(ri.quantity_per_portion) || 0) * stdPlayers,
-               dest: `${mainRecipe.name} (${turn.name} Estándar)`,
-               stock_actual: Number(ri.ingredients?.stock_actual) || 0
-             });
+            tempNeeds.push({
+              ing_id: ri.ingredient_id,
+              ing_name: ri.ing_name,
+              supp_name: ri.supp_name,
+              corte: ri.tipo_corte || 'Entera',
+              qty: (Number(ri.quantity_per_portion) || 0) * stdPlayers,
+              dest: `${mainRecipe.name} (${turn.name} Estándar)`,
+              stock_actual: ri.ing_stock
+            });
           }
         }
-        
-        // Vegetariano
+
+        // Carril vegetariano
         if (vegPlayers > 0) {
           const altRecipe = getAlternative(turn.recipeId);
           if (altRecipe) {
-            console.log(`TRAZA 4 - Receta equivalente/vegetariana buscada: Encontrada "${altRecipe.name}"`);
+            console.log(`TRAZA 4 - Alt veg encontrada: "${altRecipe.name}"`);
             const altIngs = allRecipeIngredients.filter(ri => ri.recipe_id === altRecipe.id);
-            console.log(`TRAZA 6 - Ingredientes vegetarianos calculados: ${altIngs.length} items para ${vegPlayers} pax.`);
-            if (altIngs.length === 0) console.error(`TRAZA ERROR: La receta veg "${altRecipe.name}" no tiene ingredientes asociados.`);
-            
+            console.log(`TRAZA 6 - Veg: ${altIngs.length} ingredientes para "${altRecipe.name}"`);
+            if (altIngs.length === 0) console.error(`TRAZA ERROR: "${altRecipe.name}" sin ingredientes en recipe_ingredients`);
             for (const ri of altIngs) {
-               tempNeeds.push({
-                 ing_id: ri.ingredient_id,
-                 ing_name: ri.ingredients?.name || 'Desconocido',
-                 supp_name: ri.ingredients?.suppliers?.name || 'Sin proveedor asignado',
-                 corte: ri.tipo_corte || 'Entera',
-                 qty: (Number(ri.quantity_per_portion) || 0) * vegPlayers,
-                 dest: `${altRecipe.name} (${turn.name} Veg)`,
-                 stock_actual: Number(ri.ingredients?.stock_actual) || 0
-               });
+              tempNeeds.push({
+                ing_id: ri.ingredient_id,
+                ing_name: ri.ing_name,
+                supp_name: ri.supp_name,
+                corte: ri.tipo_corte || 'Entera',
+                qty: (Number(ri.quantity_per_portion) || 0) * vegPlayers,
+                dest: `${altRecipe.name} (${turn.name} Veg)`,
+                stock_actual: ri.ing_stock
+              });
             }
           } else {
-            console.error(`TRAZA ERROR: No se encontró receta alternativa para "${mainRecipe.name}"`);
+            console.error(`TRAZA ERROR: No hay receta alternativa para "${mainRecipe.name}"`);
           }
         }
       }
     }
 
-    // 4. Consolidate logic
+    // Consolidar
     const grouped = {};
     for (const item of tempNeeds) {
       if (item.qty <= 0) continue;
       const key = `${item.ing_id}_${item.supp_name}_${item.corte}`;
       if (!grouped[key]) {
         grouped[key] = {
-           fila_id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(),
-           nombre_ingrediente: item.ing_name,
-           proveedor: item.supp_name,
-           corte: item.corte,
-           cantidad_necesaria: 0,
-           a_comprar: 0,
-           stock_actual: item.stock_actual,
-           destinations: new Set()
+          fila_id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(),
+          nombre_ingrediente: item.ing_name,
+          proveedor: item.supp_name,
+          corte: item.corte,
+          cantidad_necesaria: 0,
+          a_comprar: 0,
+          stock_actual: item.stock_actual,
+          destinations: new Set()
         };
       }
       grouped[key].cantidad_necesaria += item.qty;
@@ -1003,6 +1036,7 @@ export const generarListaComprasOptimizada = async () => {
       return g;
     });
 
+    console.log(`=== FIN: ${result.length} líneas de compra generadas ===`);
     return { data: result, error: null };
   } catch(e) {
     console.error('TRAZA ERROR CRÍTICO en generarListaComprasOptimizada JS:', e);
@@ -1010,7 +1044,9 @@ export const generarListaComprasOptimizada = async () => {
   }
 };
 
+
 export const liberarStockReservado = async (recipeId, comensales) => {
+
   return supabase.rpc('liberar_stock_reservado', { p_recipe_id: recipeId, p_comensales: comensales });
 };
 
