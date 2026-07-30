@@ -417,7 +417,7 @@ export const obtenerORegistrarSemana = async (dateStr) => {
       supabase.from('menu_weeks')
         .upsert(
           [{ start_date, end_date, year: monParts[0], month: monParts[1] }],
-          { onConflict: 'start_date' }
+          { onConflict: 'start_date,end_date' }
         )
         .select()
         .maybeSingle(),
@@ -742,7 +742,7 @@ export const guardarYConfirmarMenu = async (menuDays) => {
             month: week.month,
             confirmado: true,
             updated_at: new Date().toISOString()
-          }], { onConflict: 'start_date' });
+          }], { onConflict: 'start_date,end_date' });
       } catch (confirmErr) {
         console.warn('[menu_weeks] Failed to confirm week:', week.start_date, confirmErr.message);
       }
@@ -856,8 +856,8 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
 
 export const generarListaComprasOptimizada = async () => {
   try {
-    // Para la auditoría, necesitamos obtener los días confirmados futuros o del menú actual
-    const { data: menuDays } = await supabase.from('menu_planner').select('*').eq('confirmado', true);
+    // Para la auditoría, necesitamos obtener los días confirmados futuros o del menú actual (ahora incluimos borradores)
+    const { data: menuDays } = await supabase.from('menu_planner').select('*');
     if (menuDays && menuDays.length > 0) {
       await runDualTrackAudit(menuDays);
     }

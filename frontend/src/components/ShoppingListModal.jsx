@@ -27,6 +27,12 @@ export default function ShoppingListModal({ isOpen, onClose }) {
       generarListaComprasOptimizada()
         .then(({ data, error: rpcError }) => {
           if (rpcError) throw rpcError;
+          console.log('[AUDIT COMPRAS] Datos recibidos del RPC generar_lista_compras_optimizada:', data);
+          if (data && data.length > 0) {
+            console.log('[AUDIT COMPRAS] Doble carril procesado con éxito. Ingredientes integrados:', data.length);
+          } else {
+            console.warn('[AUDIT COMPRAS] La lista de compras llegó vacía Array(0). Revisa que el RPC no esté filtrando menús no confirmados o fechas pasadas.');
+          }
           setRawList(data || []);
         })
         .catch(err => {
