@@ -911,23 +911,34 @@ export const generarListaComprasOptimizada = async () => {
     if (suppErr) console.error("TRAZA ERROR suppliers:", suppErr.message);
     console.log(`TRAZA 5c - suppliers planos: ${suppliersData?.length || 0} filas`);
 
-    // --- JOIN en JS (sin depender de joins de Supabase) ---
+    // --- JOIN en JS (mapas por UUID normalizado) ---
     const ingredientMap = {};
-    (ingredientsData || []).forEach(ing => { ingredientMap[ing.id] = ing; });
+    (ingredientsData || []).forEach(ing => { ingredientMap[String(ing.id).trim()] = ing; });
     const supplierMap = {};
-    (suppliersData || []).forEach(s => { supplierMap[s.id] = s; });
+    (suppliersData || []).forEach(s => { supplierMap[String(s.id).trim()] = s; });
 
-    const allRecipeIngredients = (recipeIngs || []).map(ri => {
-      const ing = ingredientMap[ri.ingredient_id] || {};
-      const supp = supplierMap[ing.supplier_id] || {};
-      return {
+    // Pre-construir mapa recipe_id → [filas enriquecidas]
+    // UUID normalizado: trim + toLowerCase para evitar discrepancias
+    const riByRecipe = {};
+    (recipeIngs || []).forEach(ri => {
+      const recId = String(ri.recipe_id).trim().toLowerCase();
+      const ing = ingredientMap[String(ri.ingredient_id).trim()] || {};
+      const supp = supplierMap[String(ing.supplier_id || '').trim()] || {};
+      const enriched = {
         ...ri,
         ing_name: ing.name || 'Desconocido',
         ing_stock: Number(ing.stock_actual) || 0,
         supp_name: supp.name || 'Sin proveedor asignado',
       };
+      if (!riByRecipe[recId]) riByRecipe[recId] = [];
+      riByRecipe[recId].push(enriched);
     });
-    console.log(`TRAZA 5d - recipe_ingredients enriquecidos en JS: ${allRecipeIngredients.length} filas`);
+
+    const uniqueRecipeIdsInRI = Object.keys(riByRecipe);
+    console.log(`TRAZA 5d - Mapa recetas→ingredientes construido: ${uniqueRecipeIdsInRI.length} recetas tienen ingredientes`);
+    if (uniqueRecipeIdsInRI.length > 0) {
+      console.log('TRAZA 5d - Primeros 3 recipe_ids en el mapa:', uniqueRecipeIdsInRI.slice(0, 3));
+    }
 
     // --- Motor de doble carril ---
     const getAlternative = (mainRecipeId) => {
@@ -963,13 +974,16 @@ export const generarListaComprasOptimizada = async () => {
 
         const stdPlayers = Math.max(0, turn.players - vegCount);
         const vegPlayers = Math.min(turn.players, vegCount);
-        console.log(`TRAZA 3 - "${mainRecipe.name}" | ${turn.name} | Std:${stdPlayers} Veg:${vegPlayers}`);
+        const mainRecipeKey = String(turn.recipeId).trim().toLowerCase();
+        console.log(`TRAZA 3 - "${mainRecipe.name}" | ${turn.name} | recipeKey=${mainRecipeKey} | Std:${stdPlayers} Veg:${vegPlayers}`);
 
         // Carril estándar
         if (stdPlayers > 0) {
-          const stdIngs = allRecipeIngredients.filter(ri => ri.recipe_id === turn.recipeId);
+          const stdIngs = riByRecipe[mainRecipeKey] || [];
           console.log(`TRAZA 5 - Estándar: ${stdIngs.length} ingredientes para "${mainRecipe.name}"`);
-          if (stdIngs.length === 0) console.error(`TRAZA ERROR: "${mainRecipe.name}" sin ingredientes en recipe_ingredients`);
+          if (stdIngs.length === 0) {
+            console.error(`TRAZA ERROR UUID: "${mainRecipe.name}" (key=${mainRecipeKey}) no encontrado en mapa. Claves disponibles:`, uniqueRecipeIdsInRI.slice(0, 5));
+          }
           for (const ri of stdIngs) {
             tempNeeds.push({
               ing_id: ri.ingredient_id,
@@ -987,10 +1001,11 @@ export const generarListaComprasOptimizada = async () => {
         if (vegPlayers > 0) {
           const altRecipe = getAlternative(turn.recipeId);
           if (altRecipe) {
-            console.log(`TRAZA 4 - Alt veg encontrada: "${altRecipe.name}"`);
-            const altIngs = allRecipeIngredients.filter(ri => ri.recipe_id === altRecipe.id);
+            const altKey = String(altRecipe.id).trim().toLowerCase();
+            console.log(`TRAZA 4 - Alt veg encontrada: "${altRecipe.name}" (key=${altKey})`);
+            const altIngs = riByRecipe[altKey] || [];
             console.log(`TRAZA 6 - Veg: ${altIngs.length} ingredientes para "${altRecipe.name}"`);
-            if (altIngs.length === 0) console.error(`TRAZA ERROR: "${altRecipe.name}" sin ingredientes en recipe_ingredients`);
+            if (altIngs.length === 0) console.error(`TRAZA ERROR UUID: "${altRecipe.name}" (key=${altKey}) sin ingredientes en mapa`);
             for (const ri of altIngs) {
               tempNeeds.push({
                 ing_id: ri.ingredient_id,
