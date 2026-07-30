@@ -250,21 +250,19 @@ export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], ro
     let halal = 0;
     let kosher = 0;
     let vegan = 0;
+    let vegetarian = 0;
 
     // Filter comensales to count active players
     const activeComensales = comensales.filter(c => c.activo !== false);
     activeComensales.forEach(c => {
       const dietStr = (c.dieta || '').toLowerCase().trim();
-      if (dietStr === 'halal') {
-        halal++;
-      } else if (dietStr === 'kosher') {
-        kosher++;
-      } else if (dietStr === 'vegano' || dietStr === 'vegan') {
-        vegan++;
-      }
+      if (dietStr.includes('halal')) halal++;
+      if (dietStr.includes('kosher')) kosher++;
+      if (dietStr.includes('vegan')) vegan++;
+      if (dietStr.includes('veget') || dietStr.includes('vegan')) vegetarian++;
     });
 
-    return { halal, kosher, vegan };
+    return { halal, kosher, vegan, vegetarian };
   }, [comensales]);
 
   // Carnicería El Cairo cuts consolidator
@@ -862,18 +860,22 @@ export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], ro
                 Sin perfiles de comensales registrados en Supabase.
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2.5 flex flex-col items-center">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-2 flex flex-col items-center justify-center">
                   <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider mb-0.5">🟢 Halal</span>
                   <span className="text-base font-black text-emerald-950">{diets.halal}</span>
                 </div>
-                <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-2.5 flex flex-col items-center">
+                <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-2 flex flex-col items-center justify-center">
                   <span className="text-[10px] text-blue-800 font-bold uppercase tracking-wider mb-0.5">🔵 Kosher</span>
                   <span className="text-base font-black text-blue-950">{diets.kosher}</span>
                 </div>
-                <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-2.5 flex flex-col items-center">
+                <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-2 flex flex-col items-center justify-center">
                   <span className="text-[10px] text-orange-800 font-bold uppercase tracking-wider mb-0.5">🌿 Vegano</span>
                   <span className="text-base font-black text-orange-950">{diets.vegan}</span>
+                </div>
+                <div className="bg-green-50/70 border border-green-200 rounded-xl p-2 flex flex-col items-center justify-center">
+                  <span className="text-[10px] text-green-800 font-bold uppercase tracking-wider mb-0.5">🍃 Veggie</span>
+                  <span className="text-base font-black text-green-950">{diets.vegetarian}</span>
                 </div>
               </div>
             )}
