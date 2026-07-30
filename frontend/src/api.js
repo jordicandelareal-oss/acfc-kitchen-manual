@@ -887,9 +887,11 @@ export const generarListaComprasOptimizada = async () => {
     console.log(`TRAZA 2b - Menús planificados: ${menuDays.length} días`);
 
     // --- QUERY 4: recipe_ingredients PLANA (sin joins anidados) ---
+    // IMPORTANTE: .limit(10000) para no truncar por el límite por defecto de Supabase (1000 filas)
     const { data: recipeIngs, error: riErr } = await supabase
       .from('recipe_ingredients')
-      .select('id, recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte');
+      .select('id, recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte')
+      .limit(10000);
     if (riErr) console.error("TRAZA ERROR recipe_ingredients:", riErr.message);
     if (!recipeIngs || recipeIngs.length === 0) {
       console.error("TRAZA ERROR: recipe_ingredients vacío. Sin ingredientes asociados a recetas.");
@@ -935,10 +937,36 @@ export const generarListaComprasOptimizada = async () => {
     });
 
     const uniqueRecipeIdsInRI = Object.keys(riByRecipe);
-    console.log(`TRAZA 5d - Mapa recetas→ingredientes construido: ${uniqueRecipeIdsInRI.length} recetas tienen ingredientes`);
+    console.log(`TRAZA 5d - Mapa recetas→ingredientes: ${uniqueRecipeIdsInRI.length} recetas con ingredientes (de ${recipeIngs.length} filas totales)`);
     if (uniqueRecipeIdsInRI.length > 0) {
-      console.log('TRAZA 5d - Primeros 3 recipe_ids en el mapa:', uniqueRecipeIdsInRI.slice(0, 3));
+      console.log('TRAZA 5d - Todas las recipe_ids en el mapa:', uniqueRecipeIdsInRI);
     }
+
+    // Mapa de respaldo: nombre normalizado → key de riByRecipe
+    // Permite buscar por nombre si el UUID del planificador no coincide exactamente
+    const recipeNameToKey = {};
+    (recipes || []).forEach(r => {
+      const nameKey = String(r.name).trim().toLowerCase();
+      const idKey = String(r.id).trim().toLowerCase();
+      if (riByRecipe[idKey]) {
+        recipeNameToKey[nameKey] = idKey;
+      }
+    });
+    console.log(`TRAZA 5e - Mapa nombre→key construido para: ${Object.keys(recipeNameToKey).length} recetas`);
+
+    // Helper: busca ingredientes primero por UUID, luego por nombre normalizado
+    const getIngsForRecipe = (recipeId, recipeName) => {
+      const idKey = String(recipeId).trim().toLowerCase();
+      if (riByRecipe[idKey] && riByRecipe[idKey].length > 0) return riByRecipe[idKey];
+      // Fallback por nombre
+      const nameKey = String(recipeName || '').trim().toLowerCase();
+      const resolvedKey = recipeNameToKey[nameKey];
+      if (resolvedKey && riByRecipe[resolvedKey]) {
+        console.warn(`TRAZA FALLBACK: UUID ${idKey} no encontrado, usando nombre "${recipeName}" → key ${resolvedKey}`);
+        return riByRecipe[resolvedKey];
+      }
+      return [];
+    };
 
     // --- Motor de doble carril ---
     const getAlternative = (mainRecipeId) => {
@@ -977,12 +1005,12 @@ export const generarListaComprasOptimizada = async () => {
         const mainRecipeKey = String(turn.recipeId).trim().toLowerCase();
         console.log(`TRAZA 3 - "${mainRecipe.name}" | ${turn.name} | recipeKey=${mainRecipeKey} | Std:${stdPlayers} Veg:${vegPlayers}`);
 
-        // Carril estándar
+        // Carril estándar (UUID primero, nombre como fallback)
         if (stdPlayers > 0) {
-          const stdIngs = riByRecipe[mainRecipeKey] || [];
+          const stdIngs = getIngsForRecipe(turn.recipeId, mainRecipe.name);
           console.log(`TRAZA 5 - Estándar: ${stdIngs.length} ingredientes para "${mainRecipe.name}"`);
           if (stdIngs.length === 0) {
-            console.error(`TRAZA ERROR UUID: "${mainRecipe.name}" (key=${mainRecipeKey}) no encontrado en mapa. Claves disponibles:`, uniqueRecipeIdsInRI.slice(0, 5));
+            console.error(`TRAZA ERROR UUID: "${mainRecipe.name}" (key=${mainRecipeKey}) no en mapa. Claves disponibles:`, uniqueRecipeIdsInRI);
           }
           for (const ri of stdIngs) {
             tempNeeds.push({
@@ -997,13 +1025,13 @@ export const generarListaComprasOptimizada = async () => {
           }
         }
 
-        // Carril vegetariano
+        // Carril vegetariano (UUID primero, nombre como fallback)
         if (vegPlayers > 0) {
           const altRecipe = getAlternative(turn.recipeId);
           if (altRecipe) {
             const altKey = String(altRecipe.id).trim().toLowerCase();
             console.log(`TRAZA 4 - Alt veg encontrada: "${altRecipe.name}" (key=${altKey})`);
-            const altIngs = riByRecipe[altKey] || [];
+            const altIngs = getIngsForRecipe(altRecipe.id, altRecipe.name);
             console.log(`TRAZA 6 - Veg: ${altIngs.length} ingredientes para "${altRecipe.name}"`);
             if (altIngs.length === 0) console.error(`TRAZA ERROR UUID: "${altRecipe.name}" (key=${altKey}) sin ingredientes en mapa`);
             for (const ri of altIngs) {
