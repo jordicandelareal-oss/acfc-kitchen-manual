@@ -11,7 +11,8 @@ import {
   confirmOrderReception, 
   validarRecepcionPedido,
   fetchPlannerFullWithIngredients,
-  deletePurchaseOrder
+  deletePurchaseOrder,
+  generarListaComprasOptimizada
 } from '../api';
 import { 
   calcularCosteLineaIngrediente, 
@@ -51,6 +52,7 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
   const [internalIngredients, setInternalIngredients] = useState([]);
   const [loadingIngredients, setLoadingIngredients] = useState(false);
   const [plannerDays, setPlannerDays] = useState([]);
+  const [dualTrackVegItems, setDualTrackVegItems] = useState([]);
 
   // History / Active Orders State
   const [historyOrders, setHistoryOrders] = useState([]);
@@ -102,6 +104,51 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     }
   }, []);
 
+  // Cargar ingredientes del doble carril vegetariano (motor JS puro, sin stock_reservado)
+  const loadDualTrackVegItems = useCallback(async () => {
+    try {
+      console.log('TRAZA 1 - Iniciando motor de doble carril vegetariano...');
+      const { data: dualData, error: dualErr } = await generarListaComprasOptimizada();
+      if (dualErr) {
+        console.error('TRAZA ERROR: generarListaComprasOptimizada devolvió error:', dualErr);
+        return;
+      }
+      if (!dualData || dualData.length === 0) {
+        console.warn('TRAZA 2 - Motor doble carril: 0 ítems calculados. Revisa recetas, menú y comensales vegetarianos.');
+        return;
+      }
+      console.log(`TRAZA 2 - Motor doble carril: ${dualData.length} ítems calculados.`, dualData);
+      // Convertir al formato que usa activeOrderCalculatedItems
+      const vegItems = dualData
+        .filter(d => d.destinations && d.destinations.toLowerCase().includes('veg'))
+        .map(d => ({
+          id: `dual-veg-${d.nombre_ingrediente}-${d.proveedor}`,
+          rawName: d.nombre_ingrediente,
+          name: d.nombre_ingrediente,
+          supplierName: d.proveedor || 'Sin proveedor asignado',
+          supplierId: 'dual-track-veg',
+          supplierObj: { name: d.proveedor || 'Sin proveedor asignado' },
+          stock: Number(d.stock_actual || 0),
+          min: 0,
+          reserved: d.cantidad_necesaria,
+          alreadyOrdered: 0,
+          neededQuantity: Number(d.a_comprar || 0),
+          calculatedNeeded: Number(d.a_comprar || 0),
+          unitPrice: 0,
+          totalCost: 0,
+          isElCairo: false,
+          fromDualTrackVeg: true,
+          destinations: d.destinations,
+          proveedor: d.proveedor
+        }))
+        .filter(i => Number(i.neededQuantity) > 0);
+      console.log(`TRAZA 3 - Ítems vegetarianos inyectados en lista de compras: ${vegItems.length}`);
+      setDualTrackVegItems(vegItems);
+    } catch (e) {
+      console.error('TRAZA ERROR CRÍTICO en loadDualTrackVegItems:', e);
+    }
+  }, []);
+
   // Load purchase orders history & pending orders from Supabase
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -144,7 +191,8 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
     await Promise.all([
       loadIngredientsList(),
       loadPlannerData(),
-      loadHistory()
+      loadHistory(),
+      loadDualTrackVegItems()
     ]);
     if (onRefresh) onRefresh();
   }, [loadIngredientsList, loadPlannerData, loadHistory, onRefresh]);
@@ -387,8 +435,13 @@ const ComprasTab = ({ data, loading, month, onMonthChange, onRefresh, role, canE
       };
     }).filter(Boolean);
 
-    return [...allCairoItems, ...generalItems, ...manualAlertItems];
-  }, [safeData, plannerDays, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds, manualCartItems]);
+    // 5. Ítems del doble carril vegetariano (calculados en memoria, bypass de stock_reservado)
+    const dualVegFiltered = (dualTrackVegItems || []).filter(i =>
+      !justOrderedIds.has(i.id) && !manuallyClearedIds.has(i.id) && Number(i.neededQuantity) > 0
+    );
+
+    return [...allCairoItems, ...generalItems, ...manualAlertItems, ...dualVegFiltered];
+  }, [safeData, plannerDays, dualTrackVegItems, getStock, getMin, getReserved, customQuantities, orderedPendingMap, justOrderedIds, manuallyClearedIds, manualCartItems]);
 
   // Alertas de stock mínimo: ingredientes bajo su stock_minimo pero SIN reservas de menú.
   // Estos NO generan órdenes de compra — solo aparecen como alertas informativas.
