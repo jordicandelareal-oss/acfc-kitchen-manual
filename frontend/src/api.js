@@ -856,24 +856,36 @@ export const eliminarMenuYLiberarStock = async (datesArray) => {
 
 export const generarListaComprasOptimizada = async () => {
   try {
+    console.log("=== INICIO GENERACIÓN DE COMPRAS ===");
+    
     // 1. Fetch active vegetarians
     const { data: comensales } = await supabase.from('comensales').select('dieta').eq('activo', true);
     let vegCount = 0;
     if (comensales) {
       vegCount = comensales.filter(c => c.dieta && (c.dieta.toLowerCase().includes('veget') || c.dieta.toLowerCase().includes('vegan'))).length;
     }
-
-    console.log(`[MOTOR COMPRAS] Inicio de cálculo. Comensales vegetarianos activos detectados: ${vegCount}`);
+    const totalComensales = comensales ? comensales.length : 0;
+    console.log(`TRAZA 1 - Comensales totales y vegetarianos: Totales=${totalComensales}, Vegetarianos=${vegCount}`);
 
     // 2. Fetch data needed for calculation
     const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
+    if (!recipes || recipes.length === 0) {
+      console.error("TRAZA ERROR: Array de recetas vacío o no encontrado en BD.");
+    }
+    
     const { data: menuDays } = await supabase.from('menu_planner').select('*');
-    const { data: allRecipeIngredients } = await supabase.from('recipe_ingredients').select('recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte, ingredients(name, stock_actual, supplier_id, suppliers(name))');
+    if (!menuDays || menuDays.length === 0) {
+      console.error("TRAZA ERROR: Array de menús cargados (menu_planner) llegó vacío.");
+    } else {
+      console.log(`TRAZA 2 - Menús cargados del planificador: ${menuDays.length} días planificados.`);
+    }
 
-    if (!menuDays || !recipes || !allRecipeIngredients) {
-      console.warn('[MOTOR COMPRAS] Retorno vacío silencioso. Faltan datos esenciales en Supabase:', { 
-        menuDays: !!menuDays, recipes: !!recipes, allRecipeIngredients: !!allRecipeIngredients 
-      });
+    const { data: allRecipeIngredients } = await supabase.from('recipe_ingredients').select('recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte, ingredients(name, stock_actual, supplier_id, suppliers(name))');
+    if (!allRecipeIngredients || allRecipeIngredients.length === 0) {
+      console.error("TRAZA ERROR: No hay ingredientes mapeados en recipe_ingredients.");
+    }
+
+    if (!menuDays || !recipes || !allRecipeIngredients || menuDays.length === 0 || recipes.length === 0) {
       return { data: [], error: null };
     }
 
@@ -897,7 +909,6 @@ export const generarListaComprasOptimizada = async () => {
     
     // 3. Dual track calculation
     for (const day of menuDays) {
-      console.log(`[MOTOR COMPRAS] 📅 Analizando fecha: ${day.date}`);
       const turns = [
         { name: 'Desayuno', recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
         { name: 'Almuerzo', recipeId: day.lunch_recipe_id, players: day.lunch_players || 25 },
@@ -910,20 +921,21 @@ export const generarListaComprasOptimizada = async () => {
         
         const mainRecipe = recipes.find(r => r.id === turn.recipeId);
         if (!mainRecipe) {
-          console.warn(`[MOTOR COMPRAS] No se encontró la receta principal en memoria (ID: ${turn.recipeId}) para el turno: ${turn.name}`);
+          console.error(`TRAZA ERROR: No se encontró la receta (ID: ${turn.recipeId}) en memoria para ${turn.name}`);
           continue;
         }
         
+        console.log(`TRAZA 3 - Receta principal detectada: "${mainRecipe.name}" (Turno: ${turn.name})`);
+        
         const stdPlayers = Math.max(0, turn.players - vegCount);
         const vegPlayers = Math.min(turn.players, vegCount);
-        
-        console.log(`[MOTOR COMPRAS]   🍽️ Turno: ${turn.name} | Receta Principal: "${mainRecipe.name}" (Total pax: ${turn.players} | Estándar: ${stdPlayers} | Veg: ${vegPlayers})`);
 
         // Estándar
         if (stdPlayers > 0) {
           const stdIngs = allRecipeIngredients.filter(ri => ri.recipe_id === turn.recipeId);
-          console.log(`[MOTOR COMPRAS]     -> Ingredientes encontrados para receta principal: ${stdIngs.length}`);
-          if (stdIngs.length === 0) console.warn(`[MOTOR COMPRAS] La receta "${mainRecipe.name}" no tiene ingredientes en recipe_ingredients.`);
+          console.log(`TRAZA 5 - Ingredientes estándar calculados: ${stdIngs.length} items para ${stdPlayers} pax.`);
+          if (stdIngs.length === 0) console.error(`TRAZA ERROR: La receta estándar "${mainRecipe.name}" no tiene ingredientes asociados.`);
+          
           for (const ri of stdIngs) {
              tempNeeds.push({
                ing_id: ri.ingredient_id,
@@ -941,10 +953,11 @@ export const generarListaComprasOptimizada = async () => {
         if (vegPlayers > 0) {
           const altRecipe = getAlternative(turn.recipeId);
           if (altRecipe) {
-            console.log(`[MOTOR COMPRAS]   🌱 Receta Alternativa encontrada: "${altRecipe.name}" (ID: ${altRecipe.id})`);
+            console.log(`TRAZA 4 - Receta equivalente/vegetariana buscada: Encontrada "${altRecipe.name}"`);
             const altIngs = allRecipeIngredients.filter(ri => ri.recipe_id === altRecipe.id);
-            console.log(`[MOTOR COMPRAS]     -> Ingredientes encontrados para receta alternativa: ${altIngs.length}`);
-            if (altIngs.length === 0) console.warn(`[MOTOR COMPRAS] La receta alternativa "${altRecipe.name}" no tiene ingredientes en recipe_ingredients.`);
+            console.log(`TRAZA 6 - Ingredientes vegetarianos calculados: ${altIngs.length} items para ${vegPlayers} pax.`);
+            if (altIngs.length === 0) console.error(`TRAZA ERROR: La receta veg "${altRecipe.name}" no tiene ingredientes asociados.`);
+            
             for (const ri of altIngs) {
                tempNeeds.push({
                  ing_id: ri.ingredient_id,
@@ -957,7 +970,7 @@ export const generarListaComprasOptimizada = async () => {
                });
             }
           } else {
-            console.warn(`[MOTOR COMPRAS] No se pudo determinar receta alternativa vegetariana para "${mainRecipe.name}".`);
+            console.error(`TRAZA ERROR: No se encontró receta alternativa para "${mainRecipe.name}"`);
           }
         }
       }
@@ -992,7 +1005,7 @@ export const generarListaComprasOptimizada = async () => {
 
     return { data: result, error: null };
   } catch(e) {
-    console.error('Error en generarListaComprasOptimizada JS:', e);
+    console.error('TRAZA ERROR CRÍTICO en generarListaComprasOptimizada JS:', e);
     return { data: [], error: e };
   }
 };
