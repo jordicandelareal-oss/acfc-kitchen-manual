@@ -323,10 +323,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         comensalesRes.data.forEach(c => {
           if (c.activo !== false) {
             const d = (c.dieta || '').toLowerCase().trim();
-            if (d === 'halal') halal++;
-            if (d === 'vegano' || d === 'vegan') vegan++;
-            if (d === 'kosher') kosher++;
-            if (d === 'vegetariano' || d === 'vegetarian') vegetarian++;
+            if (d.includes('halal')) halal++;
+            if (d.includes('vegan')) vegan++;
+            if (d.includes('kosher')) kosher++;
+            if (d.includes('veget') || d.includes('vegan')) vegetarian++;
           }
         });
       }

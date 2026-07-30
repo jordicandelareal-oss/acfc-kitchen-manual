@@ -8,7 +8,7 @@ BEGIN
   SELECT count(*) INTO v_count
   FROM public.comensales
   WHERE activo = true 
-    AND (dieta ILIKE '%vegetarian%' OR dieta ILIKE '%vegano%' OR dieta ILIKE '%vegan%');
+    AND (dieta ILIKE '%veget%' OR dieta ILIKE '%vegano%' OR dieta ILIKE '%vegan%');
   RETURN COALESCE(v_count, 0);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

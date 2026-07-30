@@ -21,7 +21,7 @@ BEGIN
   -- 1. Determinar número de comensales vegetarianos activos
   SELECT count(*) INTO v_veg_count
   FROM public.comensales
-  WHERE activo = true AND (dieta ILIKE '%vegetarian%' OR dieta ILIKE '%vegan%');
+  WHERE activo = true AND (dieta ILIKE '%veget%' OR dieta ILIKE '%vegan%');
 
   -- Si es nulo por alguna razón, usar 0
   v_veg_count := COALESCE(v_veg_count, 0);
