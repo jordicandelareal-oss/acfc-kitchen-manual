@@ -863,12 +863,17 @@ export const generarListaComprasOptimizada = async () => {
       vegCount = comensales.filter(c => c.dieta && (c.dieta.toLowerCase().includes('veget') || c.dieta.toLowerCase().includes('vegan'))).length;
     }
 
+    console.log(`[MOTOR COMPRAS] Inicio de cálculo. Comensales vegetarianos activos detectados: ${vegCount}`);
+
     // 2. Fetch data needed for calculation
     const { data: recipes } = await supabase.from('recipes').select('id, name, is_vegetarian, category, equivalent_recipe_id');
     const { data: menuDays } = await supabase.from('menu_planner').select('*');
     const { data: allRecipeIngredients } = await supabase.from('recipe_ingredients').select('recipe_id, ingredient_id, quantity_per_portion, unit, tipo_corte, ingredients(name, stock_actual, supplier_id, suppliers(name))');
 
     if (!menuDays || !recipes || !allRecipeIngredients) {
+      console.warn('[MOTOR COMPRAS] Retorno vacío silencioso. Faltan datos esenciales en Supabase:', { 
+        menuDays: !!menuDays, recipes: !!recipes, allRecipeIngredients: !!allRecipeIngredients 
+      });
       return { data: [], error: null };
     }
 
@@ -892,6 +897,7 @@ export const generarListaComprasOptimizada = async () => {
     
     // 3. Dual track calculation
     for (const day of menuDays) {
+      console.log(`[MOTOR COMPRAS] 📅 Analizando fecha: ${day.date}`);
       const turns = [
         { name: 'Desayuno', recipeId: day.breakfast_recipe_id, players: day.breakfast_players || 20 },
         { name: 'Almuerzo', recipeId: day.lunch_recipe_id, players: day.lunch_players || 25 },
@@ -903,14 +909,21 @@ export const generarListaComprasOptimizada = async () => {
         if (!turn.recipeId || turn.players <= 0) continue;
         
         const mainRecipe = recipes.find(r => r.id === turn.recipeId);
-        if (!mainRecipe) continue;
+        if (!mainRecipe) {
+          console.warn(`[MOTOR COMPRAS] No se encontró la receta principal en memoria (ID: ${turn.recipeId}) para el turno: ${turn.name}`);
+          continue;
+        }
         
         const stdPlayers = Math.max(0, turn.players - vegCount);
         const vegPlayers = Math.min(turn.players, vegCount);
+        
+        console.log(`[MOTOR COMPRAS]   🍽️ Turno: ${turn.name} | Receta Principal: "${mainRecipe.name}" (Total pax: ${turn.players} | Estándar: ${stdPlayers} | Veg: ${vegPlayers})`);
 
         // Estándar
         if (stdPlayers > 0) {
           const stdIngs = allRecipeIngredients.filter(ri => ri.recipe_id === turn.recipeId);
+          console.log(`[MOTOR COMPRAS]     -> Ingredientes encontrados para receta principal: ${stdIngs.length}`);
+          if (stdIngs.length === 0) console.warn(`[MOTOR COMPRAS] La receta "${mainRecipe.name}" no tiene ingredientes en recipe_ingredients.`);
           for (const ri of stdIngs) {
              tempNeeds.push({
                ing_id: ri.ingredient_id,
@@ -928,7 +941,10 @@ export const generarListaComprasOptimizada = async () => {
         if (vegPlayers > 0) {
           const altRecipe = getAlternative(turn.recipeId);
           if (altRecipe) {
+            console.log(`[MOTOR COMPRAS]   🌱 Receta Alternativa encontrada: "${altRecipe.name}" (ID: ${altRecipe.id})`);
             const altIngs = allRecipeIngredients.filter(ri => ri.recipe_id === altRecipe.id);
+            console.log(`[MOTOR COMPRAS]     -> Ingredientes encontrados para receta alternativa: ${altIngs.length}`);
+            if (altIngs.length === 0) console.warn(`[MOTOR COMPRAS] La receta alternativa "${altRecipe.name}" no tiene ingredientes en recipe_ingredients.`);
             for (const ri of altIngs) {
                tempNeeds.push({
                  ing_id: ri.ingredient_id,
@@ -940,6 +956,8 @@ export const generarListaComprasOptimizada = async () => {
                  stock_actual: Number(ri.ingredients?.stock_actual) || 0
                });
             }
+          } else {
+            console.warn(`[MOTOR COMPRAS] No se pudo determinar receta alternativa vegetariana para "${mainRecipe.name}".`);
           }
         }
       }
