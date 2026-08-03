@@ -970,7 +970,10 @@ export const generarListaComprasOptimizada = async () => {
         ing_name: ing.name || 'Desconocido',
         ing_stock: Number(ing.stock_actual) || 0,
         supp_name: supp.name || 'Sin proveedor asignado',
-        unit: ing.unit || ri.unit || 'gr',
+        unit: (() => {
+          const u = String(ing.unit || ri.unit || 'gr').trim().toLowerCase();
+          return ['unidad', 'unidades', 'u', 'ud', 'uds', 'pcs', 'pieza', 'piezas'].includes(u) ? 'ud' : u;
+        })(),
         precio_por_kg: ing.precio_por_kg,
         precio_por_u: ing.precio_por_u,
         calculated_net_cost_kg: ing.calculated_net_cost_kg,

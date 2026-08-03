@@ -46,113 +46,6 @@ function App() {
   // Estado de Rol (RBAC) dictado estrictamente por auth.users y public.user_roles
   const [role, setRole] = useState(null);
 
-  // Verificación de sesión real de Supabase Auth con timeout de 1.5s
-  useEffect(() => {
-    let isMounted = true;
-
-    async function checkAuthSession() {
-      try {
-        const getSessionWithTimeout = () => {
-          return Promise.race([
-            supabase.auth.getSession(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Auth getSession timeout (1.5s)')), 1500)
-            )
-          ]);
-        };
-
-        const { data: { session } } = await getSessionWithTimeout();
-
-        if (!isMounted) return;
-
-        if (session?.user) {
-          setUserSession(session.user);
-          try {
-            const { data: roleRow } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            const dbRole = roleRow?.role || 'assistant';
-            setRole(dbRole);
-            localStorage.setItem('acfc_user_role', dbRole);
-            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-              id: session.user.id,
-              user: session.user.email,
-              role: dbRole,
-              status: 'authenticated'
-            });
-          } catch (e) {
-            setRole('assistant');
-            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-              id: session.user.id,
-              user: session.user.email,
-              role: 'assistant',
-              status: 'authenticated (role fallback)'
-            });
-          }
-        } else {
-          setUserSession(null);
-          setRole(null);
-          localStorage.removeItem('acfc_user_role');
-          console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-            user: null,
-            role: null,
-            status: 'unauthenticated'
-          });
-        }
-      } catch (err) {
-        if (!isMounted) return;
-        console.warn('[Auth] Timeout o error en la verificación de sesión:', err?.message || err);
-        setUserSession(null);
-        setRole(null);
-        localStorage.removeItem('acfc_user_role');
-        console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-          user: null,
-          role: null,
-          status: 'unauthenticated (timeout or error)'
-        });
-      } finally {
-        if (isMounted) {
-          setAuthChecking(false);
-          setIsInitializing(false);
-        }
-      }
-    }
-
-    checkAuthSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-      if (session?.user) {
-        setUserSession(session.user);
-        try {
-          const { data: roleRow } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          
-          const dbRole = roleRow?.role || 'assistant';
-          setRole(dbRole);
-          localStorage.setItem('acfc_user_role', dbRole);
-        } catch (e) {
-          setRole('assistant');
-        }
-      } else {
-        setUserSession(null);
-        setRole(null);
-        localStorage.removeItem('acfc_user_role');
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [globalRecipes, setGlobalRecipes] = useState([]);
 
@@ -183,11 +76,11 @@ function App() {
 
   const loadLowStockAlerts = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data: dbData, error } = await supabase
         .from('ingredients')
         .select('id, name, stock_actual, stock_minimo, unit, stock_reservado');
-      if (!error && data) {
-        const alerts = data.filter(i => {
+      if (!error && dbData) {
+        const alerts = dbData.filter(i => {
           const stock = Number(i.stock_actual) || 0;
           const min = Number(i.stock_minimo) || 0;
           // Solo alertar si tiene stock mínimo configurado (min > 0)
@@ -201,20 +94,14 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    if (notificationsOpen) {
-      loadLowStockAlerts();
-    }
-  }, [notificationsOpen, loadLowStockAlerts]);
-
   // Load recipes globally on startup
   const loadGlobalRecipes = useCallback(async () => {
     try {
-      const { data, error } = await fetchRecipesWithIngredients();
-      if (!error && data) {
-        setGlobalRecipes(data);
-        window.ALL_RECIPES = data;
-        window.RECIPES = data;
+      const { data: dbRecipes, error } = await fetchRecipesWithIngredients();
+      if (!error && dbRecipes) {
+        setGlobalRecipes(dbRecipes);
+        window.ALL_RECIPES = dbRecipes;
+        window.RECIPES = dbRecipes;
       } else {
         const { data: flatData } = await fetchRecipes();
         const recs = flatData || [];
@@ -227,11 +114,161 @@ function App() {
     }
   }, []);
 
+  const loadData = useCallback(async () => {
+    if (activeTab === 'dashboard' || activeTab === 'inventory' || activeTab === 'recipes' || activeTab === 'suppliers' || activeTab === 'planner') return;
+    setLoading(true);
+    try {
+      const res = await fetchData(activeTab, month);
+      if (res && res.success) {
+        setData(res.items || []);
+      } else {
+        setData([]);
+      }
+    } catch (e) {
+      console.error(e);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, month]);
+
+  // Verificación de sesión real de Supabase Auth con timeout de 1.5s
   useEffect(() => {
-    if (!authChecking && userSession) {
+    let isMounted = true;
+
+    async function checkAuthSession() {
+      try {
+        const getSessionWithTimeout = () => {
+          return Promise.race([
+            supabase.auth.getSession(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Auth getSession timeout (1.5s)')), 1500)
+            )
+          ]);
+        };
+
+        const { data: { session } } = await getSessionWithTimeout();
+
+        if (!isMounted) return;
+
+        if (session?.user) {
+          setUserSession(session.user);
+          let dbRole = 'assistant';
+          try {
+            const { data: roleRow } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            dbRole = roleRow?.role || 'assistant';
+            setRole(dbRole);
+            localStorage.setItem('acfc_user_role', dbRole);
+            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
+              id: session.user.id,
+              user: session.user.email,
+              role: dbRole,
+              status: 'authenticated'
+            });
+          } catch (e) {
+            setRole('assistant');
+            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
+              id: session.user.id,
+              user: session.user.email,
+              role: 'assistant',
+              status: 'authenticated (role fallback)'
+            });
+          }
+
+          // Esperamos a que los datos iniciales se descarguen por completo antes de ocultar la barrera de carga
+          console.log('[Auth] Cargando datos iniciales para el Cold Start...');
+          await Promise.all([
+            loadGlobalRecipes(),
+            loadLowStockAlerts()
+          ]);
+          console.log('[Auth] Datos iniciales cargados con éxito.');
+        } else {
+          setUserSession(null);
+          setRole(null);
+          localStorage.removeItem('acfc_user_role');
+          console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
+            user: null,
+            role: null,
+            status: 'unauthenticated'
+          });
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        console.warn('[Auth] Timeout o error en la verificación de sesión:', err?.message || err);
+        setUserSession(null);
+        setRole(null);
+        localStorage.removeItem('acfc_user_role');
+      } finally {
+        if (isMounted) {
+          setAuthChecking(false);
+          setIsInitializing(false);
+        }
+      }
+    }
+
+    checkAuthSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        setUserSession(session.user);
+        let dbRole = 'assistant';
+        try {
+          const { data: roleRow } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          
+          dbRole = roleRow?.role || 'assistant';
+          setRole(dbRole);
+          localStorage.setItem('acfc_user_role', dbRole);
+        } catch (e) {
+          setRole('assistant');
+        }
+
+        // Si se loguea o cambia la sesión a activa, volvemos a poner loading para sincronizar datos
+        setIsInitializing(true);
+        try {
+          await Promise.all([
+            loadGlobalRecipes(),
+            loadLowStockAlerts()
+          ]);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsInitializing(false);
+        }
+      } else {
+        setUserSession(null);
+        setRole(null);
+        localStorage.removeItem('acfc_user_role');
+        setIsInitializing(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [loadGlobalRecipes, loadLowStockAlerts]);
+
+  useEffect(() => {
+    if (notificationsOpen && userSession && !isInitializing) {
+      loadLowStockAlerts();
+    }
+  }, [notificationsOpen, userSession, isInitializing, loadLowStockAlerts]);
+
+  useEffect(() => {
+    if (!authChecking && userSession && !isInitializing) {
       loadGlobalRecipes();
     }
-  }, [authChecking, userSession, loadGlobalRecipes]);
+  }, [authChecking, userSession, isInitializing, loadGlobalRecipes]);
 
   // Interoperabilidad con código legacy del index.html
   useEffect(() => {
@@ -267,29 +304,11 @@ function App() {
     };
   }, []);
 
-  const loadData = useCallback(async () => {
-    if (activeTab === 'dashboard' || activeTab === 'inventory' || activeTab === 'recipes' || activeTab === 'suppliers' || activeTab === 'planner') return;
-    setLoading(true);
-    try {
-      const res = await fetchData(activeTab, month);
-      if (res && res.success) {
-        setData(res.items || []);
-      } else {
-        setData([]);
-      }
-    } catch (e) {
-      console.error(e);
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, month]);
-
   useEffect(() => {
-    if (!authChecking && userSession) {
+    if (!authChecking && userSession && !isInitializing) {
       loadData();
     }
-  }, [authChecking, userSession, loadData]);
+  }, [authChecking, userSession, isInitializing, loadData]);
 
   const allTabs = [
     { id: 'dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
@@ -314,7 +333,7 @@ function App() {
     }
   };
 
-  if (isInitializing) {
+  if (isInitializing || authChecking) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
         <div className="flex flex-col items-center gap-4 animate-pulse">
@@ -340,9 +359,20 @@ function App() {
   if (!userSession) {
     return (
       <LoginScreen 
-        onLoginSuccess={(user, userRole) => { 
+        onLoginSuccess={async (user, userRole) => { 
+          setIsInitializing(true);
           setUserSession(user); 
           setRole(userRole); 
+          try {
+            await Promise.all([
+              loadGlobalRecipes(),
+              loadLowStockAlerts()
+            ]);
+          } catch (e) {
+            console.error('Error al descargar recetas iniciales pos-login:', e);
+          } finally {
+            setIsInitializing(false);
+          }
         }} 
       />
     );
