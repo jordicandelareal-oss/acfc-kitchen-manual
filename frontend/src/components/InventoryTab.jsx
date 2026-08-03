@@ -250,6 +250,14 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
       return;
     }
 
+    // Normalizar el escenario de coste para Supabase
+    let normalizedScenario = ingOutputScenario;
+    if (['UNIT', 'UNIDADES', 'unidad', 'unidades', 'u', 'ud', 'uds'].includes(String(ingOutputScenario).toUpperCase()) || ['UNIT', 'UNIDADES', 'unidad', 'unidades', 'u', 'ud', 'uds'].includes(String(ingOutputScenario).toLowerCase())) {
+      normalizedScenario = 'UNIDADES';
+    } else {
+      normalizedScenario = 'KG_LT';
+    }
+
     const payload = {
       name: ingName.trim(),
       brand: ingBrand.trim(),
@@ -259,7 +267,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
       provider_ref: ingProviderRef.trim(),
       purchase_format_gr: parseFloat(ingFormatGr) || null,
       purchase_price: parseFloat(ingPurchasePrice) || null,
-      output_scenario: ingOutputScenario,
+      output_scenario: normalizedScenario,
       waste_percentage: parseFloat(ingWaste) || 0,
       process_type: processType,
       unit: 'gr',
@@ -273,7 +281,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
     const format = parseFloat(ingFormatGr) || 0;
     const price = parseFloat(ingPurchasePrice) || 0;
     const pct = parseFloat(ingWaste) || 0;
-    const baseCostPerKg = window.mathUtils ? window.mathUtils.calcularCosteBase(price, format, ingOutputScenario) : (ingOutputScenario === 'KG_LT' ? (format > 0 ? price / (format / 1000) : 0) : (format > 0 ? price / format : 0));
+    const baseCostPerKg = window.mathUtils ? window.mathUtils.calcularCosteBase(price, format, normalizedScenario) : (normalizedScenario === 'KG_LT' ? (format > 0 ? price / (format / 1000) : 0) : (format > 0 ? price / format : 0));
     const netCost = window.mathUtils ? window.mathUtils.calcularCosteNeto(baseCostPerKg, pct, processType) : (processType === 'MERMA' ? (1 - pct/100 > 0 ? baseCostPerKg / (1 - pct/100) : 0) : baseCostPerKg / (1 + pct/100));
 
     if (netCost > 0) {
@@ -1091,7 +1099,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Escenario coste</label>
                   <select value={ingOutputScenario} onChange={e => setIngOutputScenario(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
                     <option value="KG_LT">€ / Kg o Litro</option>
-                    <option value="UNIT">€ / Unidad</option>
+                    <option value="UNIDADES">€ / Unidad</option>
                   </select>
                 </div>
               </div>
