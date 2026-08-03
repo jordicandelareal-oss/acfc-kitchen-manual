@@ -222,7 +222,7 @@ export const deleteComensal = async (id) => {
 
 // ── Ingredients ──
 export const fetchIngredients = async () => {
-  return supabase.from('ingredients').select('*').order('name');
+  return supabase.from('ingredients').select('*, suppliers(name)').order('name');
 };
 
 export const insertIngredient = async (payload) => {

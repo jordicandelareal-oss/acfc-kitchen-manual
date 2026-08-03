@@ -6,7 +6,8 @@ import {
   deleteIngredient,
   updateCategoryName,
   nullifyCategory,
-  updateSubcategory
+  updateSubcategory,
+  fetchSuppliers
 } from '../api';
 
 export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, isInitializing = false }) {
@@ -62,6 +63,18 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
   const loadInventory = useCallback(async () => {
     setLoading(true);
     try {
+      // Carga masiva de proveedores en caché si no está inicializada
+      if (!window.SUPPLIERS || window.SUPPLIERS.length === 0) {
+        try {
+          const { data: suppData, error: suppErr } = await fetchSuppliers();
+          if (!suppErr && suppData) {
+            window.SUPPLIERS = suppData;
+          }
+        } catch (e) {
+          console.error('Error precargando proveedores en caché:', e);
+        }
+      }
+
       const { data, error: fetchErr } = await fetchIngredients();
       if (fetchErr) throw fetchErr;
 
@@ -85,9 +98,9 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
 
         const calculatedCost = netCost > 0 ? netCost : Number(item.calculated_net_cost_kg || item.precio_mas_bajo || item.precio_por_u || item.precio_por_kg || 0);
 
-        // Supplier name resolution
+        // Supplier name resolution cruzando el JOIN relacional o la caché local
         const suppObj = suppliersList.find(s => s.id === item.supplier_id);
-        const resolvedSupplierName = suppObj ? suppObj.name : (item.proveedor_principal || (item.supplier_id ? 'Cargando...' : 'Sin proveedor asignado'));
+        const resolvedSupplierName = item.suppliers?.name || (suppObj ? suppObj.name : (item.proveedor_principal || 'Sin proveedor asignado'));
 
         return {
           id: item.id,
