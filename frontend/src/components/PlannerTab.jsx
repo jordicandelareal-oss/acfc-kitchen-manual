@@ -1022,7 +1022,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         }
 
         const weeklyUsedRecipeIds = new Set();
-        let hasVegInWeek = false;
+        let vegCountInWeek = 0;
         const breakfastId = sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944');
         if (breakfastId) {
           weeklyUsedRecipeIds.add(breakfastId);
@@ -1036,12 +1036,15 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           let lunchRecipe = null;
           let shuffledMainsForLunch = shuffleArray(mainRecipes);
 
-          // Force vegetarian recipe on Sunday lunch if rule is active and no vegetarian recipe was planned yet.
-          const forceVegToday = settings['menu_setting_vegetariano_general'] && offset === 6 && !hasVegInWeek;
-          if (forceVegToday) {
-            const vegMains = shuffledMainsForLunch.filter(isVegetarianRecipe);
-            if (vegMains.length > 0) {
-              shuffledMainsForLunch = vegMains;
+          // Force exactly 1 vegetarian recipe:
+          if (settings['menu_setting_vegetariano_general']) {
+            if (vegCountInWeek >= 1) {
+              shuffledMainsForLunch = shuffledMainsForLunch.filter(r => !isVegetarianRecipe(r));
+            } else if (offset === 6 && vegCountInWeek === 0) {
+              const vegMains = shuffledMainsForLunch.filter(isVegetarianRecipe);
+              if (vegMains.length > 0) {
+                shuffledMainsForLunch = vegMains;
+              }
             }
           }
 
@@ -1069,7 +1072,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             recentRecipeIds.push(randLunch);
             weeklyUsedRecipeIds.add(randLunch);
             if (isVegetarianRecipe(lunchRecipe)) {
-              hasVegInWeek = true;
+              vegCountInWeek++;
             }
           }
 
@@ -1118,12 +1121,15 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           let dinnerRecipe = null;
           let shuffledMainsForDinner = shuffleArray(mainRecipes);
 
-          // Force vegetarian recipe on Sunday dinner if rule is active and no vegetarian recipe was planned yet.
-          const forceVegDinner = settings['menu_setting_vegetariano_general'] && offset === 6 && !hasVegInWeek;
-          if (forceVegDinner) {
-            const vegMains = shuffledMainsForDinner.filter(isVegetarianRecipe);
-            if (vegMains.length > 0) {
-              shuffledMainsForDinner = vegMains;
+          // Force exactly 1 vegetarian recipe:
+          if (settings['menu_setting_vegetariano_general']) {
+            if (vegCountInWeek >= 1) {
+              shuffledMainsForDinner = shuffledMainsForDinner.filter(r => !isVegetarianRecipe(r));
+            } else if (offset === 6 && vegCountInWeek === 0) {
+              const vegMains = shuffledMainsForDinner.filter(isVegetarianRecipe);
+              if (vegMains.length > 0) {
+                shuffledMainsForDinner = vegMains;
+              }
             }
           }
 
@@ -1150,7 +1156,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             recentRecipeIds.push(randDinner);
             weeklyUsedRecipeIds.add(randDinner);
             if (isVegetarianRecipe(dinnerRecipe)) {
-              hasVegInWeek = true;
+              vegCountInWeek++;
             }
           }
 

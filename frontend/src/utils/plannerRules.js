@@ -54,8 +54,8 @@ export const PLANNER_RULES = {
     },
     {
       key: 'menu_setting_vegetariano_general',
-      label: 'Incluir al menos 1 plato vegetariano a la semana (Menú General)',
-      desc: 'Obliga a introducir al menos una opción vegetariana en el menú principal de la semana.',
+      label: 'Exactamente 1 plato vegetariano a la semana (Menú General)',
+      desc: 'Garantiza que el menú general contenga exactamente una única opción vegetariana por semana.',
       type: 'boolean',
       defaultValue: false,
       section: 'personalizable'
