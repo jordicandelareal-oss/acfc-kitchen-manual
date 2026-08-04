@@ -186,6 +186,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [comensalesModalOpen, setComensalesModalOpen] = useState(false);
+  const [baseComensalesModalOpen, setBaseComensalesModalOpen] = useState(false);
 
   // Day Form State
   const [dayForm, setDayForm] = useState({
@@ -210,6 +211,24 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     dinner_allergies: ''
   });
 
+  const [baseComensalesForm, setBaseComensalesForm] = useState({
+    breakfast_players: 20,
+    breakfast_halal: 0,
+    breakfast_kosher: 0,
+    breakfast_vegan: 0,
+    breakfast_allergies: '',
+    lunch_players: 25,
+    lunch_halal: 0,
+    lunch_kosher: 0,
+    lunch_vegan: 0,
+    lunch_allergies: '',
+    dinner_players: 20,
+    dinner_halal: 0,
+    dinner_kosher: 0,
+    dinner_vegan: 0,
+    dinner_allergies: ''
+  });
+
   const addLog = useCallback((msg, type = 'info') => {
     const ts = new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
@@ -217,6 +236,222 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   }, []);
 
   const [currentDate, setCurrentDate] = useState(() => getMadridTodayDateObject()); // Default: Current system date
+
+  // ── Calcular suma reactiva de comensales visibles en pantalla ──
+  const visibleComensalesSum = useMemo(() => {
+    let sum = 0;
+    let visibleDates = [];
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    if (viewMode === 'day') {
+      const activeDayNum = selectedDay || getMadridTodayDateObject().getDate();
+      visibleDates = [`${year}-${String(month + 1).padStart(2, '0')}-${String(activeDayNum).padStart(2, '0')}`];
+    } else if (viewMode === 'week') {
+      selectedWeeks.forEach(w => {
+        const weekDaysList = getMadridWeekRange(year, month, w);
+        weekDaysList.forEach(d => {
+          if (d?.dateStr) visibleDates.push(d.dateStr);
+        });
+      });
+    } else if (viewMode === 'range') {
+      const days = getMadridWeekRange(year, month, selectedWeeks[0] || 1); // fallback
+      const customDays = getMadridWeekRange(year, month, selectedWeeks[0] || 1); // fallback
+      // use range
+      if (customStartDate && customEndDate) {
+        const start = new Date(customStartDate);
+        const end = new Date(customEndDate);
+        let curr = new Date(start);
+        while (curr <= end) {
+          const iso = curr.toISOString().split('T')[0];
+          visibleDates.push(iso);
+          curr.setDate(curr.getDate() + 1);
+        }
+      }
+    } else {
+      // viewMode === 'month'
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        visibleDates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+      }
+    }
+
+    visibleDates.forEach(date => {
+      const dayData = plannerData[date];
+      if (dayData) {
+        sum += (Number(dayData.breakfast_players) || 0) +
+               (Number(dayData.lunch_players) || 0) +
+               (Number(dayData.dinner_players) || 0);
+      }
+    });
+
+    return sum;
+  }, [plannerData, selectedWeeks, currentDate, viewMode, selectedDay, customStartDate, customEndDate]);
+
+  const openBaseComensalesModal = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const weekNum = selectedWeeks[0] || 1;
+    const weekDaysList = getMadridWeekRange(year, month, weekNum);
+    const weekMondayStr = weekDaysList[0]?.dateStr || '';
+    const currentWeekPlayers = weeklyPlayers[weekMondayStr] || { lunch: 25, dinner: 20, breakfast: 20 };
+    
+    let baseHalalLunch = 0;
+    let baseKosherLunch = 0;
+    let baseVeganLunch = 0;
+    let baseAllergiesLunch = '';
+    
+    let baseHalalDinner = 0;
+    let baseKosherDinner = 0;
+    let baseVeganDinner = 0;
+    let baseAllergiesDinner = '';
+
+    let baseHalalBreakfast = 0;
+    let baseKosherBreakfast = 0;
+    let baseVeganBreakfast = 0;
+    let baseAllergiesBreakfast = '';
+
+    weekDaysList.forEach(({ dateStr }) => {
+      const dayData = plannerData[dateStr];
+      if (dayData) {
+        if (dayData.lunch_halal) baseHalalLunch = dayData.lunch_halal;
+        if (dayData.lunch_kosher) baseKosherLunch = dayData.lunch_kosher;
+        if (dayData.lunch_vegan) baseVeganLunch = dayData.lunch_vegan;
+        if (dayData.lunch_allergies) {
+          const cleaned = dayData.lunch_allergies.replace(/\s*\[manual\]/g, '').replace(/^\[manual\]/g, '');
+          if (cleaned) baseAllergiesLunch = cleaned;
+        }
+
+        if (dayData.dinner_halal) baseHalalDinner = dayData.dinner_halal;
+        if (dayData.dinner_kosher) baseKosherDinner = dayData.dinner_kosher;
+        if (dayData.dinner_vegan) baseVeganDinner = dayData.dinner_vegan;
+        if (dayData.dinner_allergies) baseAllergiesDinner = dayData.dinner_allergies;
+
+        if (dayData.breakfast_halal) baseHalalBreakfast = dayData.breakfast_halal;
+        if (dayData.breakfast_kosher) baseKosherBreakfast = dayData.breakfast_kosher;
+        if (dayData.breakfast_vegan) baseVeganBreakfast = dayData.breakfast_vegan;
+        if (dayData.breakfast_allergies) baseAllergiesBreakfast = dayData.breakfast_allergies;
+      }
+    });
+
+    setBaseComensalesForm({
+      breakfast_players: currentWeekPlayers.breakfast ?? 20,
+      breakfast_halal: baseHalalBreakfast,
+      breakfast_kosher: baseKosherBreakfast,
+      breakfast_vegan: baseVeganBreakfast,
+      breakfast_allergies: baseAllergiesBreakfast,
+      lunch_players: currentWeekPlayers.lunch ?? 25,
+      lunch_halal: baseHalalLunch,
+      lunch_kosher: baseKosherLunch,
+      lunch_vegan: baseVeganLunch,
+      lunch_allergies: baseAllergiesLunch,
+      dinner_players: currentWeekPlayers.dinner ?? 20,
+      dinner_halal: baseHalalDinner,
+      dinner_kosher: baseKosherDinner,
+      dinner_vegan: baseVeganDinner,
+      dinner_allergies: baseAllergiesDinner
+    });
+    
+    setBaseComensalesModalOpen(true);
+  };
+
+  const handleApplyWeeklyComensales = async () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const weekNum = selectedWeeks[0] || 1;
+    const weekDaysList = getMadridWeekRange(year, month, weekNum);
+    
+    addLog(`Aplicando comensales base a la semana ${weekNum}...`, 'info');
+    
+    try {
+      const daysToSave = [];
+      const confirmedDaysToSave = [];
+      const newPlannerData = { ...plannerData };
+      
+      weekDaysList.forEach(({ dateStr }) => {
+        const existing = plannerData[dateStr] || {};
+        
+        // Si el día ya está personalizado manualmente ([manual]), lo respetamos por completo
+        if (existing.lunch_allergies?.includes('[manual]')) {
+          return;
+        }
+        
+        const updatedDay = {
+          ...existing,
+          date: dateStr,
+          breakfast_recipe_id: existing.breakfast_recipe_id || existing.breakfast_recipe || null,
+          lunch_recipe_id: existing.lunch_recipe_id || existing.lunch_recipe || null,
+          lunch_side_recipe_id: existing.lunch_side_recipe_id || existing.lunch_side_recipe || null,
+          dinner_recipe_id: existing.dinner_recipe_id || existing.dinner_recipe || null,
+          breakfast_players: Number(baseComensalesForm.breakfast_players) || 0,
+          breakfast_halal: Number(baseComensalesForm.breakfast_halal) || 0,
+          breakfast_kosher: Number(baseComensalesForm.breakfast_kosher) || 0,
+          breakfast_vegan: Number(baseComensalesForm.breakfast_vegan) || 0,
+          breakfast_allergies: baseComensalesForm.breakfast_allergies || '',
+          lunch_players: Number(baseComensalesForm.lunch_players) || 0,
+          lunch_halal: Number(baseComensalesForm.lunch_halal) || 0,
+          lunch_kosher: Number(baseComensalesForm.lunch_kosher) || 0,
+          lunch_vegan: Number(baseComensalesForm.lunch_vegan) || 0,
+          lunch_allergies: baseComensalesForm.lunch_allergies || '',
+          dinner_players: Number(baseComensalesForm.dinner_players) || 0,
+          dinner_halal: Number(baseComensalesForm.dinner_halal) || 0,
+          dinner_kosher: Number(baseComensalesForm.dinner_kosher) || 0,
+          dinner_vegan: Number(baseComensalesForm.dinner_vegan) || 0,
+          dinner_allergies: baseComensalesForm.dinner_allergies || '',
+        };
+        
+        newPlannerData[dateStr] = updatedDay;
+        
+        if (existing.confirmado) {
+          confirmedDaysToSave.push({ ...updatedDay, confirmado: true });
+        } else {
+          daysToSave.push(updatedDay);
+        }
+      });
+      
+      // Persistencia atómica en Supabase
+      if (daysToSave.length > 0) {
+        const { error } = await api.guardarMenuBorrador(daysToSave);
+        if (error) throw error;
+      }
+      
+      if (confirmedDaysToSave.length > 0) {
+        const { error } = await api.guardarYConfirmarMenu(confirmedDaysToSave);
+        if (error) throw error;
+      }
+      
+      // Actualizar estado frontend
+      setPlannerData(newPlannerData);
+      
+      // Actualizar weeklyPlayers para coherencia del generador semanal
+      const weekMondayStr = weekDaysList[0].dateStr;
+      setWeeklyPlayers(prev => {
+        const updated = {
+          ...prev,
+          [weekMondayStr]: {
+            lunch: Number(baseComensalesForm.lunch_players) || 25,
+            dinner: Number(baseComensalesForm.dinner_players) || 20,
+            breakfast: Number(baseComensalesForm.breakfast_players) || 20
+          }
+        };
+        localStorage.setItem('acfc_weekly_players_v2', JSON.stringify(updated));
+        return updated;
+      });
+      
+      addLog(`Comensales base aplicados con éxito a la semana ${weekNum}`, 'success');
+      if (typeof window.toast === 'function') {
+        window.toast(`✅ Comensales base aplicados a la semana ${weekNum}`);
+      }
+      
+      setBaseComensalesModalOpen(false);
+      loadData();
+    } catch (err) {
+      addLog(`Error al aplicar comensales base: ${err.message}`, 'error');
+      if (typeof window.toast === 'function') {
+        window.toast(`❌ Error: ${err.message}`);
+      }
+    }
+  };
 
   const goToCurrentWeek = () => {
     const today = getMadridTodayDateObject();
@@ -462,7 +697,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     addLog(`Guardando día ${selectedDay} (${formattedDate})...`, 'info');
     setSaveStatus('saving');
     try {
-      
+      // Añadir marca de manual a lunch_allergies si no existe
+      let finalLunchAllergies = dayForm.lunch_allergies || '';
+      if (!finalLunchAllergies.includes('[manual]')) {
+        finalLunchAllergies = finalLunchAllergies ? `${finalLunchAllergies} [manual]` : '[manual]';
+      }
+
       const payload = {
         date: formattedDate,
         breakfast_recipe_id: sanitizeRecipeId(dayForm.breakfast_recipe_id),
@@ -478,7 +718,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         lunch_halal: Number(dayForm.lunch_halal) || 0,
         lunch_kosher: Number(dayForm.lunch_kosher) || 0,
         lunch_vegan: Number(dayForm.lunch_vegan) || 0,
-        lunch_allergies: dayForm.lunch_allergies || '',
+        lunch_allergies: finalLunchAllergies,
         dinner_players: Number(dayForm.dinner_players) || 0,
         dinner_halal: Number(dayForm.dinner_halal) || 0,
         dinner_kosher: Number(dayForm.dinner_kosher) || 0,
@@ -488,8 +728,14 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       
       console.log('Depurando objeto a guardar:', payload);
       
-      const { error } = await api.guardarMenuBorrador([payload]);
-      if (error) throw error;
+      const dayData = plannerData[formattedDate] || {};
+      let saveResult;
+      if (dayData.confirmado) {
+        saveResult = await api.guardarYConfirmarMenu([{ ...payload, confirmado: true }]);
+      } else {
+        saveResult = await api.guardarMenuBorrador([payload]);
+      }
+      if (saveResult && saveResult.error) throw saveResult.error;
 
       // Actualizar estado local inmediatamente para refrescar la tarjeta visual al instante
       setPlannerData(prev => {
@@ -534,6 +780,10 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     
     const savedSideId = dayData.lunch_side_recipe_id || dayData.lunch_side_recipe?.id || '';
 
+    // Limpiar flag manual de lunch_allergies
+    let displayLunchAllergies = dayData.lunch_allergies || '';
+    displayLunchAllergies = displayLunchAllergies.replace(/\s*\[manual\]/g, '').replace(/^\[manual\]/g, '');
+
     setDayForm({
       breakfast_recipe_id: dayData.breakfast_recipe_id || '',
       lunch_recipe_id: dayData.lunch_recipe_id || '',
@@ -548,7 +798,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       lunch_halal: dayData.lunch_halal || 0,
       lunch_kosher: dayData.lunch_kosher || 0,
       lunch_vegan: dayData.lunch_vegan || 0,
-      lunch_allergies: dayData.lunch_allergies || '',
+      lunch_allergies: displayLunchAllergies,
       dinner_players: dayData.dinner_players || 20,
       dinner_halal: dayData.dinner_halal || 0,
       dinner_kosher: dayData.dinner_kosher || 0,
@@ -803,27 +1053,30 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
           const weekBreakfastPlayers = Number(weeklyPlayers[weekMondayStr]?.breakfast) || 20;
 
+          const existingDayData = plannerData[dateISO] || {};
+          const isManual = existingDayData.lunch_allergies?.includes('[manual]');
+
           upserts.push({
             date: dateISO,
             breakfast_recipe_id: sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944'),
             lunch_recipe_id: randLunch,
             lunch_side_recipe_id: randSide,
             dinner_recipe_id: randDinner,
-            breakfast_players: weekBreakfastPlayers,
-            breakfast_halal: 0,
-            breakfast_kosher: 0,
-            breakfast_vegan: 0,
-            breakfast_allergies: '',
-            lunch_players: weekLunchPlayers,
-            lunch_halal: 0,
-            lunch_kosher: 0,
-            lunch_vegan: 0,
-            lunch_allergies: '1 Celíaco',
-            dinner_players: weekDinnerPlayers,
-            dinner_halal: 0,
-            dinner_kosher: 0,
-            dinner_vegan: 0,
-            dinner_allergies: ''
+            breakfast_players: isManual ? (Number(existingDayData.breakfast_players) || weekBreakfastPlayers) : weekBreakfastPlayers,
+            breakfast_halal: isManual ? (Number(existingDayData.breakfast_halal) || 0) : 0,
+            breakfast_kosher: isManual ? (Number(existingDayData.breakfast_kosher) || 0) : 0,
+            breakfast_vegan: isManual ? (Number(existingDayData.breakfast_vegan) || 0) : 0,
+            breakfast_allergies: isManual ? (existingDayData.breakfast_allergies || '') : '',
+            lunch_players: isManual ? (Number(existingDayData.lunch_players) || weekLunchPlayers) : weekLunchPlayers,
+            lunch_halal: isManual ? (Number(existingDayData.lunch_halal) || 0) : 0,
+            lunch_kosher: isManual ? (Number(existingDayData.lunch_kosher) || 0) : 0,
+            lunch_vegan: isManual ? (Number(existingDayData.lunch_vegan) || 0) : 0,
+            lunch_allergies: isManual ? (existingDayData.lunch_allergies || '1 Celíaco') : '1 Celíaco',
+            dinner_players: isManual ? (Number(existingDayData.dinner_players) || weekDinnerPlayers) : weekDinnerPlayers,
+            dinner_halal: isManual ? (Number(existingDayData.dinner_halal) || 0) : 0,
+            dinner_kosher: isManual ? (Number(existingDayData.dinner_kosher) || 0) : 0,
+            dinner_vegan: isManual ? (Number(existingDayData.dinner_vegan) || 0) : 0,
+            dinner_allergies: isManual ? (existingDayData.dinner_allergies || '') : ''
           });
         });
       });
@@ -1046,75 +1299,18 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </div>
           )}
 
-          {/* Quick Weekly Players Controls — Independent Lunch & Dinner */}
-          {(() => {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const weekNum = selectedWeeks[0] || 1;
-            const weekDaysList = getMadridWeekRange(year, month, weekNum);
-            const weekMondayStr = weekDaysList[0]?.dateStr || '';
-            const currentPlayers = weeklyPlayers[weekMondayStr] || { lunch: 25, dinner: 20 };
-            return (
-              <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
-                <div className="flex items-center gap-1">
-                  <Users size={14} className="text-indigo-600 ml-1" />
-                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
-                    Sem {weekNum}:
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {/* Comida / Lunch */}
-                  <div className="flex items-center gap-1 bg-white border border-brand/30 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Almuerzo">
-                    <span className="text-[10px] font-bold text-brand">☀️</span>
-                    {canEdit && (
-                      <button 
-                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'lunch', -1)}
-                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                      >
-                        -
-                      </button>
-                    )}
-                    <span className="font-extrabold text-xs text-slate-800 min-w-[18px] text-center">
-                      {currentPlayers.lunch ?? 25}
-                    </span>
-                    {canEdit && (
-                      <button 
-                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'lunch', 1)}
-                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                      >
-                        +
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Cena / Dinner */}
-                  <div className="flex items-center gap-1 bg-white border border-indigo-200 rounded-lg px-1.5 py-0.5 shadow-xs" title="Comensales Cena">
-                    <span className="text-[10px] font-bold text-indigo-600">🌙</span>
-                    {canEdit && (
-                      <button 
-                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'dinner', -1)}
-                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                      >
-                        -
-                      </button>
-                    )}
-                    <span className="font-extrabold text-xs text-indigo-950 min-w-[18px] text-center">
-                      {currentPlayers.dinner ?? 20}
-                    </span>
-                    {canEdit && (
-                      <button 
-                        onClick={() => handleUpdateMealPlayers(weekMondayStr, 'dinner', 1)}
-                        className="w-4 h-4 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors text-xs cursor-pointer"
-                      >
-                        +
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+          {/* Quick Weekly Players Controls — Informativo y Reactivo */}
+          <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+            <div className="flex items-center gap-1.5">
+              <Users size={14} className="text-indigo-600 ml-1" />
+              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
+                Comensales en Pantalla:
+              </span>
+              <span className="font-extrabold text-xs text-indigo-950 bg-white border border-indigo-200 rounded-lg px-2 py-0.5 shadow-xs">
+                {visibleComensalesSum} pax
+              </span>
+            </div>
+          </div>
 
           {/* Auto-generate button */}
           {canEdit && (
@@ -1194,6 +1390,17 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             >
               <Users size={14} />
               <span>Comensales</span>
+            </button>
+          )}
+
+          {/* Asignar Base Semanal button — only for chef/admin */}
+          {canEdit && (
+            <button 
+              onClick={openBaseComensalesModal}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-muted/20 text-brand border border-brand/20 rounded-xl text-xs font-semibold hover:bg-brand-muted/30 transition-all whitespace-nowrap cursor-pointer"
+            >
+              <Users size={14} />
+              <span>Asignar Base Semanal</span>
             </button>
           )}
 
@@ -1445,7 +1652,13 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                               </div>
 
                               <div className="pt-2 mt-2 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
-                                <span>Editar</span>
+                                {menu?.lunch_allergies?.includes('[manual]') ? (
+                                  <span className="flex items-center gap-0.5 text-indigo-600 font-bold bg-indigo-50 border border-indigo-200/50 px-1 py-0.5 rounded text-[8px] uppercase tracking-wide" title="Comensales personalizados manualmente">
+                                    👤 Personalizado
+                                  </span>
+                                ) : (
+                                  <span>Editar</span>
+                                )}
                                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
                               </div>
                             </div>
@@ -1593,7 +1806,12 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                           }`}
                         >
                           <div className="flex justify-between items-center">
-                            <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-xs font-black ${isToday ? 'text-brand' : 'text-slate-700'}`}>{d}</span>
+                              {menu?.lunch_allergies?.includes('[manual]') && (
+                                <span className="text-[9px] text-indigo-600 font-bold" title="Comensales personalizados manualmente">👤</span>
+                              )}
+                            </div>
                             {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
                           </div>
 
@@ -1694,6 +1912,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                           <div className="flex items-center gap-1.5">
                             <span className={`text-xs font-bold font-display ${isToday ? 'text-brand' : 'text-slate-500'}`}>{d}</span>
                             {isToday && <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>}
+                            {menu?.lunch_allergies?.includes('[manual]') && (
+                              <span className="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200/60 rounded px-1 flex items-center font-bold" title="Comensales personalizados manualmente">
+                                👤
+                              </span>
+                            )}
                           </div>
                           {canEdit && (
                             <div className="flex items-center gap-2">
@@ -2132,6 +2355,203 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         isOpen={comensalesModalOpen}
         onClose={() => setComensalesModalOpen(false)}
       />
+
+      {/* ── MODAL: ASIGNACIÓN DE COMENSALES BASE SEMANALES ── */}
+      {baseComensalesModalOpen && (
+        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setBaseComensalesModalOpen(false); }}>
+          <div className="modal-box max-w-xl max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Users className="text-brand" size={22} />
+                <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
+                  Asignar Comensales Base (Semana {selectedWeeks[0] || 1})
+                </h3>
+              </div>
+              <button onClick={() => setBaseComensalesModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto pr-1 space-y-5 flex-1 pb-4">
+              <p className="text-xs text-slate-500 bg-indigo-50 border border-indigo-100 rounded-xl p-3 leading-relaxed">
+                💡 Al guardar, se aplicará masivamente esta configuración a todos los días de la semana (de lunes a domingo) en sus respectivos turnos, <strong>exceptuando</strong> los días que hayas personalizado de forma manual en sus modales diarios (los cuales mantendrán su icono 👤 y sus propios datos).
+              </p>
+
+              {/* 🍳 DESAYUNO */}
+              <div className="border-l-4 border-amber-400 pl-3 space-y-3">
+                <label className="block text-xs font-bold text-amber-700 uppercase tracking-wide">🍳 Desayuno Base</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.breakfast_players} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.breakfast_halal} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.breakfast_kosher} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.breakfast_vegan} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Desayuno</label>
+                  <input 
+                    type="text" 
+                    value={baseComensalesForm.breakfast_allergies} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_allergies: e.target.value }))}
+                    placeholder="Ej: Celíacos..."
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+
+              {/* ☀️ ALMUERZO */}
+              <div className="border-l-4 border-brand pl-3 space-y-3">
+                <label className="block text-xs font-bold text-brand uppercase tracking-wide">☀️ Almuerzo Base</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.lunch_players} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.lunch_halal} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.lunch_kosher} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.lunch_vegan} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Almuerzo</label>
+                  <input 
+                    type="text" 
+                    value={baseComensalesForm.lunch_allergies} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_allergies: e.target.value }))}
+                    placeholder="Ej: Gluten, Lactosa..."
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+
+              {/* 🌙 CENA */}
+              <div className="border-l-4 border-indigo-400 pl-3 space-y-3">
+                <label className="block text-xs font-bold text-indigo-700 uppercase tracking-wide">🌙 Cena Base</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.dinner_players} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_players: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.dinner_halal} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_halal: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.dinner_kosher} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_kosher: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
+                    <input 
+                      type="number" 
+                      value={baseComensalesForm.dinner_vegan} 
+                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_vegan: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Cena</label>
+                  <input 
+                    type="text" 
+                    value={baseComensalesForm.dinner_allergies} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_allergies: e.target.value }))}
+                    placeholder="Ej: Sin marisco..."
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setBaseComensalesModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                Cancelar
+              </button>
+              <button 
+                onClick={handleApplyWeeklyComensales} 
+                className="px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all"
+              >
+                Aplicar a la Semana
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
