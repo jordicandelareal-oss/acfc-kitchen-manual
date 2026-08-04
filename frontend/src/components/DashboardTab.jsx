@@ -7,6 +7,22 @@ import {
 import { fetchIngredients, fetchPlannerDataDb, fetchPurchaseOrders, fetchComensales } from '../api';
 import { supabase } from '../supabaseClient';
 
+const getWeekYearString = (dateStr) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const d = parseInt(parts[2], 10);
+  
+  const date = new Date(y, m, d);
+  const dayNum = date.getDay() || 7;
+  date.setDate(date.getDate() + 4 - dayNum);
+  const year = date.getFullYear();
+  const firstDayOfYear = new Date(year, 0, 1);
+  const weekNum = Math.ceil((((date - firstDayOfYear) / 86400000) + 1) / 7);
+  return `${year}-W${String(weekNum).padStart(2, '0')}`;
+};
+
 export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], role: propsRole, setRole: propsSetRole, isInitializing = false }) {
   // 1. Declaración global de la fecha HOY en formato YYYY-MM-DD
   const todayISO = useMemo(() => {
@@ -28,6 +44,71 @@ export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], ro
   const [loading, setLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [updatingIngredientId, setUpdatingIngredientId] = useState(null);
+
+  // Estados y funciones para la gestión del presupuesto semanal en Supabase (Admin)
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [tempBudget, setTempBudget] = useState(1250);
+
+  const fetchBudgetForWeek = async (weekStr) => {
+    const weekYearStr = getWeekYearString(weekStr);
+    if (!weekYearStr) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('weekly_budgets')
+        .select('budget_limit')
+        .eq('week_year', weekYearStr)
+        .maybeSingle();
+        
+      if (error) throw error;
+      
+      if (data) {
+        setWeeklyBudget(Number(data.budget_limit));
+      } else {
+        const cached = Number(localStorage.getItem('acfc_weekly_budget')) || 1250;
+        setWeeklyBudget(cached);
+      }
+    } catch (err) {
+      console.error('Error fetching weekly budget:', err);
+      const cached = Number(localStorage.getItem('acfc_weekly_budget')) || 1250;
+      setWeeklyBudget(cached);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedWeek) {
+      fetchBudgetForWeek(selectedWeek);
+    }
+  }, [selectedWeek]);
+
+  const handleSaveBudget = async (newLimit) => {
+    const weekYearStr = getWeekYearString(selectedWeek);
+    if (!weekYearStr) return;
+    
+    try {
+      const { error } = await supabase
+        .from('weekly_budgets')
+        .upsert(
+          { week_year: weekYearStr, budget_limit: newLimit },
+          { onConflict: 'week_year' }
+        );
+        
+      if (error) throw error;
+      
+      setWeeklyBudget(newLimit);
+      localStorage.setItem('acfc_weekly_budget', String(newLimit));
+      setIsEditingBudget(false);
+      
+      if (typeof window.toast === 'function') {
+        window.toast(`✅ Presupuesto de la semana ${weekYearStr} actualizado a ${newLimit}€`);
+      }
+    } catch (err) {
+      console.error('Error saving weekly budget:', err);
+      if (typeof window.toast === 'function') {
+        window.toast(`❌ Error al guardar presupuesto: ${err.message}`);
+      }
+    }
+  };
 
 
   // Sync role to localStorage
@@ -625,8 +706,85 @@ export default function DashboardTab({ onNavigate, onAddToCart, recipes = [], ro
         </div>
       </div>
 
-      {/* Stats Grid — 2 columnas compactas en móviles */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      {/* Stats Grid — 2 columnas compactas en móviles (5 columnas para admin para dar cabida al presupuesto) */}
+      <div className={`grid grid-cols-2 ${role === 'admin' ? 'md:grid-cols-3 lg:grid-cols-5' : 'lg:grid-cols-4'} gap-2.5 sm:gap-4`}>
+        {/* Tarjeta Presupuesto Semanal (Solo para Administrador) */}
+        {role === 'admin' && (
+          <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden flex flex-col justify-between group">
+            <div className="flex justify-between items-start">
+              <div className="p-1.5 sm:p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+                <Euro className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <span className={`badge text-[10px] py-0.5 px-1.5 ${budgetAnalysis.isOverBudget ? 'badge-danger pulse-red' : 'badge-ok'}`}>
+                {budgetAnalysis.isOverBudget ? 'EXCEDIDO' : 'CONTROLADO'}
+              </span>
+            </div>
+            
+            <div className="mt-2 sm:mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Presupuesto Semanal</p>
+                {!isEditingBudget ? (
+                  <button 
+                    onClick={() => {
+                      setTempBudget(weeklyBudget);
+                      setIsEditingBudget(true);
+                    }}
+                    className="p-1 text-slate-400 hover:text-brand rounded-lg hover:bg-slate-50 transition-colors"
+                    title="Editar límite de presupuesto"
+                  >
+                    <span className="material-symbols-outlined text-sm" style={{ fontSize: '16px' }}>edit</span>
+                  </button>
+                ) : (
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => handleSaveBudget(tempBudget)}
+                      className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                      title="Guardar"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingBudget(false)}
+                      className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      title="Cancelar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {!isEditingBudget ? (
+                <p className="text-lg sm:text-2xl font-extrabold text-slate-800 mt-0.5" style={{ fontFamily: 'Outfit' }}>
+                  {loading ? '—' : `${weeklyBudget.toLocaleString('es-ES')} €`}
+                </p>
+              ) : (
+                <input 
+                  type="number"
+                  value={tempBudget}
+                  onChange={e => setTempBudget(Number(e.target.value) || 0)}
+                  className="w-full text-sm font-extrabold text-slate-800 border-b border-slate-300 focus:border-brand outline-none mt-1 pb-0.5 bg-slate-50 rounded px-1"
+                  autoFocus
+                />
+              )}
+
+              {/* Comparativa con Gasto Real */}
+              <div className="mt-2">
+                <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold mb-1">
+                  <span>Gasto: {weeklyActualSpent.toFixed(0)}€</span>
+                  <span>{budgetAnalysis.percentage}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-500 ${budgetAnalysis.isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}
+                    style={{ width: `${budgetAnalysis.percentage}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Total Ingredients */}
         <div className="p-3.5 sm:p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow transition-all relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start">
