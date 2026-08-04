@@ -40,6 +40,42 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
   const [ingBrand, setIngBrand] = useState('');
   const [ingCategory, setIngCategory] = useState('');
   const [ingSubcategory, setIngSubcategory] = useState('');
+  const [customCategories, setCustomCategories] = useState([]);
+  const [customSubcategories, setCustomSubcategories] = useState({});
+
+  const handleCategorySelectChange = (val) => {
+    if (val === '__ADD_NEW__') {
+      const newCat = window.prompt('Introduce el nombre de la nueva categoría:');
+      if (newCat && newCat.trim()) {
+        const name = newCat.trim();
+        setCustomCategories(prev => [...new Set([...prev, name])]);
+        setIngCategory(name);
+        setIngSubcategory('');
+      }
+    } else {
+      setIngCategory(val);
+      setIngSubcategory('');
+    }
+  };
+
+  const handleSubcategorySelectChange = (val) => {
+    if (val === '__ADD_NEW__') {
+      const newSub = window.prompt('Introduce el nombre de la nueva subcategoría:');
+      if (newSub && newSub.trim() && ingCategory) {
+        const name = newSub.trim();
+        setCustomSubcategories(prev => {
+          const current = prev[ingCategory] || [];
+          return {
+            ...prev,
+            [ingCategory]: [...new Set([...current, name])]
+          };
+        });
+        setIngSubcategory(name);
+      }
+    } else {
+      setIngSubcategory(val);
+    }
+  };
   const [ingProviderId, setIngProviderId] = useState('');
   const [ingProviderRef, setIngProviderRef] = useState('');
   const [ingFormatGr, setIngFormatGr] = useState('');
@@ -395,6 +431,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
   const handleAddCategory = () => {
     const name = newCatName.trim();
     if (!name) return;
+    setCustomCategories(prev => [...new Set([...prev, name])]);
     window.toast(`✅ Categoría "${name}" lista. Asígnala al crear o editar un ingrediente.`);
     setShowAddCatForm(false);
     setNewCatName('');
@@ -403,6 +440,13 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
   const handleAddSubcategory = () => {
     const name = newSubcatName.trim();
     if (!name || !catMgrSelectedCat) return;
+    setCustomSubcategories(prev => {
+      const current = prev[catMgrSelectedCat] || [];
+      return {
+        ...prev,
+        [catMgrSelectedCat]: [...new Set([...current, name])]
+      };
+    });
     window.toast(`✅ Subcategoría "${name}" lista. Asígnala al editar un ingrediente.`);
     setShowAddSubcatForm(false);
     setNewSubcatName('');
@@ -1100,11 +1144,38 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Categoría</label>
-                  <input type="text" value={ingCategory} onChange={e => setIngCategory(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Ej: Verduras" />
+                  <select
+                    value={ingCategory}
+                    onChange={e => handleCategorySelectChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                  >
+                    <option value="">Selecciona categoría</option>
+                    {[...new Set([...Object.keys(getCatManagerData()).filter(c => c !== 'Sin categoría'), ...customCategories])].sort().map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="__ADD_NEW__" className="text-brand font-semibold">+ Añadir nueva categoría...</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Subcategoría</label>
-                  <input type="text" value={ingSubcategory} onChange={e => setIngSubcategory(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Ej: Bulbos" />
+                  <select
+                    value={ingSubcategory}
+                    onChange={e => handleSubcategorySelectChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                    disabled={!ingCategory}
+                  >
+                    <option value="">Selecciona subcategoría</option>
+                    {(() => {
+                      const dbSubs = getCatManagerData()[ingCategory] ? [...getCatManagerData()[ingCategory]] : [];
+                      const custSubs = customSubcategories[ingCategory] || [];
+                      return [...new Set([...dbSubs, ...custSubs])].sort().map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ));
+                    })()}
+                    {ingCategory && (
+                      <option value="__ADD_NEW__" className="text-brand font-semibold">+ Añadir nueva subcategoría...</option>
+                    )}
+                  </select>
                 </div>
               </div>
 
