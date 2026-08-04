@@ -68,6 +68,11 @@ const isSideRecipe = (r) => {
   return SIDE_CATEGORIES.some(s => cat === s || cat.includes(s));
 };
 
+const isVegetarianRecipe = (r) => {
+  if (!r) return false;
+  return !!r.is_vegetarian || r.category === 'Vegetariano' || (r.category || '').toLowerCase().trim() === 'vegetariano';
+};
+
 const getDaysInRange = (startStr, endStr) => {
   const days = [];
   if (!startStr || !endStr) return days;
@@ -1017,6 +1022,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         }
 
         const weeklyUsedRecipeIds = new Set();
+        let hasVegInWeek = false;
         const breakfastId = sanitizeRecipeId('d9b736b4-2db2-4809-913a-c80f4f81c944');
         if (breakfastId) {
           weeklyUsedRecipeIds.add(breakfastId);
@@ -1028,7 +1034,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
           // ── EVALUACIÓN PASO A PASO: ALMUERZO ──
           let lunchRecipe = null;
-          const shuffledMainsForLunch = shuffleArray(mainRecipes);
+          let shuffledMainsForLunch = shuffleArray(mainRecipes);
+
+          // Force vegetarian recipe on Sunday lunch if rule is active and no vegetarian recipe was planned yet.
+          const forceVegToday = settings['menu_setting_vegetariano_general'] && offset === 6 && !hasVegInWeek;
+          if (forceVegToday) {
+            const vegMains = shuffledMainsForLunch.filter(isVegetarianRecipe);
+            if (vegMains.length > 0) {
+              shuffledMainsForLunch = vegMains;
+            }
+          }
 
           for (const candidate of shuffledMainsForLunch) {
             if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(candidate.id)) {
@@ -1053,6 +1068,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           if (randLunch) {
             recentRecipeIds.push(randLunch);
             weeklyUsedRecipeIds.add(randLunch);
+            if (isVegetarianRecipe(lunchRecipe)) {
+              hasVegInWeek = true;
+            }
           }
 
           // ── EVALUACIÓN PASO A PASO: GUARNICIÓN ──
@@ -1098,7 +1116,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
           // ── EVALUACIÓN PASO A PASO: CENA ──
           let dinnerRecipe = null;
-          const shuffledMainsForDinner = shuffleArray(mainRecipes);
+          let shuffledMainsForDinner = shuffleArray(mainRecipes);
+
+          // Force vegetarian recipe on Sunday dinner if rule is active and no vegetarian recipe was planned yet.
+          const forceVegDinner = settings['menu_setting_vegetariano_general'] && offset === 6 && !hasVegInWeek;
+          if (forceVegDinner) {
+            const vegMains = shuffledMainsForDinner.filter(isVegetarianRecipe);
+            if (vegMains.length > 0) {
+              shuffledMainsForDinner = vegMains;
+            }
+          }
 
           for (const candidate of shuffledMainsForDinner) {
             if (settings['menu_setting_no_repetir_semana'] && weeklyUsedRecipeIds.has(candidate.id)) {
@@ -1122,6 +1149,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           if (randDinner) {
             recentRecipeIds.push(randDinner);
             weeklyUsedRecipeIds.add(randDinner);
+            if (isVegetarianRecipe(dinnerRecipe)) {
+              hasVegInWeek = true;
+            }
           }
 
           // Mantener cola de rotación amplia (últimos 14 platos servidos)
