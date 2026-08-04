@@ -382,6 +382,45 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     };
   }, [comensalesList]);
 
+  const [weeklySummaryOpen, setWeeklySummaryOpen] = useState(true);
+
+  const weeklyOperationalBreakdown = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const weekNum = selectedWeeks[0] || 1;
+    const weekDaysList = getMadridWeekRange(year, month, weekNum);
+
+    return weekDaysList.map(({ dateStr, label, dayNum }) => {
+      const menu = plannerData[dateStr] || {};
+      
+      const bPlayers = Number(menu.breakfast_players) || 0;
+      const lPlayers = Number(menu.lunch_players) || 0;
+      const dPlayers = Number(menu.dinner_players) || 0;
+
+      const bRest = getActiveRestrictions(bPlayers);
+      const lRest = getActiveRestrictions(lPlayers);
+      const dRest = getActiveRestrictions(dPlayers);
+
+      return {
+        dateStr,
+        label,
+        dayNum,
+        confirmado: !!menu.confirmado,
+        breakfast: { players: bPlayers, ...bRest },
+        lunch: { players: lPlayers, ...lRest },
+        dinner: { players: dPlayers, ...dRest }
+      };
+    });
+  }, [plannerData, selectedWeeks, currentDate, getActiveRestrictions]);
+
+  const maxWeeklyPlayers = useMemo(() => {
+    let max = 0;
+    weeklyOperationalBreakdown.forEach(day => {
+      max = Math.max(max, day.breakfast.players, day.lunch.players, day.dinner.players);
+    });
+    return max || 0;
+  }, [weeklyOperationalBreakdown]);
+
   const handleApplyWeeklyComensales = async () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -1508,6 +1547,95 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
               Modo: {viewMode === 'day' ? 'Vista por Día' : viewMode === 'week' ? `Semana ${selectedWeeks[0] || 1}` : 'Vista Mensual'}
             </span>
           </div>
+
+          {/* Widget de Resumen Semanal Desglosado */}
+          {viewMode === 'week' && (
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Users className="text-brand" size={18} />
+                  <span className="font-bold text-slate-800 text-sm" style={{ fontFamily: 'Outfit' }}>
+                    Censo & Planificación de Comensales (Semana {selectedWeeks[0] || 1})
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-brand bg-brand-muted/20 border border-brand/20 px-2.5 py-1 rounded-lg">
+                    Tienes {maxWeeklyPlayers} jugadores asignados para toda la semana
+                  </span>
+                  <button 
+                    onClick={() => setWeeklySummaryOpen(!weeklySummaryOpen)} 
+                    className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                  >
+                    <span>{weeklySummaryOpen ? 'Ocultar desglose' : 'Mostrar desglose'}</span>
+                    <span className="material-symbols-outlined font-bold" style={{ fontSize: '16px' }}>
+                      {weeklySummaryOpen ? 'expand_less' : 'expand_more'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {weeklySummaryOpen && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2 pt-3 border-t border-slate-100">
+                  {weeklyOperationalBreakdown.map((day) => {
+                    const hasManual = day.lunch.allergies?.includes('[manual]');
+                    return (
+                      <div key={day.dateStr} className={`p-2.5 rounded-lg border flex flex-col justify-between space-y-2 ${day.confirmado ? 'bg-indigo-50/20 border-indigo-100' : 'bg-slate-50/40 border-slate-150'}`}>
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{day.label} {day.dayNum}</span>
+                          {hasManual && (
+                            <span className="text-[9px]" title="Comensales personalizados manualmente">👤</span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1.5 text-[10px]">
+                          {/* Desayuno */}
+                          <div className="bg-amber-50/50 p-1 rounded border border-amber-100/50">
+                            <span className="font-bold text-amber-800">🍳 Des:</span> <span className="font-extrabold">{day.breakfast.players} pax</span>
+                            {(day.breakfast.halal > 0 || day.breakfast.kosher > 0 || day.breakfast.vegan > 0) && (
+                              <div className="text-[8px] text-amber-700 font-medium mt-0.5 space-y-0.5">
+                                {day.breakfast.halal > 0 && <div>🕌 Halal: {day.breakfast.halal}</div>}
+                                {day.breakfast.kosher > 0 && <div>✡️ Kosher: {day.breakfast.kosher}</div>}
+                                {day.breakfast.vegan > 0 && <div>🌱 Vegan: {day.breakfast.vegan}</div>}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Almuerzo */}
+                          <div className="bg-indigo-50/50 p-1 rounded border border-indigo-100/50">
+                            <span className="font-bold text-indigo-800">☀️ Alm:</span> <span className="font-extrabold">{day.lunch.players} pax</span>
+                            {(day.lunch.halal > 0 || day.lunch.kosher > 0 || day.lunch.vegan > 0) && (
+                              <div className="text-[8px] text-indigo-700 font-medium mt-0.5 space-y-0.5">
+                                {day.lunch.halal > 0 && <div>🕌 Halal: {day.lunch.halal}</div>}
+                                {day.lunch.kosher > 0 && <div>✡️ Kosher: {day.lunch.kosher}</div>}
+                                {day.lunch.vegan > 0 && <div>🌱 Vegan: {day.lunch.vegan}</div>}
+                              </div>
+                            )}
+                            {day.lunch.allergies && day.lunch.allergies.replace('[manual]', '').trim() && (
+                              <div className="text-[8px] text-red-650 font-semibold mt-1 truncate" title={`Alergias: ${day.lunch.allergies.replace('[manual]', '').trim()}`}>
+                                ⚠️ {day.lunch.allergies.replace('[manual]', '').trim()}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Cena */}
+                          <div className="bg-emerald-50/50 p-1 rounded border border-emerald-100/50">
+                            <span className="font-bold text-emerald-800">🌙 Cen:</span> <span className="font-extrabold">{day.dinner.players} pax</span>
+                            {(day.dinner.halal > 0 || day.dinner.kosher > 0 || day.dinner.vegan > 0) && (
+                              <div className="text-[8px] text-emerald-700 font-medium mt-0.5 space-y-0.5">
+                                {day.dinner.halal > 0 && <div>🕌 Halal: {day.dinner.halal}</div>}
+                                {day.dinner.kosher > 0 && <div>✡️ Kosher: {day.dinner.kosher}</div>}
+                                {day.dinner.vegan > 0 && <div>🌱 Vegan: {day.dinner.vegan}</div>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── VISTA DÍA ── */}
           {viewMode === 'day' && (
