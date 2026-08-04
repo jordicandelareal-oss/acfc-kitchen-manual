@@ -131,6 +131,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     return [wk];
   });
   const [viewMode, setViewMode] = useState('week'); // 'day' | 'week' | 'month'
+  const [comensalesList, setComensalesList] = useState([]);
   const [logs, setLogs] = useState([
     { type: 'info', msg: '[SISTEMA] Consola iniciada. Esperando eventos...', ts: new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' }) }
   ]);
@@ -237,9 +238,11 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
   const [currentDate, setCurrentDate] = useState(() => getMadridTodayDateObject()); // Default: Current system date
 
-  // ── Calcular suma reactiva de comensales visibles en pantalla ──
-  const visibleComensalesSum = useMemo(() => {
-    let sum = 0;
+  // ── Calcular desglose reactivo de comensales visibles en pantalla por servicio ──
+  const visibleComensalesBreakdown = useMemo(() => {
+    let breakfast = 0;
+    let lunch = 0;
+    let dinner = 0;
     let visibleDates = [];
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -255,9 +258,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         });
       });
     } else if (viewMode === 'range') {
-      const days = getMadridWeekRange(year, month, selectedWeeks[0] || 1); // fallback
-      const customDays = getMadridWeekRange(year, month, selectedWeeks[0] || 1); // fallback
-      // use range
       if (customStartDate && customEndDate) {
         const start = new Date(customStartDate);
         const end = new Date(customEndDate);
@@ -277,15 +277,13 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     }
 
     visibleDates.forEach(date => {
-      const dayData = plannerData[date];
-      if (dayData) {
-        sum += (Number(dayData.breakfast_players) || 0) +
-               (Number(dayData.lunch_players) || 0) +
-               (Number(dayData.dinner_players) || 0);
-      }
+      const dayData = plannerData[date] || {};
+      breakfast += Number(dayData.breakfast_players) || 0;
+      lunch += Number(dayData.lunch_players) || 0;
+      dinner += Number(dayData.dinner_players) || 0;
     });
 
-    return sum;
+    return { breakfast, lunch, dinner };
   }, [plannerData, selectedWeeks, currentDate, viewMode, selectedDay, customStartDate, customEndDate]);
 
   const openBaseComensalesModal = () => {
@@ -355,6 +353,35 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     setBaseComensalesModalOpen(true);
   };
 
+  const getActiveRestrictions = useCallback((playersCount) => {
+    if (!comensalesList || comensalesList.length === 0) {
+      return { halal: 0, kosher: 0, vegan: 0, allergies: '' };
+    }
+    const activos = comensalesList.filter(c => c.activo !== false);
+    
+    const halal = activos.filter(c => (c.dieta || '').toLowerCase().trim() === 'halal').length;
+    const kosher = activos.filter(c => (c.dieta || '').toLowerCase().trim() === 'kosher').length;
+    const vegan = activos.filter(c => (c.dieta || '').toLowerCase().trim() === 'vegano' || (c.dieta || '').toLowerCase().trim() === 'vegan').length;
+    
+    const allAllergies = activos
+      .map(c => (c.alergias || '').trim())
+      .filter(Boolean)
+      .flatMap(a => a.split(',').map(s => s.trim().toLowerCase()))
+      .filter(Boolean);
+    
+    const uniqueAllergies = [...new Set(allAllergies)]
+      .map(a => a.charAt(0).toUpperCase() + a.slice(1));
+    
+    const allergiesStr = uniqueAllergies.join(', ');
+    
+    return {
+      halal: Math.min(playersCount, halal),
+      kosher: Math.min(playersCount, kosher),
+      vegan: Math.min(playersCount, vegan),
+      allergies: allergiesStr
+    };
+  }, [comensalesList]);
+
   const handleApplyWeeklyComensales = async () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -367,6 +394,14 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       const daysToSave = [];
       const confirmedDaysToSave = [];
       const newPlannerData = { ...plannerData };
+
+      const bPlayers = Number(baseComensalesForm.breakfast_players) || 0;
+      const lPlayers = Number(baseComensalesForm.lunch_players) || 0;
+      const dPlayers = Number(baseComensalesForm.dinner_players) || 0;
+
+      const bRest = getActiveRestrictions(bPlayers);
+      const lRest = getActiveRestrictions(lPlayers);
+      const dRest = getActiveRestrictions(dPlayers);
       
       weekDaysList.forEach(({ dateStr }) => {
         const existing = plannerData[dateStr] || {};
@@ -383,21 +418,21 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
           lunch_recipe_id: existing.lunch_recipe_id || existing.lunch_recipe || null,
           lunch_side_recipe_id: existing.lunch_side_recipe_id || existing.lunch_side_recipe || null,
           dinner_recipe_id: existing.dinner_recipe_id || existing.dinner_recipe || null,
-          breakfast_players: Number(baseComensalesForm.breakfast_players) || 0,
-          breakfast_halal: Number(baseComensalesForm.breakfast_halal) || 0,
-          breakfast_kosher: Number(baseComensalesForm.breakfast_kosher) || 0,
-          breakfast_vegan: Number(baseComensalesForm.breakfast_vegan) || 0,
-          breakfast_allergies: baseComensalesForm.breakfast_allergies || '',
-          lunch_players: Number(baseComensalesForm.lunch_players) || 0,
-          lunch_halal: Number(baseComensalesForm.lunch_halal) || 0,
-          lunch_kosher: Number(baseComensalesForm.lunch_kosher) || 0,
-          lunch_vegan: Number(baseComensalesForm.lunch_vegan) || 0,
-          lunch_allergies: baseComensalesForm.lunch_allergies || '',
-          dinner_players: Number(baseComensalesForm.dinner_players) || 0,
-          dinner_halal: Number(baseComensalesForm.dinner_halal) || 0,
-          dinner_kosher: Number(baseComensalesForm.dinner_kosher) || 0,
-          dinner_vegan: Number(baseComensalesForm.dinner_vegan) || 0,
-          dinner_allergies: baseComensalesForm.dinner_allergies || '',
+          breakfast_players: bPlayers,
+          breakfast_halal: bRest.halal,
+          breakfast_kosher: bRest.kosher,
+          breakfast_vegan: bRest.vegan,
+          breakfast_allergies: bRest.allergies,
+          lunch_players: lPlayers,
+          lunch_halal: lRest.halal,
+          lunch_kosher: lRest.kosher,
+          lunch_vegan: lRest.vegan,
+          lunch_allergies: lRest.allergies,
+          dinner_players: dPlayers,
+          dinner_halal: dRest.halal,
+          dinner_kosher: dRest.kosher,
+          dinner_vegan: dRest.vegan,
+          dinner_allergies: dRest.allergies,
         };
         
         newPlannerData[dateStr] = updatedDay;
@@ -429,9 +464,9 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         const updated = {
           ...prev,
           [weekMondayStr]: {
-            lunch: Number(baseComensalesForm.lunch_players) || 25,
-            dinner: Number(baseComensalesForm.dinner_players) || 20,
-            breakfast: Number(baseComensalesForm.breakfast_players) || 20
+            lunch: lPlayers,
+            dinner: dPlayers,
+            breakfast: bPlayers
           }
         };
         localStorage.setItem('acfc_weekly_players_v2', JSON.stringify(updated));
@@ -555,6 +590,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       
       let halal = 0, vegan = 0, kosher = 0, vegetarian = 0;
       if (comensalesRes.data) {
+        setComensalesList(comensalesRes.data);
         comensalesRes.data.forEach(c => {
           if (c.activo !== false) {
             const d = (c.dieta || '').toLowerCase().trim();
@@ -697,8 +733,16 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     addLog(`Guardando día ${selectedDay} (${formattedDate})...`, 'info');
     setSaveStatus('saving');
     try {
+      const bPlayers = Number(dayForm.breakfast_players) || 0;
+      const lPlayers = Number(dayForm.lunch_players) || 0;
+      const dPlayers = Number(dayForm.dinner_players) || 0;
+
+      const bRest = getActiveRestrictions(bPlayers);
+      const lRest = getActiveRestrictions(lPlayers);
+      const dRest = getActiveRestrictions(dPlayers);
+
       // Añadir marca de manual a lunch_allergies si no existe
-      let finalLunchAllergies = dayForm.lunch_allergies || '';
+      let finalLunchAllergies = lRest.allergies || '';
       if (!finalLunchAllergies.includes('[manual]')) {
         finalLunchAllergies = finalLunchAllergies ? `${finalLunchAllergies} [manual]` : '[manual]';
       }
@@ -709,21 +753,21 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
         lunch_recipe_id: sanitizeRecipeId(dayForm.lunch_recipe_id),
         lunch_side_recipe_id: sanitizeRecipeId(dayForm.lunch_side_recipe_id),
         dinner_recipe_id: sanitizeRecipeId(dayForm.dinner_recipe_id),
-        breakfast_players: Number(dayForm.breakfast_players) || 0,
-        breakfast_halal: Number(dayForm.breakfast_halal) || 0,
-        breakfast_kosher: Number(dayForm.breakfast_kosher) || 0,
-        breakfast_vegan: Number(dayForm.breakfast_vegan) || 0,
-        breakfast_allergies: dayForm.breakfast_allergies || '',
-        lunch_players: Number(dayForm.lunch_players) || 0,
-        lunch_halal: Number(dayForm.lunch_halal) || 0,
-        lunch_kosher: Number(dayForm.lunch_kosher) || 0,
-        lunch_vegan: Number(dayForm.lunch_vegan) || 0,
+        breakfast_players: bPlayers,
+        breakfast_halal: bRest.halal,
+        breakfast_kosher: bRest.kosher,
+        breakfast_vegan: bRest.vegan,
+        breakfast_allergies: bRest.allergies,
+        lunch_players: lPlayers,
+        lunch_halal: lRest.halal,
+        lunch_kosher: lRest.kosher,
+        lunch_vegan: lRest.vegan,
         lunch_allergies: finalLunchAllergies,
-        dinner_players: Number(dayForm.dinner_players) || 0,
-        dinner_halal: Number(dayForm.dinner_halal) || 0,
-        dinner_kosher: Number(dayForm.dinner_kosher) || 0,
-        dinner_vegan: Number(dayForm.dinner_vegan) || 0,
-        dinner_allergies: dayForm.dinner_allergies || ''
+        dinner_players: dPlayers,
+        dinner_halal: dRest.halal,
+        dinner_kosher: dRest.kosher,
+        dinner_vegan: dRest.vegan,
+        dinner_allergies: dRest.allergies
       };
       
       console.log('Depurando objeto a guardar:', payload);
@@ -1299,15 +1343,23 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </div>
           )}
 
-          {/* Quick Weekly Players Controls — Informativo y Reactivo */}
-          <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
-            <div className="flex items-center gap-1.5">
-              <Users size={14} className="text-indigo-600 ml-1" />
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">
-                Comensales en Pantalla:
+          {/* Quick Weekly Players Controls — Informativo y Reactivo Desglosado */}
+          <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
+            <div className="flex items-center gap-1">
+              <Users size={13} className="text-indigo-600 ml-1" />
+              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight mr-1">
+                Desglose:
               </span>
-              <span className="font-extrabold text-xs text-indigo-950 bg-white border border-indigo-200 rounded-lg px-2 py-0.5 shadow-xs">
-                {visibleComensalesSum} pax
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Desayunos Totales">
+                🍳 {visibleComensalesBreakdown.breakfast}
+              </span>
+              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Almuerzos Totales">
+                ☀️ {visibleComensalesBreakdown.lunch}
+              </span>
+              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Cenas Totales">
+                🌙 {visibleComensalesBreakdown.dinner}
               </span>
             </div>
           </div>
@@ -1548,20 +1600,20 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
 
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                       <span className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
-                        👥 Resumen Comensales
+                        👥 Comensales por día asignados
                       </span>
                       <div className="text-xs space-y-1 text-slate-600">
                         <div className="flex justify-between">
-                          <span>Almuerzos:</span>
-                          <span className="font-bold text-slate-900">{players.lunch}</span>
+                          <span>🍳 Desayunos:</span>
+                          <span className="font-bold text-slate-900">{menu?.breakfast_players !== undefined ? menu.breakfast_players : 20} pax</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Cenas:</span>
-                          <span className="font-bold text-slate-900">{players.dinner}</span>
+                          <span>☀️ Almuerzos:</span>
+                          <span className="font-bold text-slate-900">{menu?.lunch_players !== undefined ? menu.lunch_players : 25} pax</span>
                         </div>
-                        <div className="flex justify-between border-t border-slate-200 pt-1">
-                          <span>Total Día:</span>
-                          <span className="font-extrabold text-brand">{players.lunch + players.dinner} pax</span>
+                        <div className="flex justify-between">
+                          <span>🌙 Cenas:</span>
+                          <span className="font-bold text-slate-900">{menu?.dinner_players !== undefined ? menu.dinner_players : 20} pax</span>
                         </div>
                       </div>
                     </div>
@@ -2055,16 +2107,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                     </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas desayuno</label>
-                  <input 
-                    type="text" 
-                    value={dayForm.breakfast_allergies} 
-                    onChange={e => setDayForm(prev => ({ ...prev, breakfast_allergies: e.target.value }))}
-                    placeholder="Ej: Sin lactosa"
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
-                </div>
               </div>
 
               {/* ═══════ SECCIÓN ALMUERZO ═══════ */}
@@ -2143,16 +2185,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                     </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas almuerzo</label>
-                  <input 
-                    type="text" 
-                    value={dayForm.lunch_allergies} 
-                    onChange={e => setDayForm(prev => ({ ...prev, lunch_allergies: e.target.value }))}
-                    placeholder="Ej: Celíacos, Sin frutos secos"
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
-                </div>
               </div>
 
               {/* ═══════ SECCIÓN CENA ═══════ */}
@@ -2199,16 +2231,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
                       </div>
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas cena</label>
-                  <input 
-                    type="text" 
-                    value={dayForm.dinner_allergies} 
-                    onChange={e => setDayForm(prev => ({ ...prev, dinner_allergies: e.target.value }))}
-                    placeholder="Ej: Sin marisco"
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm outline-none"
-                  />
                 </div>
               </div>
 
@@ -2359,7 +2381,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       {/* ── MODAL: ASIGNACIÓN DE COMENSALES BASE SEMANALES ── */}
       {baseComensalesModalOpen && (
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setBaseComensalesModalOpen(false); }}>
-          <div className="modal-box max-w-xl max-h-[85vh] flex flex-col">
+          <div className="modal-box max-w-md max-h-[85vh] flex flex-col">
             {/* Header */}
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -2373,166 +2395,49 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
               </button>
             </div>
 
-            <div className="overflow-y-auto pr-1 space-y-5 flex-1 pb-4">
+            <div className="overflow-y-auto pr-1 space-y-4 flex-1 pb-4">
               <p className="text-xs text-slate-500 bg-indigo-50 border border-indigo-100 rounded-xl p-3 leading-relaxed">
-                💡 Al guardar, se aplicará masivamente esta configuración a todos los días de la semana (de lunes a domingo) en sus respectivos turnos, <strong>exceptuando</strong> los días que hayas personalizado de forma manual en sus modales diarios (los cuales mantendrán su icono 👤 y sus propios datos).
+                💡 Introduce el número de comensales (Pax) para cada servicio. Las dietas especiales (Halal, Kosher, Vegano) y alergias se calcularán automáticamente en base a los perfiles de la academia. Se respetarán los días personalizados (👤).
               </p>
 
               {/* 🍳 DESAYUNO */}
-              <div className="border-l-4 border-amber-400 pl-3 space-y-3">
+              <div className="border-l-4 border-amber-400 pl-3 space-y-2">
                 <label className="block text-xs font-bold text-amber-700 uppercase tracking-wide">🍳 Desayuno Base</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.breakfast_players} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_players: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.breakfast_halal} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_halal: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.breakfast_kosher} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_kosher: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.breakfast_vegan} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_vegan: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Desayuno</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
                   <input 
-                    type="text" 
-                    value={baseComensalesForm.breakfast_allergies} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_allergies: e.target.value }))}
-                    placeholder="Ej: Celíacos..."
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
+                    type="number" 
+                    value={baseComensalesForm.breakfast_players} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_players: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-amber-400"
                   />
                 </div>
               </div>
 
               {/* ☀️ ALMUERZO */}
-              <div className="border-l-4 border-brand pl-3 space-y-3">
+              <div className="border-l-4 border-brand pl-3 space-y-2">
                 <label className="block text-xs font-bold text-brand uppercase tracking-wide">☀️ Almuerzo Base</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.lunch_players} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.lunch_halal} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_halal: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.lunch_kosher} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_kosher: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.lunch_vegan} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_vegan: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Almuerzo</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
                   <input 
-                    type="text" 
-                    value={baseComensalesForm.lunch_allergies} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_allergies: e.target.value }))}
-                    placeholder="Ej: Gluten, Lactosa..."
+                    type="number" 
+                    value={baseComensalesForm.lunch_players} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
                     className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
                   />
                 </div>
               </div>
 
               {/* 🌙 CENA */}
-              <div className="border-l-4 border-indigo-400 pl-3 space-y-3">
+              <div className="border-l-4 border-indigo-400 pl-3 space-y-2">
                 <label className="block text-xs font-bold text-indigo-700 uppercase tracking-wide">🌙 Cena Base</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.dinner_players} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_players: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Halal</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.dinner_halal} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_halal: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Kosher</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.dinner_kosher} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_kosher: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Vegano</label>
-                    <input 
-                      type="number" 
-                      value={baseComensalesForm.dinner_vegan} 
-                      onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_vegan: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none"
-                    />
-                  </div>
-                </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Alergias / Notas Cena</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
                   <input 
-                    type="text" 
-                    value={baseComensalesForm.dinner_allergies} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_allergies: e.target.value }))}
-                    placeholder="Ej: Sin marisco..."
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
+                    type="number" 
+                    value={baseComensalesForm.dinner_players} 
+                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_players: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-400"
                   />
                 </div>
               </div>
