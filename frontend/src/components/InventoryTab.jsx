@@ -424,13 +424,6 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
     return true;
   });
 
-  filteredInventory.sort((a, b) => {
-    const aVal = a[sortKey] ?? '';
-    const bVal = b[sortKey] ?? '';
-    if (typeof aVal === 'number') return (aVal - bVal) * sortDir;
-    return String(aVal).localeCompare(String(bVal)) * sortDir;
-  });
-
   const handleSort = (key) => {
     if (sortKey === key) {
       setSortDir(prev => prev * -1);
@@ -492,12 +485,34 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
       return set;
     }, [filteredInventory]);
 
-    // Lista ordenada alfabéticamente
+    // Lista ordenada según el criterio de ordenación seleccionado (sortKey y sortDir)
     const sortedInventory = useMemo(() => {
-      return [...filteredInventory].sort((a, b) =>
-        (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
-      );
-    }, [filteredInventory]);
+      return [...filteredInventory].sort((a, b) => {
+        let aVal = a[sortKey];
+        let bVal = b[sortKey];
+
+        // Si ordenamos por 'stock', usar 'stock_actual' por consistencia
+        if (sortKey === 'stock') {
+          aVal = a.stock_actual;
+          bVal = b.stock_actual;
+        }
+
+        // Si es nulo o indefinido, normalizar
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+
+        // Campos numéricos explícitos o valores que sean puramente numéricos
+        const numericKeys = ['stock', 'stock_actual', 'stock_minimo', 'stock_maximo', 'cost', 'calculated_net_cost_kg'];
+        if (numericKeys.includes(sortKey) || (typeof aVal === 'number' && typeof bVal === 'number')) {
+          const aNum = Number(aVal) || 0;
+          const bNum = Number(bVal) || 0;
+          return (aNum - bNum) * sortDir;
+        }
+
+        // Ordenación de texto con localeCompare en español
+        return String(aVal).localeCompare(String(bVal), 'es', { sensitivity: 'base' }) * sortDir;
+      });
+    }, [filteredInventory, sortKey, sortDir]);
 
     const [activeLetter, setActiveLetter] = useState('');
     const [collapsedLetters, setCollapsedLetters] = useState({});
@@ -807,8 +822,8 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
                   <th className="px-6 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('name')}>Ingrediente {sortKey === 'name' && (sortDir === 1 ? '↑' : '↓')}</th>
                   <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cat')}>Categoría {sortKey === 'cat' && (sortDir === 1 ? '↑' : '↓')}</th>
                   <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock')}>Stock Actual {sortKey === 'stock' && (sortDir === 1 ? '↑' : '↓')}</th>
-                  <th className="px-4 py-3">Mínimo</th>
-                  <th className="px-4 py-3">Máximo</th>
+                  <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock_minimo')}>Mínimo {sortKey === 'stock_minimo' && (sortDir === 1 ? '↑' : '↓')}</th>
+                  <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('stock_maximo')}>Máximo {sortKey === 'stock_maximo' && (sortDir === 1 ? '↑' : '↓')}</th>
                   {!isAssistant && <th className="px-4 py-3 hidden sm:table-cell cursor-pointer hover:text-brand select-none" onClick={() => handleSort('cost')}>Coste {sortKey === 'cost' && (sortDir === 1 ? '↑' : '↓')}</th>}
                   <th className="px-4 py-3 cursor-pointer hover:text-brand select-none" onClick={() => handleSort('supplier')}>Proveedor {sortKey === 'supplier' && (sortDir === 1 ? '↑' : '↓')}</th>
                   <th className="px-4 py-3">Estado</th>
