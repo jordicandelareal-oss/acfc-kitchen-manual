@@ -558,16 +558,19 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
       });
 
       setTimeout(() => {
+        const isMobile = window.innerWidth < 768;
         const targets = [letter, ...ALPHABET.filter(l => l > letter && activeLetters.has(l))];
         for (const l of targets) {
-          const el = document.getElementById(`letter-group-${l}`) || document.getElementById(`letter-group-mobile-${l}`);
+          const el = isMobile 
+            ? (document.getElementById(`letter-mobile-${l}`) || document.getElementById(`letter-${l}`))
+            : (document.getElementById(`letter-${l}`) || document.getElementById(`letter-mobile-${l}`));
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             setActiveLetter(l);
             return;
           }
         }
-      }, 60);
+      }, 80);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLetters]);
 
@@ -590,11 +593,21 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
         { threshold: [0, 0.1, 0.5, 1], rootMargin: '-10% 0px -55% 0px' }
       );
 
+      const isMobile = window.innerWidth < 768;
       ALPHABET.forEach(letter => {
-        const el = document.getElementById(`letter-group-${letter}`) || document.getElementById(`letter-group-mobile-${letter}`);
+        const el = isMobile 
+          ? document.getElementById(`letter-mobile-${letter}`)
+          : document.getElementById(`letter-${letter}`);
+        
         if (el) {
           el.dataset.alphaLetter = letter;
           observer.observe(el);
+        } else {
+          const fallbackEl = document.getElementById(`letter-${letter}`) || document.getElementById(`letter-mobile-${letter}`);
+          if (fallbackEl) {
+            fallbackEl.dataset.alphaLetter = letter;
+            observer.observe(fallbackEl);
+          }
         }
       });
 
@@ -617,10 +630,18 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
       {ALPHABET.map(letter => {
         const isActive = activeLetters.has(letter);
         const isCurrent = activeLetter === letter;
+
+        const handleInteraction = (e) => {
+          if (!isActive) return;
+          e.preventDefault();
+          scrollToLetter(letter);
+        };
+
         return (
           <button
             key={letter}
-            onClick={() => isActive && scrollToLetter(letter)}
+            onClick={handleInteraction}
+            onTouchStart={handleInteraction}
             className={`text-center leading-tight font-bold transition-all rounded ${
               isCurrent
                 ? 'text-white bg-brand scale-110'
@@ -837,7 +858,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
                     <React.Fragment key={`group-${letter}`}>
                       {/* Encabezado Acordeón de Letra */}
                       <tr
-                        id={`letter-group-${letter}`}
+                        id={`letter-${letter}`}
                         onClick={() => toggleLetterCollapse(letter)}
                         className="bg-slate-100/90 border-y border-slate-200 cursor-pointer hover:bg-slate-200/80 transition-colors select-none scroll-mt-24"
                       >
@@ -964,7 +985,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
                 <div key={`m-group-${letter}`} className="space-y-2">
                   {/* Encabezado Acordeón Móvil de Letra */}
                   <div
-                    id={`letter-group-mobile-${letter}`}
+                    id={`letter-mobile-${letter}`}
                     onClick={() => toggleLetterCollapse(letter)}
                     className="flex items-center justify-between bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-slate-200/70 transition-all select-none scroll-mt-28 shadow-xs"
                   >
