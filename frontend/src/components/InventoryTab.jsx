@@ -462,7 +462,14 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
     )) return false;
     if (selectedCat && i.cat !== selectedCat) return false;
     if (selectedSubcat && i.subcategory !== selectedSubcat) return false;
-    if (selectedProvider && i.supplier !== selectedProvider) return false;
+    if (selectedProvider) {
+      if (selectedProvider === 'NO_PROVIDER') {
+        const hasNoProvider = !i.supplier_id && !i.proveedor_principal && (!i.supplier || i.supplier === 'Sin proveedor asignado' || i.supplier === 'Sin proveedor');
+        if (!hasNoProvider) return false;
+      } else {
+        if (i.supplier !== selectedProvider) return false;
+      }
+    }
     if (selectedStatus === 'critical' && !i.critical) return false;
     if (selectedStatus === 'ok' && i.critical) return false;
     return true;
@@ -816,6 +823,7 @@ export default function InventoryTab({ role: propsRole, canEdit: propsCanEdit, i
             <select value={selectedProvider} onChange={e => setSelectedProvider(e.target.value)} className="col-span-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand w-full">
               <option value="">Todos los proveedores</option>
               {providers.map(p => <option key={p} value={p}>{p}</option>)}
+              <option value="NO_PROVIDER">Sin proveedor asignado</option>
             </select>
             <div className="col-span-1 flex gap-1.5">
               <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs sm:text-sm text-slate-600 outline-none focus:border-brand">
