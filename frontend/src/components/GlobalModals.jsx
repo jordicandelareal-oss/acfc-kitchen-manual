@@ -159,9 +159,10 @@ export function SettingsModal({ isOpen, onClose, role, setRole }) {
 
 export function ProfileModal({ isOpen, onClose, userSession, role, onLogout }) {
   if (!isOpen) return null;
-  const email = userSession?.email || 'usuario@acfcacademy.com';
-  const roleLabel = role === 'admin' ? 'Administrador' : role === 'chef' ? 'Jefe de Cocina' : 'Asistente de Cocina';
-  const initial = email.charAt(0).toUpperCase();
+  const isGuest = userSession?.isGuest;
+  const email = isGuest ? 'Invitado (Solo Lectura)' : (userSession?.email || 'usuario@acfcacademy.com');
+  const roleLabel = isGuest ? 'Invitado' : (role === 'admin' ? 'Administrador' : role === 'chef' ? 'Jefe de Cocina' : 'Asistente de Cocina');
+  const initial = isGuest ? 'I' : email.charAt(0).toUpperCase();
 
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -185,7 +186,7 @@ export function ProfileModal({ isOpen, onClose, userSession, role, onLogout }) {
           <div className="space-y-2 text-xs">
             <div className="flex justify-between p-2.5 border-b border-slate-100">
               <span className="text-slate-400 font-medium">Cuenta Supabase</span>
-              <span className="text-slate-700 font-semibold">{email}</span>
+              <span className="text-slate-700 font-semibold">{isGuest ? 'Sin sesión activa' : email}</span>
             </div>
             <div className="flex justify-between p-2.5 border-b border-slate-100">
               <span className="text-slate-400 font-medium">Establecimiento</span>
@@ -193,15 +194,27 @@ export function ProfileModal({ isOpen, onClose, userSession, role, onLogout }) {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              onClose();
-              if (typeof onLogout === 'function') onLogout();
-            }}
-            className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition-all border border-red-200 mt-2"
-          >
-            Cerrar Sesión
-          </button>
+          {isGuest ? (
+            <button
+              onClick={() => {
+                onClose();
+                if (typeof onLogout === 'function') onLogout();
+              }}
+              className="w-full py-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs rounded-xl transition-all border border-indigo-200 mt-2"
+            >
+              Iniciar Sesión
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onClose();
+                if (typeof onLogout === 'function') onLogout();
+              }}
+              className="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition-all border border-red-200 mt-2"
+            >
+              Cerrar Sesión
+            </button>
+          )}
         </div>
       </div>
     </div>

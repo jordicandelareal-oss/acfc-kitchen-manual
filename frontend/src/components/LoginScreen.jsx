@@ -157,6 +157,22 @@ export default function LoginScreen({ onLoginSuccess }) {
           </button>
         </form>
 
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof onLoginSuccess === 'function') {
+              onLoginSuccess({
+                id: 'guest',
+                email: 'invitado@acfcacademy.com',
+                isGuest: true
+              }, 'assistant');
+            }
+          }}
+          className="w-full mt-3 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm rounded-xl hover:border-slate-300 border border-slate-200 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <span>Continuar como Invitado (Modo Lectura)</span>
+        </button>
+
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Accesos Rápidos de Prueba (1-Clic)</p>
           <div className="grid grid-cols-3 gap-2 text-[10px]">

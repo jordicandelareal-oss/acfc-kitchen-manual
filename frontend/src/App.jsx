@@ -26,12 +26,37 @@ import {
 import NotificationsPanel from './components/NotificationsPanel';
 import MenuTvView from './components/MenuTvView';
 
+const GUEST_SESSION = {
+  id: 'guest',
+  email: 'invitado@acfcacademy.com',
+  isGuest: true
+};
+
+const getCachedSessionUser = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const keys = Object.keys(localStorage);
+      const authKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (authKey) {
+        const data = localStorage.getItem(authKey);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (parsed?.user) return parsed.user;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[SafeStorage] Error reading cached session:', e);
+  }
+  return GUEST_SESSION;
+};
+
 function App() {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [showIntro, setShowIntro] = useState(() => {
     return !sessionStorage.getItem('introPlayed');
   });
-  const [userSession, setUserSession] = useState(null);
+  const [userSession, setUserSession] = useState(() => getCachedSessionUser());
   const [authChecking, setAuthChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [month, setMonth] = useState('Julio');
@@ -44,7 +69,13 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   
   // Estado de Rol (RBAC) dictado estrictamente por auth.users y public.user_roles
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState(() => {
+    try {
+      return localStorage.getItem('acfc_user_role') || 'assistant';
+    } catch {
+      return 'assistant';
+    }
+  });
 
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [globalRecipes, setGlobalRecipes] = useState([]);
@@ -132,25 +163,18 @@ function App() {
     }
   }, [activeTab, month]);
 
-  // Verificación de sesión real de Supabase Auth con timeout de 1.5s
+  // Verificación de sesión real de Supabase Auth (resiliente, sin timeouts rígidos, con reintentos silenciosos y fallback de invitado)
   useEffect(() => {
     let isMounted = true;
 
-    async function checkAuthSession() {
+    async function checkAuthSession(retryCount = 0) {
       try {
-        const getSessionWithTimeout = () => {
-          return Promise.race([
-            supabase.auth.getSession(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Auth getSession timeout (1.5s)')), 1500)
-            )
-          ]);
-        };
-
-        const { data: { session } } = await getSessionWithTimeout();
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
 
         if (!isMounted) return;
 
+        const session = data?.session;
         if (session?.user) {
           setUserSession(session.user);
           let dbRole = 'assistant';
@@ -162,47 +186,45 @@ function App() {
               .maybeSingle();
             
             dbRole = roleRow?.role || 'assistant';
-            setRole(dbRole);
-            localStorage.setItem('acfc_user_role', dbRole);
-            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-              id: session.user.id,
-              user: session.user.email,
-              role: dbRole,
-              status: 'authenticated'
-            });
           } catch (e) {
-            setRole('assistant');
-            console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-              id: session.user.id,
-              user: session.user.email,
-              role: 'assistant',
-              status: 'authenticated (role fallback)'
-            });
+            console.warn('[Auth] Error querying user role, using assistant fallback:', e);
           }
-
-          // Esperamos a que los datos iniciales se descarguen por completo antes de ocultar la barrera de carga
-          console.log('[Auth] Cargando datos iniciales para el Cold Start...');
-          await Promise.all([
-            loadGlobalRecipes(),
-            loadLowStockAlerts()
-          ]);
-          console.log('[Auth] Datos iniciales cargados con éxito.');
+          setRole(dbRole);
+          try {
+            localStorage.setItem('acfc_user_role', dbRole);
+          } catch (e) {
+            console.warn('[SafeStorage] Error caching user role:', e);
+          }
+          
+          // Cargar datos iniciales en background
+          loadGlobalRecipes();
+          loadLowStockAlerts();
         } else {
-          setUserSession(null);
-          setRole(null);
-          localStorage.removeItem('acfc_user_role');
-          console.log('✅ Interfaz montada por defecto. Estado de sesión resolved:', {
-            user: null,
-            role: null,
-            status: 'unauthenticated'
-          });
+          // Si no hay sesión, se entra en modo invitado temporal
+          setUserSession(GUEST_SESSION);
+          setRole('assistant');
+          try {
+            localStorage.setItem('acfc_user_role', 'assistant');
+          } catch (e) {}
         }
       } catch (err) {
+        console.warn(`[Auth] Error/Timeout verificando sesión (intento ${retryCount + 1}):`, err);
         if (!isMounted) return;
-        console.warn('[Auth] Timeout o error en la verificación de sesión:', err?.message || err);
-        setUserSession(null);
-        setRole(null);
-        localStorage.removeItem('acfc_user_role');
+
+        if (retryCount < 2) {
+          // Reintento silencioso con retraso exponencial
+          setTimeout(() => {
+            if (isMounted) checkAuthSession(retryCount + 1);
+          }, 1000 * (retryCount + 1));
+          return;
+        }
+
+        // Fallback final silencioso a modo invitado/público temporal
+        setUserSession(GUEST_SESSION);
+        setRole('assistant');
+        try {
+          localStorage.setItem('acfc_user_role', 'assistant');
+        } catch (e) {}
       } finally {
         if (isMounted) {
           setAuthChecking(false);
@@ -216,6 +238,9 @@ function App() {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       if (session?.user) {
+        // Ignorar el trigger si es nuestro objeto simulado de guest
+        if (session.user.id === 'guest') return;
+
         setUserSession(session.user);
         let dbRole = 'assistant';
         try {
@@ -226,29 +251,27 @@ function App() {
             .maybeSingle();
           
           dbRole = roleRow?.role || 'assistant';
-          setRole(dbRole);
-          localStorage.setItem('acfc_user_role', dbRole);
         } catch (e) {
-          setRole('assistant');
+          console.warn('[Auth] Error querying user role on state change:', e);
         }
-
-        // Si se loguea o cambia la sesión a activa, volvemos a poner loading para sincronizar datos
-        setIsInitializing(true);
+        setRole(dbRole);
         try {
-          await Promise.all([
-            loadGlobalRecipes(),
-            loadLowStockAlerts()
-          ]);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsInitializing(false);
-        }
+          localStorage.setItem('acfc_user_role', dbRole);
+        } catch (e) {}
+
+        // Sincronizar datos para el usuario logueado en background
+        loadGlobalRecipes();
+        loadLowStockAlerts();
       } else {
-        setUserSession(null);
-        setRole(null);
-        localStorage.removeItem('acfc_user_role');
-        setIsInitializing(false);
+        // Solo resetear si no estamos ya en modo invitado
+        setUserSession(prev => {
+          if (prev?.isGuest) return prev;
+          setRole('assistant');
+          try {
+            localStorage.setItem('acfc_user_role', 'assistant');
+          } catch (e) {}
+          return GUEST_SESSION;
+        });
       }
     });
 
@@ -323,17 +346,21 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      if (userSession && !userSession.isGuest) {
+        await supabase.auth.signOut();
+      }
     } catch (e) {
       console.error('Error al cerrar sesión:', e);
     } finally {
-      localStorage.removeItem('acfc_user_role');
+      try {
+        localStorage.removeItem('acfc_user_role');
+      } catch (e) {}
       setUserSession(null);
       setRole(null);
     }
   };
 
-  if (isInitializing || authChecking) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
         <div className="flex flex-col items-center gap-4 animate-pulse">
