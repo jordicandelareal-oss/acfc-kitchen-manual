@@ -192,7 +192,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   const [shoppingModalOpen, setShoppingModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [comensalesModalOpen, setComensalesModalOpen] = useState(false);
-  const [baseComensalesModalOpen, setBaseComensalesModalOpen] = useState(false);
 
   // Day Form State
   const [dayForm, setDayForm] = useState({
@@ -217,24 +216,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     dinner_allergies: ''
   });
 
-  const [baseComensalesForm, setBaseComensalesForm] = useState({
-    breakfast_players: 20,
-    breakfast_halal: 0,
-    breakfast_kosher: 0,
-    breakfast_vegan: 0,
-    breakfast_allergies: '',
-    lunch_players: 25,
-    lunch_halal: 0,
-    lunch_kosher: 0,
-    lunch_vegan: 0,
-    lunch_allergies: '',
-    dinner_players: 20,
-    dinner_halal: 0,
-    dinner_kosher: 0,
-    dinner_vegan: 0,
-    dinner_allergies: ''
-  });
-
   const addLog = useCallback((msg, type = 'info') => {
     const ts = new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' });
     setLogs(prev => [...prev, { type, msg, ts }].slice(-300));
@@ -242,121 +223,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
   }, []);
 
   const [currentDate, setCurrentDate] = useState(() => getMadridTodayDateObject()); // Default: Current system date
-
-  // ── Calcular desglose reactivo de comensales visibles en pantalla por servicio ──
-  const visibleComensalesBreakdown = useMemo(() => {
-    let breakfast = 0;
-    let lunch = 0;
-    let dinner = 0;
-    let visibleDates = [];
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    if (viewMode === 'day') {
-      const activeDayNum = selectedDay || getMadridTodayDateObject().getDate();
-      visibleDates = [`${year}-${String(month + 1).padStart(2, '0')}-${String(activeDayNum).padStart(2, '0')}`];
-    } else if (viewMode === 'week') {
-      selectedWeeks.forEach(w => {
-        const weekDaysList = getMadridWeekRange(year, month, w);
-        weekDaysList.forEach(d => {
-          if (d?.dateStr) visibleDates.push(d.dateStr);
-        });
-      });
-    } else if (viewMode === 'range') {
-      if (customStartDate && customEndDate) {
-        const start = new Date(customStartDate);
-        const end = new Date(customEndDate);
-        let curr = new Date(start);
-        while (curr <= end) {
-          const iso = curr.toISOString().split('T')[0];
-          visibleDates.push(iso);
-          curr.setDate(curr.getDate() + 1);
-        }
-      }
-    } else {
-      // viewMode === 'month'
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      for (let d = 1; d <= daysInMonth; d++) {
-        visibleDates.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
-      }
-    }
-
-    visibleDates.forEach(date => {
-      const dayData = plannerData[date] || {};
-      breakfast += Number(dayData.breakfast_players) || 0;
-      lunch += Number(dayData.lunch_players) || 0;
-      dinner += Number(dayData.dinner_players) || 0;
-    });
-
-    return { breakfast, lunch, dinner };
-  }, [plannerData, selectedWeeks, currentDate, viewMode, selectedDay, customStartDate, customEndDate]);
-
-  const openBaseComensalesModal = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const weekNum = selectedWeeks[0] || 1;
-    const weekDaysList = getMadridWeekRange(year, month, weekNum);
-    const weekMondayStr = weekDaysList[0]?.dateStr || '';
-    const currentWeekPlayers = weeklyPlayers[weekMondayStr] || { lunch: 25, dinner: 20, breakfast: 20 };
-    
-    let baseHalalLunch = 0;
-    let baseKosherLunch = 0;
-    let baseVeganLunch = 0;
-    let baseAllergiesLunch = '';
-    
-    let baseHalalDinner = 0;
-    let baseKosherDinner = 0;
-    let baseVeganDinner = 0;
-    let baseAllergiesDinner = '';
-
-    let baseHalalBreakfast = 0;
-    let baseKosherBreakfast = 0;
-    let baseVeganBreakfast = 0;
-    let baseAllergiesBreakfast = '';
-
-    weekDaysList.forEach(({ dateStr }) => {
-      const dayData = plannerData[dateStr];
-      if (dayData) {
-        if (dayData.lunch_halal) baseHalalLunch = dayData.lunch_halal;
-        if (dayData.lunch_kosher) baseKosherLunch = dayData.lunch_kosher;
-        if (dayData.lunch_vegan) baseVeganLunch = dayData.lunch_vegan;
-        if (dayData.lunch_allergies) {
-          const cleaned = dayData.lunch_allergies.replace(/\s*\[manual\]/g, '').replace(/^\[manual\]/g, '');
-          if (cleaned) baseAllergiesLunch = cleaned;
-        }
-
-        if (dayData.dinner_halal) baseHalalDinner = dayData.dinner_halal;
-        if (dayData.dinner_kosher) baseKosherDinner = dayData.dinner_kosher;
-        if (dayData.dinner_vegan) baseVeganDinner = dayData.dinner_vegan;
-        if (dayData.dinner_allergies) baseAllergiesDinner = dayData.dinner_allergies;
-
-        if (dayData.breakfast_halal) baseHalalBreakfast = dayData.breakfast_halal;
-        if (dayData.breakfast_kosher) baseKosherBreakfast = dayData.breakfast_kosher;
-        if (dayData.breakfast_vegan) baseVeganBreakfast = dayData.breakfast_vegan;
-        if (dayData.breakfast_allergies) baseAllergiesBreakfast = dayData.breakfast_allergies;
-      }
-    });
-
-    setBaseComensalesForm({
-      breakfast_players: currentWeekPlayers.breakfast ?? 20,
-      breakfast_halal: baseHalalBreakfast,
-      breakfast_kosher: baseKosherBreakfast,
-      breakfast_vegan: baseVeganBreakfast,
-      breakfast_allergies: baseAllergiesBreakfast,
-      lunch_players: currentWeekPlayers.lunch ?? 25,
-      lunch_halal: baseHalalLunch,
-      lunch_kosher: baseKosherLunch,
-      lunch_vegan: baseVeganLunch,
-      lunch_allergies: baseAllergiesLunch,
-      dinner_players: currentWeekPlayers.dinner ?? 20,
-      dinner_halal: baseHalalDinner,
-      dinner_kosher: baseKosherDinner,
-      dinner_vegan: baseVeganDinner,
-      dinner_allergies: baseAllergiesDinner
-    });
-    
-    setBaseComensalesModalOpen(true);
-  };
 
   const getActiveRestrictions = useCallback((playersCount) => {
     if (!comensalesList || comensalesList.length === 0) {
@@ -387,150 +253,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
     };
   }, [comensalesList]);
 
-  const [weeklySummaryOpen, setWeeklySummaryOpen] = useState(true);
 
-  const weeklyOperationalBreakdown = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const weekNum = selectedWeeks[0] || 1;
-    const weekDaysList = getMadridWeekRange(year, month, weekNum);
-
-    return weekDaysList.map(({ dateStr, label, dayNum }) => {
-      const menu = plannerData[dateStr] || {};
-      
-      const bPlayers = Number(menu.breakfast_players) || 0;
-      const lPlayers = Number(menu.lunch_players) || 0;
-      const dPlayers = Number(menu.dinner_players) || 0;
-
-      const bRest = getActiveRestrictions(bPlayers);
-      const lRest = getActiveRestrictions(lPlayers);
-      const dRest = getActiveRestrictions(dPlayers);
-
-      return {
-        dateStr,
-        label,
-        dayNum,
-        confirmado: !!menu.confirmado,
-        breakfast: { players: bPlayers, ...bRest },
-        lunch: { players: lPlayers, ...lRest },
-        dinner: { players: dPlayers, ...dRest }
-      };
-    });
-  }, [plannerData, selectedWeeks, currentDate, getActiveRestrictions]);
-
-  const maxWeeklyPlayers = useMemo(() => {
-    let max = 0;
-    weeklyOperationalBreakdown.forEach(day => {
-      max = Math.max(max, day.breakfast.players, day.lunch.players, day.dinner.players);
-    });
-    return max || 0;
-  }, [weeklyOperationalBreakdown]);
-
-  const handleApplyWeeklyComensales = async () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const weekNum = selectedWeeks[0] || 1;
-    const weekDaysList = getMadridWeekRange(year, month, weekNum);
-    
-    addLog(`Aplicando comensales base a la semana ${weekNum}...`, 'info');
-    
-    try {
-      const daysToSave = [];
-      const confirmedDaysToSave = [];
-      const newPlannerData = { ...plannerData };
-
-      const bPlayers = Number(baseComensalesForm.breakfast_players) || 0;
-      const lPlayers = Number(baseComensalesForm.lunch_players) || 0;
-      const dPlayers = Number(baseComensalesForm.dinner_players) || 0;
-
-      const bRest = getActiveRestrictions(bPlayers);
-      const lRest = getActiveRestrictions(lPlayers);
-      const dRest = getActiveRestrictions(dPlayers);
-      
-      weekDaysList.forEach(({ dateStr }) => {
-        const existing = plannerData[dateStr] || {};
-        
-        // Si el día ya está personalizado manualmente ([manual]), lo respetamos por completo
-        if (existing.lunch_allergies?.includes('[manual]')) {
-          return;
-        }
-        
-        const updatedDay = {
-          ...existing,
-          date: dateStr,
-          breakfast_recipe_id: existing.breakfast_recipe_id || existing.breakfast_recipe || null,
-          lunch_recipe_id: existing.lunch_recipe_id || existing.lunch_recipe || null,
-          lunch_side_recipe_id: existing.lunch_side_recipe_id || existing.lunch_side_recipe || null,
-          dinner_recipe_id: existing.dinner_recipe_id || existing.dinner_recipe || null,
-          breakfast_players: bPlayers,
-          breakfast_halal: bRest.halal,
-          breakfast_kosher: bRest.kosher,
-          breakfast_vegan: bRest.vegan,
-          breakfast_allergies: bRest.allergies,
-          lunch_players: lPlayers,
-          lunch_halal: lRest.halal,
-          lunch_kosher: lRest.kosher,
-          lunch_vegan: lRest.vegan,
-          lunch_allergies: lRest.allergies,
-          dinner_players: dPlayers,
-          dinner_halal: dRest.halal,
-          dinner_kosher: dRest.kosher,
-          dinner_vegan: dRest.vegan,
-          dinner_allergies: dRest.allergies,
-        };
-        
-        newPlannerData[dateStr] = updatedDay;
-        
-        if (existing.confirmado) {
-          confirmedDaysToSave.push({ ...updatedDay, confirmado: true });
-        } else {
-          daysToSave.push(updatedDay);
-        }
-      });
-      
-      // Persistencia atómica en Supabase
-      if (daysToSave.length > 0) {
-        const { error } = await api.guardarMenuBorrador(daysToSave);
-        if (error) throw error;
-      }
-      
-      if (confirmedDaysToSave.length > 0) {
-        const { error } = await api.guardarYConfirmarMenu(confirmedDaysToSave);
-        if (error) throw error;
-      }
-      
-      // Actualizar estado frontend
-      setPlannerData(newPlannerData);
-      
-      // Actualizar weeklyPlayers para coherencia del generador semanal
-      const weekMondayStr = weekDaysList[0].dateStr;
-      setWeeklyPlayers(prev => {
-        const updated = {
-          ...prev,
-          [weekMondayStr]: {
-            lunch: lPlayers,
-            dinner: dPlayers,
-            breakfast: bPlayers
-          }
-        };
-        localStorage.setItem('acfc_weekly_players_v2', JSON.stringify(updated));
-        return updated;
-      });
-      
-      addLog(`Comensales base aplicados con éxito a la semana ${weekNum}`, 'success');
-      if (typeof window.toast === 'function') {
-        window.toast(`✅ Comensales base aplicados a la semana ${weekNum}`);
-      }
-      
-      setBaseComensalesModalOpen(false);
-      loadData();
-    } catch (err) {
-      addLog(`Error al aplicar comensales base: ${err.message}`, 'error');
-      if (typeof window.toast === 'function') {
-        window.toast(`❌ Error: ${err.message}`);
-      }
-    }
-  };
 
   const goToCurrentWeek = () => {
     const today = getMadridTodayDateObject();
@@ -1369,28 +1092,39 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </button>
           )}
 
-          {/* Week selector */}
+          {/* Selector de semanas ultra-compacto (carrusel horizontal) */}
           {viewMode === 'week' && (
-            <div className="flex flex-wrap items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5">Semanas:</span>
-              {(() => {
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
-                const numWeeks = getMadridWeeksInMonth(year, month);
-                const weeksArr = [];
-                for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
-                return weeksArr.map(w => (
-                  <label key={w} className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors whitespace-nowrap">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedWeeks.includes(w)}
-                      onChange={() => handleWeekToggle(w)}
-                      className="rounded border-slate-300 text-brand focus:ring-brand w-3.5 h-3.5"
-                    />
-                    <span>{getMadridWeekRangeLabelForSelector(year, month, w)}</span>
-                  </label>
-                ));
-              })()}
+            <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 w-full md:w-auto overflow-hidden">
+              <span className="text-[10px] font-bold text-slate-500 uppercase px-1.5 hidden sm:inline flex-shrink-0">Semana:</span>
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin py-0.5 px-0.5 -mx-0.5 flex-1 max-w-full md:max-w-none no-scrollbar">
+                {(() => {
+                  const year = currentDate.getFullYear();
+                  const month = currentDate.getMonth();
+                  const numWeeks = getMadridWeeksInMonth(year, month);
+                  const weeksArr = [];
+                  for (let i = 1; i <= numWeeks; i++) weeksArr.push(i);
+                  return weeksArr.map(w => {
+                    const isActive = selectedWeeks.includes(w);
+                    const label = getMadridWeekRangeLabelForSelector(year, month, w);
+                    return (
+                      <button
+                        key={w}
+                        type="button"
+                        onClick={() => {
+                          handleWeekToggle(w);
+                        }}
+                        className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-brand text-white shadow-2xs'
+                            : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           )}
 
@@ -1417,27 +1151,6 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
               </div>
             </div>
           )}
-
-          {/* Quick Weekly Players Controls — Informativo y Reactivo Desglosado */}
-          <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-2 bg-indigo-50/80 border border-indigo-200 p-1.5 rounded-xl">
-            <div className="flex items-center gap-1">
-              <Users size={13} className="text-indigo-600 ml-1" />
-              <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight mr-1">
-                Desglose:
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Desayunos Totales">
-                🍳 {visibleComensalesBreakdown.breakfast}
-              </span>
-              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Almuerzos Totales">
-                ☀️ {visibleComensalesBreakdown.lunch}
-              </span>
-              <span className="text-[10px] font-bold text-slate-800 bg-white border border-indigo-100 rounded-lg px-2 py-0.5 shadow-xs" title="Cenas Totales">
-                🌙 {visibleComensalesBreakdown.dinner}
-              </span>
-            </div>
-          </div>
 
           {/* Auto-generate button */}
           {canEdit && (
@@ -1509,27 +1222,14 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </button>
           )}
 
-          {/* Comensales button — only for chef/admin */}
-          {canEdit && (
-            <button 
-              onClick={() => setComensalesModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-xs font-semibold hover:bg-indigo-100 transition-all whitespace-nowrap"
-            >
-              <Users size={14} />
-              <span>Comensales</span>
-            </button>
-          )}
-
-          {/* Asignar Base Semanal button — only for chef/admin */}
-          {canEdit && (
-            <button 
-              onClick={openBaseComensalesModal}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-muted/20 text-brand border border-brand/20 rounded-xl text-xs font-semibold hover:bg-brand-muted/30 transition-all whitespace-nowrap cursor-pointer"
-            >
-              <Users size={14} />
-              <span>Asignar Base Semanal</span>
-            </button>
-          )}
+          {/* Comensales button — accessible to all */}
+          <button 
+            onClick={() => setComensalesModalOpen(true)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-xs font-semibold hover:bg-indigo-100 transition-all whitespace-nowrap cursor-pointer"
+          >
+            <Users size={14} />
+            <span>Comensales</span>
+          </button>
 
           {/* Month Navigator */}
           <div className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 flex-shrink-0">
@@ -1584,94 +1284,7 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
             </span>
           </div>
 
-          {/* Widget de Resumen Semanal Desglosado */}
-          {viewMode === 'week' && (
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Users className="text-brand" size={18} />
-                  <span className="font-bold text-slate-800 text-sm" style={{ fontFamily: 'Outfit' }}>
-                    Censo & Planificación de Comensales (Semana {selectedWeeks[0] || 1})
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-brand bg-brand-muted/20 border border-brand/20 px-2.5 py-1 rounded-lg">
-                    Tienes {maxWeeklyPlayers} jugadores asignados para toda la semana
-                  </span>
-                  <button 
-                    onClick={() => setWeeklySummaryOpen(!weeklySummaryOpen)} 
-                    className="text-slate-500 hover:text-slate-700 p-1 hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
-                  >
-                    <span>{weeklySummaryOpen ? 'Ocultar desglose' : 'Mostrar desglose'}</span>
-                    <span className="material-symbols-outlined font-bold" style={{ fontSize: '16px' }}>
-                      {weeklySummaryOpen ? 'expand_less' : 'expand_more'}
-                    </span>
-                  </button>
-                </div>
-              </div>
 
-              {weeklySummaryOpen && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-2 pt-3 border-t border-slate-100">
-                  {weeklyOperationalBreakdown.map((day) => {
-                    const hasManual = day.lunch.allergies?.includes('[manual]');
-                    return (
-                      <div key={day.dateStr} className={`p-2.5 rounded-lg border flex flex-col justify-between space-y-2 ${day.confirmado ? 'bg-indigo-50/20 border-indigo-100' : 'bg-slate-50/40 border-slate-150'}`}>
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight">{day.label} {day.dayNum}</span>
-                          {hasManual && (
-                            <span className="text-[9px]" title="Comensales personalizados manualmente">👤</span>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-1.5 text-[10px]">
-                          {/* Desayuno */}
-                          <div className="bg-amber-50/50 p-1 rounded border border-amber-100/50">
-                            <span className="font-bold text-amber-800">🍳 Des:</span> <span className="font-extrabold">{day.breakfast.players} pax</span>
-                            {(day.breakfast.halal > 0 || day.breakfast.kosher > 0 || day.breakfast.vegan > 0) && (
-                              <div className="text-[8px] text-amber-700 font-medium mt-0.5 space-y-0.5">
-                                {day.breakfast.halal > 0 && <div>🕌 Halal: {day.breakfast.halal}</div>}
-                                {day.breakfast.kosher > 0 && <div>✡️ Kosher: {day.breakfast.kosher}</div>}
-                                {day.breakfast.vegan > 0 && <div>🌱 Vegan: {day.breakfast.vegan}</div>}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Almuerzo */}
-                          <div className="bg-indigo-50/50 p-1 rounded border border-indigo-100/50">
-                            <span className="font-bold text-indigo-800">☀️ Alm:</span> <span className="font-extrabold">{day.lunch.players} pax</span>
-                            {(day.lunch.halal > 0 || day.lunch.kosher > 0 || day.lunch.vegan > 0) && (
-                              <div className="text-[8px] text-indigo-700 font-medium mt-0.5 space-y-0.5">
-                                {day.lunch.halal > 0 && <div>🕌 Halal: {day.lunch.halal}</div>}
-                                {day.lunch.kosher > 0 && <div>✡️ Kosher: {day.lunch.kosher}</div>}
-                                {day.lunch.vegan > 0 && <div>🌱 Vegan: {day.lunch.vegan}</div>}
-                              </div>
-                            )}
-                            {day.lunch.allergies && day.lunch.allergies.replace('[manual]', '').trim() && (
-                              <div className="text-[8px] text-red-650 font-semibold mt-1 truncate" title={`Alergias: ${day.lunch.allergies.replace('[manual]', '').trim()}`}>
-                                ⚠️ {day.lunch.allergies.replace('[manual]', '').trim()}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Cena */}
-                          <div className="bg-emerald-50/50 p-1 rounded border border-emerald-100/50">
-                            <span className="font-bold text-emerald-800">🌙 Cen:</span> <span className="font-extrabold">{day.dinner.players} pax</span>
-                            {(day.dinner.halal > 0 || day.dinner.kosher > 0 || day.dinner.vegan > 0) && (
-                              <div className="text-[8px] text-emerald-700 font-medium mt-0.5 space-y-0.5">
-                                {day.dinner.halal > 0 && <div>🕌 Halal: {day.dinner.halal}</div>}
-                                {day.dinner.kosher > 0 && <div>✡️ Kosher: {day.dinner.kosher}</div>}
-                                {day.dinner.vegan > 0 && <div>🌱 Vegan: {day.dinner.vegan}</div>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* ── VISTA DÍA ── */}
           {viewMode === 'day' && (
@@ -2540,87 +2153,17 @@ export default function PlannerTab({ recipes = [], role, canEdit = true, isIniti
       <ComensalesModal 
         isOpen={comensalesModalOpen}
         onClose={() => setComensalesModalOpen(false)}
+        canEdit={canEdit}
+        currentDate={currentDate}
+        selectedWeeks={selectedWeeks}
+        getActiveRestrictions={getActiveRestrictions}
+        plannerData={plannerData}
+        setPlannerData={setPlannerData}
+        weeklyPlayers={weeklyPlayers}
+        setWeeklyPlayers={setWeeklyPlayers}
+        loadData={loadData}
+        addLog={addLog}
       />
-
-      {/* ── MODAL: ASIGNACIÓN DE COMENSALES BASE SEMANALES ── */}
-      {baseComensalesModalOpen && (
-        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setBaseComensalesModalOpen(false); }}>
-          <div className="modal-box max-w-md max-h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Users className="text-brand" size={22} />
-                <h3 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'Outfit' }}>
-                  Asignar Comensales Base (Semana {selectedWeeks[0] || 1})
-                </h3>
-              </div>
-              <button onClick={() => setBaseComensalesModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto pr-1 space-y-4 flex-1 pb-4">
-              <p className="text-xs text-slate-500 bg-indigo-50 border border-indigo-100 rounded-xl p-3 leading-relaxed">
-                💡 Introduce el número de comensales (Pax) para cada servicio. Las dietas especiales (Halal, Kosher, Vegano) y alergias se calcularán automáticamente en base a los perfiles de la academia. Se respetarán los días personalizados (👤).
-              </p>
-
-              {/* 🍳 DESAYUNO */}
-              <div className="border-l-4 border-amber-400 pl-3 space-y-2">
-                <label className="block text-xs font-bold text-amber-700 uppercase tracking-wide">🍳 Desayuno Base</label>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                  <input 
-                    type="number" 
-                    value={baseComensalesForm.breakfast_players} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, breakfast_players: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-
-              {/* ☀️ ALMUERZO */}
-              <div className="border-l-4 border-brand pl-3 space-y-2">
-                <label className="block text-xs font-bold text-brand uppercase tracking-wide">☀️ Almuerzo Base</label>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                  <input 
-                    type="number" 
-                    value={baseComensalesForm.lunch_players} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, lunch_players: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-brand"
-                  />
-                </div>
-              </div>
-
-              {/* 🌙 CENA */}
-              <div className="border-l-4 border-indigo-400 pl-3 space-y-2">
-                <label className="block text-xs font-bold text-indigo-700 uppercase tracking-wide">🌙 Cena Base</label>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Pax</label>
-                  <input 
-                    type="number" 
-                    value={baseComensalesForm.dinner_players} 
-                    onChange={e => setBaseComensalesForm(prev => ({ ...prev, dinner_players: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:border-indigo-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
-              <button onClick={() => setBaseComensalesModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                Cancelar
-              </button>
-              <button 
-                onClick={handleApplyWeeklyComensales} 
-                className="px-5 py-2 text-sm font-semibold text-white bg-brand hover:bg-brand-dark rounded-lg shadow-sm transition-all"
-              >
-                Aplicar a la Semana
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
